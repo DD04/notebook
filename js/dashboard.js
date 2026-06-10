@@ -147,7 +147,6 @@ export async function refreshDashboard() {
         populateFilterSelectors();
         
         // Recalculate cards and render table
-        calculateSummaryCards();
         applyFiltersAndRender();
     } catch (e) {
         console.error("Failed to load dashboard data", e);
@@ -155,13 +154,13 @@ export async function refreshDashboard() {
     }
 }
 
-function calculateSummaryCards() {
+function calculateSummaryCards(txList = localTransactions) {
     let income = 0;
     let expense = 0;
     let incomeCount = 0;
     let expenseCount = 0;
     
-    localTransactions.forEach(t => {
+    txList.forEach(t => {
         const val = parseFloat(t.amount);
         if (t.type === 'income') {
             income += val;
@@ -246,6 +245,7 @@ function applyFiltersAndRender() {
     });
     
     currentPage = 1;
+    calculateSummaryCards(filteredTransactions);
     renderTable();
 }
 

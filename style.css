@@ -2072,3 +2072,20 @@ a {
     pointer-events: none !important;
 }
 
+#budgetMonthPicker {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s;
+    outline: none;
+    width: auto;
+}
+
+#budgetMonthPicker:focus {
+    border-color: var(--primary);
+}
+

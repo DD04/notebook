@@ -9,14 +9,61 @@ let transactions = [];
 let donutChartInstance = null;
 let barChartInstance = null;
 
+export function initAnalytics() {
+    const analyticsMonthSelect = document.getElementById('analyticsMonthSelect');
+    const analyticsRangeSelect = document.getElementById('analyticsRangeSelect');
+
+    if (analyticsMonthSelect) {
+        analyticsMonthSelect.addEventListener('change', () => {
+            renderCategoryDonut();
+        });
+    }
+
+    if (analyticsRangeSelect) {
+        analyticsRangeSelect.addEventListener('change', () => {
+            renderTrendBarChart();
+        });
+    }
+}
+
 export async function refreshAnalytics() {
     try {
         transactions = await storage.getTransactions();
         
+        populateAnalyticsMonthSelect();
         renderCategoryDonut();
         renderTrendBarChart();
     } catch (e) {
         console.error("Failed to render analytics", e);
+    }
+}
+
+function populateAnalyticsMonthSelect() {
+    const analyticsMonthSelect = document.getElementById('analyticsMonthSelect');
+    if (!analyticsMonthSelect) return;
+
+    const months = new Set();
+    transactions.forEach(t => {
+        if (t.date) {
+            months.add(t.date.substring(0, 7)); // YYYY-MM
+        }
+    });
+
+    const prevMonth = analyticsMonthSelect.value;
+    
+    analyticsMonthSelect.innerHTML = `<option value="all">${getText('db_all_months') || '所有月份'}</option>`;
+    
+    Array.from(months).sort().reverse().forEach(mon => {
+        const dateObj = new Date(mon + '-02'); // Buffer day
+        const formatted = dateObj.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
+        analyticsMonthSelect.innerHTML += `<option value="${mon}">${formatted}</option>`;
+    });
+
+    // Restore previous selection if still valid
+    if (Array.from(months).includes(prevMonth) || prevMonth === 'all') {
+        analyticsMonthSelect.value = prevMonth;
+    } else {
+        analyticsMonthSelect.value = 'all';
     }
 }
 
@@ -45,7 +92,13 @@ function renderCategoryDonut() {
         donutChartInstance = null;
     }
     
-    const filteredTxs = transactions;
+    const analyticsMonthSelect = document.getElementById('analyticsMonthSelect');
+    const selectedMonth = analyticsMonthSelect ? analyticsMonthSelect.value : 'all';
+
+    const filteredTxs = transactions.filter(t => {
+        if (selectedMonth === 'all') return true;
+        return t.date && t.date.startsWith(selectedMonth);
+    });
         
     // Group expense items ONLY
     const catTotals = {};
@@ -136,13 +189,16 @@ function renderTrendBarChart() {
     }
     
     const filteredTxs = transactions;
+    
+    const analyticsRangeSelect = document.getElementById('analyticsRangeSelect');
+    const monthsToDisplay = analyticsRangeSelect ? parseInt(analyticsRangeSelect.value, 10) : 6;
         
-    // Group values by month (last 6 months, starting from current month)
+    // Group values by month
     const monthlySummary = {};
     const monthsArray = [];
     
     const today = new Date();
-    for (let i = 5; i >= 0; i--) {
+    for (let i = monthsToDisplay - 1; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');

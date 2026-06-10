@@ -2,29 +2,29 @@
 export const translations = {
     'zh': {
         // Sidebar Navigation
-        'nav_dashboard': '主頁主控台',
+        'nav_dashboard': '個人帳本',
         'nav_groups': '群組共同記帳',
         'nav_analytics': '收支數據分析',
         'nav_budgeting': '消費預算管理',
         'nav_settings': '資料庫與設定',
         'sidebar_offline_user': '訪客用戶',
         'sidebar_disconnected': '未配置連線',
-        
+
         // Mode badge
         'badge_cloud_sync': '雲端同步中',
         'badge_db_required': '請配置資料庫',
-        
+
         // Dashboard View
-        'db_title': '主頁主控台',
-        'db_balance': '淨資產餘額',
+        'db_title': '個人帳本',
+        'db_balance': '淨結餘',
         'db_balance_desc': '目前個人淨收支統計',
-        'db_income': '總收入金額',
+        'db_income': '總收入',
         'db_income_count': '筆收入交易',
-        'db_expense': '總支出金額',
+        'db_expense': '總支出',
         'db_expense_count': '筆支出交易',
         'db_ledger': '個人收支明細',
         'db_add_tx': '新增交易紀錄',
-        'db_search': '搜尋說明或標籤...',
+        'db_search': '搜尋說明...',
         'db_all_types': '所有收支類型',
         'db_income_type': '收入類型',
         'db_expense_type': '支出類型',
@@ -34,7 +34,7 @@ export const translations = {
         'db_prev_page': '上一頁',
         'db_next_page': '下一頁',
         'db_page_info': '第 {current} 頁，共 {total} 頁',
-        
+
         // Table headers
         'th_date': '日期',
         'th_desc': '說明',
@@ -42,7 +42,7 @@ export const translations = {
         'th_tags': '標籤',
         'th_amount': '金額',
         'th_actions': '操作',
-        
+
         // Groups View
         'group_title': '群組共同記帳',
         'group_list_title': '我的記帳群組',
@@ -67,7 +67,7 @@ export const translations = {
         'group_expense_count': '筆支出交易',
         'th_member': '記帳者',
         'th_type': '類型',
-        
+
         // Analytics View
         'analytics_title': '收支數據分析',
         'analytics_cat_dist': '分類支出比例',
@@ -75,14 +75,14 @@ export const translations = {
         'analytics_tags': '標籤支出分析',
         'analytics_no_expense': '無支出數據',
         'analytics_no_tags': '交易中尚未發現任何標籤。',
-        
+
         // Budgeting View
         'budget_title': '消費預算管理',
         'budget_subtitle': '預算設定上限',
         'budget_desc': '設定每個月每個分類的最高消費金額，系統會即時統計您的預算剩餘與進度。',
         'budget_set_limit': '設定額度：',
         'budget_no_limit': '無預算上限',
-        
+
         // Settings View
         'settings_title': '資料庫與設定',
         'settings_db_title': 'Supabase 資料庫配置',
@@ -96,7 +96,7 @@ export const translations = {
         'settings_backup_desc': '您可以將所有儲存在 Supabase 的資料（收支、預算、群組）匯出為 JSON，或在下方還原備份。',
         'settings_btn_export': '匯出 JSON 備份',
         'settings_btn_import': '導入 JSON 備份',
-        
+
         // Gateway overlay
         'gw_db_req': '需要配置資料庫連線',
         'gw_db_desc': '本應用使用純雲端儲存，請輸入您的 Supabase API 參數以繼續。',
@@ -114,7 +114,7 @@ export const translations = {
         'gw_btn_signup': '建立帳戶並登入',
         'gw_switch_to_signup': '沒有帳戶？立即註冊',
         'gw_switch_to_signin': '已有帳戶？立即登入',
-        
+
         // Modals
         'modal_add_tx': '新增交易紀錄',
         'modal_edit_tx': '編輯交易紀錄',
@@ -126,15 +126,15 @@ export const translations = {
         'modal_tx_desc': '詳細說明',
         'modal_tx_save': '儲存交易',
         'modal_cancel': '取消',
-        
+
         'modal_new_group': '建立新記帳群組',
         'modal_group_name': '群組名稱',
         'modal_group_create': '建立群組',
-        
+
         'modal_new_member': '新增群組成員',
         'modal_member_name': '成員名稱 / 暱稱',
         'modal_member_add': '加入成員',
-        
+
         'modal_group_tx': '新增群組交易',
         'modal_gtx_amount': '交易金額',
         'modal_gtx_payer': '誰付的錢？',
@@ -143,7 +143,7 @@ export const translations = {
         'modal_gtx_desc': '交易說明',
         'modal_gtx_split': '分攤對象成員 (均分機制)',
         'modal_gtx_save': '記錄交易',
-        
+
         // Categories
         'cat_Food': '餐飲',
         'cat_Transport': '交通',
@@ -153,7 +153,7 @@ export const translations = {
         'cat_Salary': '薪資收入',
         'cat_Investments': '投資收入',
         'cat_Other': '其他',
-        
+
         // Toast messages
         'toast_tx_added': '交易紀錄已新增！',
         'toast_tx_updated': '交易紀錄已更新！',
@@ -165,23 +165,23 @@ export const translations = {
         'toast_settled': '結清成功！',
         'toast_budget_set': '預算已設定',
         'toast_budget_fail': '預算儲存失敗：',
-        
+
         // Confirm dialogs
         'confirm_delete_tx': '確定要刪除這筆交易紀錄嗎？',
         'confirm_delete_bill': '確定要刪除這筆群組交易紀錄嗎？',
         'confirm_disconnect': '確定要中斷資料庫連線嗎？這將登出帳號並返回連線設定頁面。',
-        
+
         // Warnings
         'warn_min_2_members': '請至少新增 2 位成員再進行記帳。',
         'warn_check_one_member': '請確認交易資訊是否正確。',
-        
+
         // Group dynamic text
         'group_empty_list': '尚未建立任何記帳群組。',
         'group_created_on': '建立於',
         'group_transferred_to': '轉帳給',
         'group_split_with': '與',
         'group_split_member': '位成員均分',
-        
+
         // Group admin / member management
         'group_creator_badge': '建立者',
         'group_creator_only': '只有群組建立者才能執行此操作。',
@@ -190,19 +190,19 @@ export const translations = {
         'group_delete_group': '刪除群組',
         'confirm_delete_group': '確定要刪除此群組？所有群組資料將永久刪除且無法復原。',
         'toast_group_deleted': '群組已成功刪除。',
-        
+
         // Add member modal
         'modal_member_hint': '請輸入要新增成員的已註冊帳號暱稱。',
         'modal_member_placeholder': '輸入帳號暱稱…',
-        
+
         // Settlement modal
         'settle_record_title': '記錄債務結清',
         'settle_select_label': '選擇要結清的債務',
         'settle_record_btn': '確認結清',
-        
+
         // Analytics
         'analytics_total_exp': '總支出',
-        
+
         // Settings
         'settings_session_title': '帳號與連線狀態',
         'budget_month': '月份：'
@@ -216,11 +216,11 @@ export const translations = {
         'nav_settings': 'Configuration Settings',
         'sidebar_offline_user': 'Guest User',
         'sidebar_disconnected': 'Disconnected',
-        
+
         // Mode badge
         'badge_cloud_sync': 'Cloud Sync',
         'badge_db_required': 'Database Required',
-        
+
         // Dashboard View
         'db_title': 'Dashboard',
         'db_balance': 'Net Balance',
@@ -241,7 +241,7 @@ export const translations = {
         'db_prev_page': 'Prev',
         'db_next_page': 'Next',
         'db_page_info': 'Page {current} of {total}',
-        
+
         // Table headers
         'th_date': 'Date',
         'th_desc': 'Description',
@@ -249,7 +249,7 @@ export const translations = {
         'th_tags': 'Tags',
         'th_amount': 'Amount',
         'th_actions': 'Actions',
-        
+
         // Groups View
         'group_title': 'Group Shared Ledger',
         'group_list_title': 'My Ledger Groups',
@@ -274,7 +274,7 @@ export const translations = {
         'group_expense_count': 'expense entries',
         'th_member': 'Recorded By',
         'th_type': 'Type',
-        
+
         // Analytics View
         'analytics_title': 'Analytics & Trends',
         'analytics_cat_dist': 'Category Distribution',
@@ -282,14 +282,14 @@ export const translations = {
         'analytics_tags': 'Spending by Tags',
         'analytics_no_expense': 'No expense data',
         'analytics_no_tags': 'No tags found in expenses.',
-        
+
         // Budgeting View
         'budget_title': 'Monthly Budgeting',
         'budget_subtitle': 'Budget Settings',
         'budget_desc': 'Set monthly spending limits for each category. We will track your spending progress in real-time.',
         'budget_set_limit': 'Set Limit:',
         'budget_no_limit': 'No Limit',
-        
+
         // Settings View
         'settings_title': 'Configuration Settings',
         'settings_db_title': 'Supabase Configuration',
@@ -303,7 +303,7 @@ export const translations = {
         'settings_backup_desc': 'Export your Supabase transactions, budgets, and groups to a JSON file, or restore from a previous JSON backup into the database.',
         'settings_btn_export': 'Export JSON',
         'settings_btn_import': 'Import JSON',
-        
+
         // Gateway overlay
         'gw_db_req': 'Database Connection Required',
         'gw_db_desc': 'Connect to your Supabase instance to begin.',
@@ -321,7 +321,7 @@ export const translations = {
         'gw_btn_signup': 'Sign Up',
         'gw_switch_to_signup': "Don't have an account? Sign Up",
         'gw_switch_to_signin': 'Already have an account? Sign In',
-        
+
         // Modals
         'modal_add_tx': 'Add Transaction',
         'modal_edit_tx': 'Edit Transaction',
@@ -333,15 +333,15 @@ export const translations = {
         'modal_tx_desc': 'Description',
         'modal_tx_save': 'Save Transaction',
         'modal_cancel': 'Cancel',
-        
+
         'modal_new_group': 'Create New Ledger Group',
         'modal_group_name': 'Group Name',
         'modal_group_create': 'Create Group',
-        
+
         'modal_new_member': 'Add Group Member',
         'modal_member_name': 'Nickname / Name',
         'modal_member_add': 'Add Member',
-        
+
         'modal_group_tx': 'Add Group Transaction',
         'modal_gtx_amount': 'Amount',
         'modal_gtx_payer': 'Paid By',
@@ -350,7 +350,7 @@ export const translations = {
         'modal_gtx_desc': 'Description',
         'modal_gtx_split': 'Split Between Members (Equally)',
         'modal_gtx_save': 'Save Transaction',
-        
+
         // Categories
         'cat_Food': 'Food',
         'cat_Transport': 'Transport',
@@ -360,7 +360,7 @@ export const translations = {
         'cat_Salary': 'Salary (Income)',
         'cat_Investments': 'Investments (Income)',
         'cat_Other': 'Other',
-        
+
         // Toast messages
         'toast_tx_added': 'Transaction added successfully!',
         'toast_tx_updated': 'Transaction updated successfully!',
@@ -372,23 +372,23 @@ export const translations = {
         'toast_settled': 'Settlement recorded!',
         'toast_budget_set': 'budget set to',
         'toast_budget_fail': 'Failed to save budget: ',
-        
+
         // Confirm dialogs
         'confirm_delete_tx': 'Are you sure you want to delete this transaction?',
         'confirm_delete_bill': 'Are you sure you want to delete this group transaction?',
         'confirm_disconnect': 'Are you sure you want to disconnect? This will log you out and return to the connection page.',
-        
+
         // Warnings
         'warn_min_2_members': 'Please add members to start tracking.',
         'warn_check_one_member': 'Please verify transaction details.',
-        
+
         // Group dynamic text
         'group_empty_list': 'No groups yet.',
         'group_created_on': 'Created on',
         'group_transferred_to': 'Transferred to',
         'group_split_with': 'Split with',
         'group_split_member': 'members',
-        
+
         // Group admin / member management
         'group_creator_badge': 'Creator',
         'group_creator_only': 'Only the group creator can perform this action.',
@@ -397,19 +397,19 @@ export const translations = {
         'group_delete_group': 'Delete Group',
         'confirm_delete_group': 'Are you sure you want to delete this group? All group data will be permanently deleted.',
         'toast_group_deleted': 'Group deleted successfully.',
-        
+
         // Add member modal
         'modal_member_hint': 'Enter the registered account nickname of the user you want to add.',
         'modal_member_placeholder': 'Enter account nickname...',
-        
+
         // Settlement modal
         'settle_record_title': 'Record Settlement',
         'settle_select_label': 'Select Debt to Clear',
         'settle_record_btn': 'Record Payment',
-        
+
         // Analytics
         'analytics_total_exp': 'TOTAL EXPENSES',
-        
+
         // Settings
         'settings_session_title': 'Account & Connection Status',
         'budget_month': 'Month:'

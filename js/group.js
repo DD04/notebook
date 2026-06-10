@@ -261,7 +261,6 @@ async function selectGroup(group) {
     activeTransactions = await storage.getGroupTransactions(group.id);
     
     renderMembersList();
-    renderGroupSummaryCards();
     
     // Show the analytics button for selected group
     const groupAnalyticsBtn = document.getElementById('groupAnalyticsBtn');
@@ -298,13 +297,13 @@ function renderMembersList() {
     if (window.lucide) window.lucide.createIcons();
 }
 
-function renderGroupSummaryCards() {
+function renderGroupSummaryCards(txList = activeTransactions) {
     let totalIncome = 0;
     let totalExpense = 0;
     let incomeCount = 0;
     let expenseCount = 0;
 
-    activeTransactions.forEach(t => {
+    txList.forEach(t => {
         const amount = parseFloat(t.amount);
         if (t.type === 'income') {
             totalIncome += amount;
@@ -669,6 +668,7 @@ function applyGroupFiltersAndRender() {
 
     // Reset to page 1 whenever filters change
     groupCurrentPage = 1;
+    renderGroupSummaryCards(groupFilteredTransactions);
     renderGroupTransactions();
 }
 

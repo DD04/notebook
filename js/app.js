@@ -87,6 +87,7 @@ async function initApp() {
     dashboard.initDashboard(onLedgerDataChange);
     group.initGroups();
     budgeting.initBudgeting();
+    analytics.initAnalytics();
     settings.initSettings();
 
     // 6. Setup SPA Navigation
