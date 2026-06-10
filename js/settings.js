@@ -13,6 +13,8 @@ const disconnectSupabaseBtn = document.getElementById('disconnectSupabaseBtn');
 
 const exportBackupBtn = document.getElementById('exportBackupBtn');
 const importBackupBtn = document.getElementById('importBackupBtn');
+const headerExportBtn = document.getElementById('headerExportBtn');
+const headerImportBtn = document.getElementById('headerImportBtn');
 const importFileSelector = document.getElementById('importFileSelector');
 
 export function initSettings() {
@@ -33,11 +35,19 @@ export function initSettings() {
     if (exportBackupBtn) {
         exportBackupBtn.addEventListener('click', handleExportBackup);
     }
+    if (headerExportBtn) {
+        headerExportBtn.addEventListener('click', handleExportBackup);
+    }
 
     // 5. Import JSON backup
     if (importBackupBtn) {
         importBackupBtn.addEventListener('click', () => {
-            importFileSelector.click();
+            if (importFileSelector) importFileSelector.click();
+        });
+    }
+    if (headerImportBtn) {
+        headerImportBtn.addEventListener('click', () => {
+            if (importFileSelector) importFileSelector.click();
         });
     }
     
@@ -134,11 +144,16 @@ async function handleDisconnect() {
 }
 
 async function handleExportBackup() {
-    if (exportBackupBtn) {
-        exportBackupBtn.disabled = true;
-        exportBackupBtn.innerHTML = `<i data-lucide="loader"></i> ${getText('settings_btn_export')}...`;
-        if (window.lucide) window.lucide.createIcons();
-    }
+    const exportBtns = [exportBackupBtn, headerExportBtn].filter(Boolean);
+    exportBtns.forEach(btn => {
+        btn.disabled = true;
+        if (btn === headerExportBtn) {
+            btn.innerHTML = `<i data-lucide="loader"></i>`;
+        } else {
+            btn.innerHTML = `<i data-lucide="loader"></i> ${getText('settings_btn_export')}...`;
+        }
+    });
+    if (window.lucide) window.lucide.createIcons();
 
     try {
         const jsonStr = await storage.exportStateAsJSON();
@@ -158,11 +173,15 @@ async function handleExportBackup() {
     } catch (err) {
         showToast("Export failed: " + err.message, "error");
     } finally {
-        if (exportBackupBtn) {
-            exportBackupBtn.disabled = false;
-            exportBackupBtn.innerHTML = `<i data-lucide="download-cloud"></i> ${getText('settings_btn_export')}`;
-            if (window.lucide) window.lucide.createIcons();
-        }
+        exportBtns.forEach(btn => {
+            btn.disabled = false;
+            if (btn === headerExportBtn) {
+                btn.innerHTML = `<i data-lucide="download-cloud"></i>`;
+            } else {
+                btn.innerHTML = `<i data-lucide="download-cloud"></i> ${getText('settings_btn_export')}`;
+            }
+        });
+        if (window.lucide) window.lucide.createIcons();
     }
 }
 
@@ -170,11 +189,16 @@ function handleImportBackup(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    if (importBackupBtn) {
-        importBackupBtn.disabled = true;
-        importBackupBtn.innerHTML = `<i data-lucide="loader"></i> ${getText('settings_btn_import')}...`;
-        if (window.lucide) window.lucide.createIcons();
-    }
+    const importBtns = [importBackupBtn, headerImportBtn].filter(Boolean);
+    importBtns.forEach(btn => {
+        btn.disabled = true;
+        if (btn === headerImportBtn) {
+            btn.innerHTML = `<i data-lucide="loader"></i>`;
+        } else {
+            btn.innerHTML = `<i data-lucide="loader"></i> ${getText('settings_btn_import')}...`;
+        }
+    });
+    if (window.lucide) window.lucide.createIcons();
 
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -189,11 +213,15 @@ function handleImportBackup(e) {
         } finally {
             // Reset file selection
             importFileSelector.value = '';
-            if (importBackupBtn) {
-                importBackupBtn.disabled = false;
-                importBackupBtn.innerHTML = `<i data-lucide="upload-cloud"></i> ${getText('settings_btn_import')}`;
-                if (window.lucide) window.lucide.createIcons();
-            }
+            importBtns.forEach(btn => {
+                btn.disabled = false;
+                if (btn === headerImportBtn) {
+                    btn.innerHTML = `<i data-lucide="upload-cloud"></i>`;
+                } else {
+                    btn.innerHTML = `<i data-lucide="upload-cloud"></i> ${getText('settings_btn_import')}`;
+                }
+            });
+            if (window.lucide) window.lucide.createIcons();
         }
     };
     reader.readAsText(file);

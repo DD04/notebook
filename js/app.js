@@ -5,7 +5,7 @@ import * as dashboard from './dashboard.js';
 import * as group from './group.js';
 import * as budgeting from './budgeting.js';
 import * as analytics from './analytics.js';
-// Note: settings.js removed - DB config is code-only (config.js)
+import * as settings from './settings.js';
 
 // Lucide API compatibility polyfill
 if (window.lucide && !window.lucide.replace) {
@@ -66,7 +66,7 @@ async function initApp() {
     dashboard.initDashboard(onLedgerDataChange);
     group.initGroups();
     budgeting.initBudgeting();
-    // settings.initSettings() removed - settings page no longer exists
+    settings.initSettings();
 
     // 6. Setup SPA Navigation
     initRouter();
@@ -141,6 +141,9 @@ function switchView(viewName) {
     
     // Refresh view specific data on display
     triggerViewRefresh(viewName);
+
+    // Update URL hash to persist active view on refresh
+    window.location.hash = viewName;
 }
 
 function triggerViewRefresh(viewName) {
@@ -171,11 +174,21 @@ export async function refreshAppState() {
     const ready = await checkGatewayStatus();
     if (!ready) return;
 
-    // Get active view and refresh it
-    const activeNav = document.querySelector('.nav-item.active');
-    const activeView = activeNav ? activeNav.getAttribute('data-view') : 'dashboard';
+    // Get active view based on hash or fallback
+    let activeView = 'dashboard';
+    const hash = window.location.hash.replace('#', '');
+    const validViews = ['dashboard', 'groups', 'analytics'];
     
-    triggerViewRefresh(activeView);
+    if (hash && validViews.includes(hash)) {
+        activeView = hash;
+    } else {
+        const activeNav = document.querySelector('.nav-item.active');
+        if (activeNav) {
+            activeView = activeNav.getAttribute('data-view');
+        }
+    }
+    
+    switchView(activeView);
 }
 
 // Event triggered when dashboard transaction is updated/deleted/added
@@ -370,6 +383,16 @@ function updateModeBadge() {
         modeBadge.title = text;
         modeBadge.querySelector('.badge-dot').style.background = 'var(--error)';
         modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--error)';
+    }
+
+    // Update Superuser UI Backup elements
+    const superuserBackupSection = document.getElementById('superuserBackupSection');
+    if (superuserBackupSection) {
+        if (isCloud && currentUser && currentUser.superuser) {
+            superuserBackupSection.style.display = 'flex';
+        } else {
+            superuserBackupSection.style.display = 'none';
+        }
     }
 }
 

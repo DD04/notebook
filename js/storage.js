@@ -129,17 +129,18 @@ export async function getCurrentUser() {
     const { data } = await supabase.auth.getUser();
     if (!data?.user) return null;
     
-    // Fetch custom profile details (nickname)
+    // Fetch custom profile details (nickname, superuser)
     const { data: profile } = await supabase
         .from('profiles')
-        .select('nickname')
+        .select('nickname, superuser')
         .eq('id', data.user.id)
         .single();
         
     return {
         id: data.user.id,
         email: data.user.email,
-        nickname: profile?.nickname || splitEmail(data.user.email)
+        nickname: profile?.nickname || splitEmail(data.user.email),
+        superuser: !!profile?.superuser
     };
 }
 
@@ -423,6 +424,12 @@ export async function updateGroupTransaction(groupId, txId, updatedTx) {
 export async function exportStateAsJSON() {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
+    // Fetch all profiles (superuser bypasses RLS)
+    const { data: profiles, error: pErr } = await supabase
+        .from('profiles')
+        .select('*');
+    if (pErr) throw pErr;
+    
     const txs = await getTransactions();
     
     // Fetch all budgets
@@ -446,6 +453,7 @@ export async function exportStateAsJSON() {
     }
     
     const data = {
+        profiles: profiles,
         transactions: txs,
         budgets: budgets,
         groups: fullGroups,
@@ -462,87 +470,182 @@ export async function importStateFromJSON(jsonString) {
     try {
         const data = JSON.parse(jsonString);
         
-        // 1. Import Personal Transactions
-        if (data.transactions && Array.isArray(data.transactions)) {
-            const dbTxs = data.transactions.map(t => ({
-                user_id: user.id,
-                type: t.type,
-                amount: parseFloat(t.amount),
-                category: t.category,
-                date: t.date || new Date().toISOString().split('T')[0],
-                description: t.description || '',
-                tags: t.tags || []
-            }));
+        // 1. Import Profiles (One-to-One increment, no overwrite)
+        if (data.profiles && Array.isArray(data.profiles)) {
+            const { data: currentProfiles, error: pErr } = await supabase
+                .from('profiles')
+                .select('id');
+            if (pErr) throw pErr;
+            const currentProfileIds = new Set(currentProfiles.map(p => p.id));
             
-            if (dbTxs.length > 0) {
-                const { error } = await supabase.from('transactions').insert(dbTxs);
-                if (error) throw error;
+            const newProfiles = data.profiles
+                .filter(p => p.id && !currentProfileIds.has(p.id))
+                .map(p => ({
+                    id: p.id,
+                    email: p.email || 'imported@local.user',
+                    nickname: p.nickname || 'Imported User',
+                    superuser: !!p.superuser,
+                    created_at: p.created_at || new Date().toISOString()
+                }));
+                
+            if (newProfiles.length > 0) {
+                const { error: insErr } = await supabase
+                    .from('profiles')
+                    .insert(newProfiles);
+                if (insErr) throw insErr;
             }
         }
         
-        // 2. Import Budgets
+        // Load profiles again to get all valid user IDs (including newly inserted ones)
+        const { data: allProfiles, error: apErr } = await supabase
+            .from('profiles')
+            .select('id');
+        if (apErr) throw apErr;
+        const validUserIds = new Set(allProfiles.map(p => p.id));
+        
+        // Helper to get fallback/valid user_id
+        const getValidUserId = (originalId) => {
+            return (originalId && validUserIds.has(originalId)) ? originalId : user.id;
+        };
+
+        // 2. Import Personal Transactions (Increment, no overwrite)
+        if (data.transactions && Array.isArray(data.transactions)) {
+            const { data: currentTxs, error: tErr } = await supabase
+                .from('transactions')
+                .select('id');
+            if (tErr) throw tErr;
+            const currentTxIds = new Set(currentTxs.map(t => t.id));
+            
+            const newTxs = data.transactions
+                .filter(t => t.id && !currentTxIds.has(t.id))
+                .map(t => ({
+                    id: t.id,
+                    user_id: getValidUserId(t.user_id),
+                    type: t.type,
+                    amount: parseFloat(t.amount),
+                    category: t.category,
+                    date: t.date || new Date().toISOString().split('T')[0],
+                    description: t.description || '',
+                    tags: t.tags || [],
+                    created_at: t.created_at || new Date().toISOString()
+                }));
+                
+            if (newTxs.length > 0) {
+                const { error: insErr } = await supabase
+                    .from('transactions')
+                    .insert(newTxs);
+                if (insErr) throw insErr;
+            }
+        }
+        
+        // 3. Import Budgets (Increment, no overwrite)
         if (data.budgets && Array.isArray(data.budgets)) {
-            for (const b of data.budgets) {
-                const { error } = await supabase.from('budgets').upsert({
-                    user_id: user.id,
+            const { data: currentBudgets, error: bErr } = await supabase
+                .from('budgets')
+                .select('user_id, category, month');
+            if (bErr) throw bErr;
+            
+            const budgetKeys = new Set(currentBudgets.map(b => `${b.user_id}_${b.category}_${b.month}`));
+            
+            const newBudgets = data.budgets
+                .filter(b => {
+                    const targetUid = getValidUserId(b.user_id);
+                    const key = `${targetUid}_${b.category}_${b.month}`;
+                    return !budgetKeys.has(key);
+                })
+                .map(b => ({
+                    user_id: getValidUserId(b.user_id),
                     category: b.category,
                     amount: parseFloat(b.amount),
-                    month: b.month
-                }, { onConflict: 'user_id,category,month' });
-                if (error) throw error;
+                    month: b.month,
+                    created_at: b.created_at || new Date().toISOString()
+                }));
+                
+            if (newBudgets.length > 0) {
+                const { error: insErr } = await supabase
+                    .from('budgets')
+                    .insert(newBudgets);
+                if (insErr) throw insErr;
             }
         }
         
-        // 3. Import Groups
+        // 4. Import Groups (Increment, no overwrite)
         if (data.groups && Array.isArray(data.groups)) {
+            const { data: currentGroups, error: gErr } = await supabase
+                .from('groups')
+                .select('id');
+            if (gErr) throw gErr;
+            const currentGroupIds = new Set(currentGroups.map(g => g.id));
+            
             for (const g of data.groups) {
-                // Insert group
-                const { data: newGroup, error: gError } = await supabase
-                    .from('groups')
-                    .insert([{ name: g.name, created_by: user.id }])
-                    .select()
-                    .single();
-                if (gError) throw gError;
+                const isGroupExists = currentGroupIds.has(g.id);
                 
-                // Add members (find unique nicknames)
-                const nicknames = Array.from(new Set(g.members.map(m => m.nickname)));
-                const memberInsert = nicknames.map(nick => {
-                    const isSelf = nick.toLowerCase() === user.nickname.toLowerCase();
-                    return {
-                        group_id: newGroup.id,
-                        user_id: isSelf ? user.id : null,
-                        nickname: nick
-                    };
-                });
-                
-                if (memberInsert.length > 0) {
-                    const { error: mError } = await supabase
-                        .from('group_members')
-                        .insert(memberInsert);
-                    if (mError) throw mError;
+                let targetGroupId = g.id;
+                if (!isGroupExists) {
+                    // Create group with original g.id
+                    const { error: insGErr } = await supabase
+                        .from('groups')
+                        .insert([{
+                            id: g.id,
+                            name: g.name,
+                            created_by: getValidUserId(g.created_by),
+                            created_at: g.created_at || new Date().toISOString()
+                        }]);
+                    if (insGErr) throw insGErr;
                 }
                 
-                // Add group transactions
+                // 4.1. Import Group Members
+                if (g.members && Array.isArray(g.members)) {
+                    const currentMembers = await getGroupMembers(targetGroupId);
+                    // Match by user_id, or if null, nickname
+                    const newMembers = g.members.filter(m => {
+                        const targetUid = m.user_id ? getValidUserId(m.user_id) : null;
+                        const isMatch = currentMembers.some(cm => {
+                            if (targetUid && cm.user_id === targetUid) return true;
+                            return cm.nickname.toLowerCase() === m.nickname.toLowerCase();
+                        });
+                        return !isMatch;
+                    }).map(m => ({
+                        group_id: targetGroupId,
+                        user_id: m.user_id ? getValidUserId(m.user_id) : null,
+                        nickname: m.nickname,
+                        joined_at: m.joined_at || new Date().toISOString()
+                    }));
+                    
+                    if (newMembers.length > 0) {
+                        const { error: insMErr } = await supabase
+                            .from('group_members')
+                            .insert(newMembers);
+                        if (insMErr) throw insMErr;
+                    }
+                }
+                
+                // 4.2. Import Group Transactions
                 if (g.transactions && Array.isArray(g.transactions)) {
-                    const groupTxs = g.transactions.map(gt => {
-                        return {
-                            group_id: newGroup.id,
-                            user_id: user.id,
-                            member_nickname: gt.member_nickname || gt.paid_by || user.nickname,
-                            type: gt.type || 'expense',
+                    const currentGTxs = await getGroupTransactions(targetGroupId);
+                    const currentGTxIds = new Set(currentGTxs.map(gt => gt.id));
+                    
+                    const newGTxs = g.transactions
+                        .filter(gt => gt.id && !currentGTxIds.has(gt.id))
+                        .map(gt => ({
+                            id: gt.id,
+                            group_id: targetGroupId,
+                            user_id: gt.user_id ? getValidUserId(gt.user_id) : null,
+                            member_nickname: gt.member_nickname,
+                            type: gt.type,
                             amount: parseFloat(gt.amount),
-                            category: gt.category || 'Other',
+                            category: gt.category,
                             date: gt.date || new Date().toISOString().split('T')[0],
                             description: gt.description || '',
-                            tags: gt.tags || []
-                        };
-                    });
-                    
-                    if (groupTxs.length > 0) {
-                        const { error: gtError } = await supabase
+                            tags: gt.tags || [],
+                            created_at: gt.created_at || new Date().toISOString()
+                        }));
+                        
+                    if (newGTxs.length > 0) {
+                        const { error: insGTErr } = await supabase
                             .from('group_transactions')
-                            .insert(groupTxs);
-                        if (gtError) throw gtError;
+                            .insert(newGTxs);
+                        if (insGTErr) throw insGTErr;
                     }
                 }
             }

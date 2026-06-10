@@ -68,6 +68,15 @@
                     <h1 class="page-title" id="pageTitle" data-i18n="db_title">Dashboard</h1>
                 </div>
                 <div class="header-right">
+                    <!-- Superuser Backup Buttons -->
+                    <div id="superuserBackupSection" style="display: none; align-items: center; gap: 8px; margin-right: 12px;">
+                        <button class="theme-toggle-btn" id="headerExportBtn" title="匯出備份 JSON">
+                            <i data-lucide="download-cloud"></i>
+                        </button>
+                        <button class="theme-toggle-btn" id="headerImportBtn" title="匯入還原 JSON">
+                            <i data-lucide="upload-cloud"></i>
+                        </button>
+                    </div>
                     <!-- Status Indicators -->
                     <div class="mode-badge" id="modeBadge">
                         <span class="badge-dot"></span>
@@ -232,7 +241,6 @@
                                          <button class="btn btn-secondary btn-sm" id="groupAnalyticsBtn" style="display:none;"><i data-lucide="pie-chart"></i> <span>群組分析</span></button>
                                          <button class="btn btn-outline-error btn-sm" id="deleteGroupBtn" data-i18n="group_delete_group" style="display:none;"><i data-lucide="trash-2"></i> <span data-i18n="group_delete_group">Delete Group</span></button>
                                          <button class="btn btn-secondary" id="settleUpBtn" style="display:none;"><i data-lucide="check-circle-2"></i> <span data-i18n="group_settle_btn">Settle Up</span></button>
-                                         <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
                                     </div>
                                 </div>
 
@@ -270,8 +278,11 @@
                                 </div>
 
                                  <!-- Group Transactions List -->
-                                 <div class="group-transactions-list card-box">
-                                     <h3 data-i18n="group_ledger_title">Group Ledger</h3>
+                                 <div class="group-transactions-list ledger-container">
+                                     <div class="section-header">
+                                         <h3 data-i18n="group_ledger_title">Group Ledger</h3>
+                                         <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
+                                     </div>
                                      
                                      <!-- Group Filters panel -->
                                      <div class="filters-panel" style="margin-bottom: 20px;">
