@@ -28,8 +28,8 @@ const toastContainer = document.getElementById('toastContainer');
 // State
 let currentUser = null;
 
-// Initialize App
-document.addEventListener('DOMContentLoaded', async () => {
+// Initialize App Function
+async function initApp() {
     // 1. Initialize Theme
     initTheme();
 
@@ -64,7 +64,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Replace Lucide Icons initially
     lucide.replace();
-});
+}
+
+// Safe App Bootstrapping
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 /* ==========================================================================
    SPA ROUTER
