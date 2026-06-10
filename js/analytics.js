@@ -26,6 +26,7 @@ const CHART_COLORS = [
 ];
 
 let transactions = [];
+let activeFilterTag = null; // Currently active tag filter
 
 export async function refreshAnalytics() {
     try {
@@ -46,11 +47,16 @@ function renderCategoryDonut() {
     categoryDonutChart.innerHTML = '';
     categoryLegend.innerHTML = '';
     
+    // Filter transactions if a tag filter is active
+    const filteredTxs = activeFilterTag
+        ? transactions.filter(t => t.tags && t.tags.some(tag => tag.trim() === activeFilterTag))
+        : transactions;
+        
     // Group expense items
     const catTotals = {};
     let totalExpense = 0;
     
-    transactions.forEach(t => {
+    filteredTxs.forEach(t => {
         if (t.type === 'expense') {
             const cat = t.category || 'Other';
             const val = parseFloat(t.amount);
@@ -111,7 +117,7 @@ function renderCategoryDonut() {
         slice.addEventListener('mouseenter', (e) => {
             donutTooltip.style.opacity = '1';
             donutTooltip.innerHTML = `
-                <strong>${cat}</strong><br>
+                <strong>${getText('cat_' + cat) || cat}</strong><br>
                 ${formatCurrency(val)} (${(percent * 100).toFixed(1)}%)
             `;
             updateTooltipPos(donutTooltip, e, categoryDonutChart);
@@ -130,12 +136,12 @@ function renderCategoryDonut() {
         // Accumulate segment angle
         accumulatedAngle += strokeLength;
         
-        // Add Legend Element
+        // Add Legend Element (Using dynamic category translation)
         const legendItem = document.createElement('span');
         legendItem.className = 'legend-item';
         legendItem.innerHTML = `
             <span class="legend-color" style="background-color: ${color}"></span>
-            ${cat} (${(percent * 100).toFixed(0)}%)
+            ${getText('cat_' + cat) || cat} (${(percent * 100).toFixed(0)}%)
         `;
         categoryLegend.appendChild(legendItem);
     });
@@ -169,21 +175,28 @@ function renderCategoryDonut() {
 function renderTrendBarChart() {
     trendBarChart.innerHTML = '';
     
-    // 1. Group transaction values by month (last 6 months)
+    // Filter transactions if a tag filter is active
+    const filteredTxs = activeFilterTag
+        ? transactions.filter(t => t.tags && t.tags.some(tag => tag.trim() === activeFilterTag))
+        : transactions;
+        
+    // 1. Group transaction values by month (last 6 months, starting from current month YYYY-MM)
     const monthlySummary = {};
     const monthsArray = [];
     
-    // Build array of last 6 months
+    // Build array of last 6 months using safe local year/month to prevent timezone offset issues
     const today = new Date();
     for (let i = 5; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-        const key = d.toISOString().substring(0, 7); // YYYY-MM
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const key = `${year}-${month}`;
         monthsArray.push(key);
         monthlySummary[key] = { income: 0, expense: 0 };
     }
     
     // Populate summaries
-    transactions.forEach(t => {
+    filteredTxs.forEach(t => {
         if (!t.date) return;
         const mKey = t.date.substring(0, 7);
         if (monthlySummary[mKey]) {
@@ -241,8 +254,12 @@ function renderTrendBarChart() {
         const stats = monthlySummary[mKey];
         const xCenter = paddingLeft + (idx * colSpacing) + (colSpacing / 2);
         
-        const dateObj = new Date(mKey + '-02');
-        const monthLabel = dateObj.toLocaleDateString('en-US', { month: 'short' });
+        // Parse date for locale display
+        const dateParts = mKey.split('-');
+        const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, 2);
+        
+        const locale = 'zh-TW';
+        const monthLabel = dateObj.toLocaleDateString(locale, { month: 'short' });
         
         // Income Bar (Emerald)
         const inHeight = (stats.income / maxVal) * (chartHeight - 10);
@@ -272,7 +289,7 @@ function renderTrendBarChart() {
             item.el.addEventListener('mouseenter', (e) => {
                 trendTooltip.style.opacity = '1';
                 trendTooltip.innerHTML = `
-                    <strong>${monthLabel} ${dateObj.getFullYear()}</strong><br>
+                    <strong>${dateParts[0]}年${dateParts[1]}月</strong><br>
                     ${item.label}: ${formatCurrency(item.val)}
                 `;
                 updateTooltipPos(trendTooltip, e, trendBarChart);
@@ -351,10 +368,26 @@ function renderTagsAnalytics() {
     sortedTags.forEach(([tag, val]) => {
         const badge = document.createElement('div');
         badge.className = 'tag-stat-badge';
+        if (activeFilterTag === tag) {
+            badge.classList.add('active');
+        }
         badge.innerHTML = `
             <span class="tag-stat-name">#${escapeHTML(tag)}</span>
             <span class="tag-stat-val">${formatCurrency(val)}</span>
         `;
+        
+        // Toggle active filter tag and redraw charts
+        badge.addEventListener('click', () => {
+            if (activeFilterTag === tag) {
+                activeFilterTag = null;
+            } else {
+                activeFilterTag = tag;
+            }
+            renderCategoryDonut();
+            renderTrendBarChart();
+            renderTagsAnalytics();
+        });
+        
         analyticsTagsList.appendChild(badge);
     });
 }

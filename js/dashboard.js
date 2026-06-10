@@ -1,6 +1,6 @@
 // js/dashboard.js - Personal Dashboard Ledger Module
 import * as storage from './storage.js';
-import { showToast } from './app.js';
+import { showToast, showConfirm } from './app.js';
 import { getText, getLocale } from './i18n.js';
 
 // DOM elements
@@ -356,7 +356,8 @@ async function handleTxSubmit(e) {
 }
 
 async function handleTxDelete(id) {
-    if (!confirm(getText('confirm_delete_tx') || '確定要刪除這筆交易紀錄嗎？')) return;
+    const isConfirmed = await showConfirm(getText('confirm_delete_tx') || '確定要刪除這筆交易紀錄嗎？');
+    if (!isConfirmed) return;
     
     try {
         await storage.deleteTransaction(id);

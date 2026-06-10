@@ -241,6 +241,21 @@ export async function setBudget(category, amount, month) {
     return data[0];
 }
 
+export async function deleteBudget(category, month) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const user = await getCurrentUser();
+    if (!user) throw new Error("Authentication required.");
+    
+    const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('category', category)
+        .eq('month', month);
+    if (error) throw error;
+    return true;
+}
+
 /* ==========================================================================
    GROUP LEDGER API
    ========================================================================== */

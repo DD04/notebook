@@ -76,6 +76,24 @@ function renderBudgetDashboard() {
             statusClass = 'status-yellow';
         }
         
+        // Remaining balance calculation
+        const remaining = budgetLimit - totalSpent;
+        let limitText = '';
+        if (budgetLimit > 0) {
+            if (remaining >= 0) {
+                limitText = `剩餘 ${formatCurrency(remaining)}`;
+            } else {
+                limitText = `<span class="text-error" style="font-weight:600;">超支 ${formatCurrency(Math.abs(remaining))}</span>`;
+            }
+        } else {
+            limitText = '無上限';
+        }
+        
+        // Tooltip text for progress track hover
+        const tooltipText = budgetLimit > 0
+            ? `已消費 ${formatCurrency(totalSpent)} (${percent.toFixed(1)}%)`
+            : `已消費 ${formatCurrency(totalSpent)} (無預算上限)`;
+            
         const row = document.createElement('div');
         row.className = 'budget-item-row card-box bg-glass';
         row.style.animation = 'fadeIn 0.3s ease-out';
@@ -84,14 +102,11 @@ function renderBudgetDashboard() {
             <div class="budget-row-meta">
                 <span class="budget-cat-name">${getText('cat_' + cat) || cat}</span>
                 <div class="budget-limits">
-                    <span class="budget-spent ${totalSpent > budgetLimit && budgetLimit > 0 ? 'text-error' : ''}">
-                        ${formatCurrency(totalSpent)}
-                    </span>
-                    <span class="budget-limit-val"> / ${budgetLimit > 0 ? formatCurrency(budgetLimit) : getText('budget_no_limit')}</span>
+                    <span class="budget-limit-val">${limitText}</span>
                 </div>
             </div>
             
-            <div class="budget-progress-track">
+            <div class="budget-progress-track" title="${tooltipText}">
                 <div class="budget-progress-fill ${statusClass}" style="width: ${percentClamped}%"></div>
             </div>
             
@@ -117,8 +132,13 @@ function renderBudgetDashboard() {
         slider.addEventListener('change', async (e) => {
             const newLimit = parseFloat(e.target.value);
             try {
-                await storage.setBudget(cat, newLimit, activeMonth);
-                showToast(`${getText('cat_' + cat) || cat} ${getText('toast_budget_set') || '預算已設定'} $${newLimit}`, 'success');
+                if (newLimit === 0) {
+                    await storage.deleteBudget(cat, activeMonth);
+                    showToast(`${getText('cat_' + cat) || cat} 預算已移除上限`, 'success');
+                } else {
+                    await storage.setBudget(cat, newLimit, activeMonth);
+                    showToast(`${getText('cat_' + cat) || cat} 預算已設定 $${newLimit}`, 'success');
+                }
                 
                 // Reload data
                 await refreshBudgeting();

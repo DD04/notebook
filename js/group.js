@@ -1,7 +1,7 @@
 // js/group.js - Group shared bookkeeping ledger logic
 import * as storage from './storage.js';
 import { formatCurrency, escapeHTML, updateCategoryDropdown } from './dashboard.js';
-import { showToast } from './app.js';
+import { showToast, showConfirm } from './app.js';
 import { getText, getLocale } from './i18n.js';
 
 // DOM elements
@@ -412,7 +412,8 @@ async function handleDeleteGroup() {
     if (!isGroupCreator || !activeGroup) return;
     
     const confirmMsg = getText('confirm_delete_group') || `確定要刪除群組「${activeGroup.name}」嗎？所有群組資料將永久刪除。`;
-    if (!confirm(confirmMsg)) return;
+    const isConfirmed = await showConfirm(confirmMsg);
+    if (!isConfirmed) return;
     
     try {
         await storage.deleteGroup(activeGroup.id);
@@ -492,7 +493,8 @@ async function handleGroupTxSubmit(e) {
 }
 
 async function handleGroupTxDelete(txId) {
-    if (!confirm(getText('confirm_delete_bill') || '確定要刪除這筆群組交易紀錄嗎？')) return;
+    const isConfirmed = await showConfirm(getText('confirm_delete_bill') || '確定要刪除這筆群組交易紀錄嗎？');
+    if (!isConfirmed) return;
     
     try {
         await storage.deleteGroupTransaction(activeGroup.id, txId);

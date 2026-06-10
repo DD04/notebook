@@ -419,17 +419,11 @@ export const translations = {
 let currentLocale = 'zh'; // Default to Traditional Chinese
 
 export function getLocale() {
-    const saved = localStorage.getItem('notebook_locale');
-    if (saved === 'en' || saved === 'zh') {
-        currentLocale = saved;
-    }
-    return currentLocale;
+    return 'zh';
 }
 
 export function toggleLocale() {
-    currentLocale = currentLocale === 'zh' ? 'en' : 'zh';
-    localStorage.setItem('notebook_locale', currentLocale);
-    return currentLocale;
+    return 'zh';
 }
 
 export function getText(key) {
