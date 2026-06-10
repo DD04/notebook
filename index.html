@@ -39,10 +39,6 @@
                     <i data-lucide="pie-chart"></i>
                     <span data-i18n="nav_analytics">Analytics</span>
                 </a>
-                <a href="#budgeting" class="nav-item" data-view="budgeting">
-                    <i data-lucide="wallet"></i>
-                    <span data-i18n="nav_budgeting">Budgeting</span>
-                </a>
                 <!-- Settings nav removed: DB config is code-only -->
             </nav>
 
@@ -165,7 +161,6 @@
                                         <th data-i18n="th_date">Date</th>
                                         <th data-i18n="th_desc">Description</th>
                                         <th data-i18n="th_cat">Category</th>
-                                        <th data-i18n="th_tags">Tags</th>
                                         <th class="text-right" data-i18n="th_amount">Amount</th>
                                         <th class="text-center" data-i18n="th_actions">Actions</th>
                                     </tr>
@@ -173,7 +168,7 @@
                                 <tbody id="ledgerTableBody">
                                     <!-- Dynamic Content -->
                                     <tr class="empty-state-row">
-                                        <td colspan="6">
+                                        <td colspan="5">
                                             <div class="empty-state">
                                                 <i data-lucide="file-text"></i>
                                                 <p data-i18n="db_empty_state">No transactions found. Add one to get started!</p>
@@ -285,7 +280,6 @@
                                                     <th data-i18n="th_type">Type</th>
                                                     <th data-i18n="th_desc">Description</th>
                                                     <th data-i18n="th_cat">Category</th>
-                                                    <th data-i18n="th_tags">Tags</th>
                                                     <th class="text-right" data-i18n="th_amount">Amount</th>
                                                     <th class="text-center" data-i18n="th_actions">Actions</th>
                                                 </tr>
@@ -322,18 +316,8 @@
                          </div>
                     </div>
 
-                    <!-- Tags breakdown table -->
-                    <div class="analytics-tags-section card-box">
-                        <h3 data-i18n="analytics_tags">Spending by Tags</h3>
-                        <div class="tags-badge-container" id="analyticsTagsList">
-                            <!-- Filled dynamically -->
-                        </div>
-                    </div>
-                </section>
-
-                <!-- VIEW 4: Budgeting View -->
-                <section id="view-budgeting" class="view-section">
-                    <div class="budget-setup-panel card-box">
+                    <!-- Budgeting panel integrated -->
+                    <div class="budget-setup-panel card-box" style="margin-top: 24px;">
                         <div class="section-header">
                             <h2 data-i18n="budget_subtitle">Budget Settings</h2>
                             <div class="budget-month-selector">
@@ -409,7 +393,7 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" style="display: none;">
                     <label for="txTags" data-i18n="modal_tx_tags">Tags (Comma-separated)</label>
                     <input type="text" id="txTags" placeholder="e.g. dinner, friends, weekend">
                 </div>
@@ -511,7 +495,7 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" style="display: none;">
                     <label for="gtxTags" data-i18n="modal_tx_tags">Tags (Comma-separated)</label>
                     <input type="text" id="gtxTags" placeholder="e.g. dinner, friends, weekend">
                 </div>

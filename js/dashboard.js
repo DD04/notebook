@@ -250,7 +250,7 @@ function renderTable() {
     if (filteredTransactions.length === 0) {
         ledgerTableBody.innerHTML = `
             <tr class="empty-state-row">
-                <td colspan="6">
+                <td colspan="5">
                     <div class="empty-state">
                         <i data-lucide="file-text"></i>
                         <p>${getText('db_empty_state')}</p>
@@ -289,7 +289,6 @@ function renderTable() {
             <td>${t.date}</td>
             <td style="font-weight: 500;">${escapeHTML(t.description || 'Untitled')}</td>
             <td><span class="tag-badge" style="background: rgba(99, 102, 241, 0.08); color: var(--primary);">${t.category}</span></td>
-            <td><div style="max-width: 200px; display: flex; flex-wrap: wrap;">${tagsHtml}</div></td>
             <td class="text-right ${amountClass}" style="font-weight: 600; font-family: 'Outfit';">
                 ${amountPrefix}${formatCurrency(t.amount)}
             </td>

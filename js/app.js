@@ -135,8 +135,7 @@ function switchView(viewName) {
     const titles = {
         dashboard: getText('nav_dashboard'),
         groups: getText('nav_groups'),
-        analytics: getText('nav_analytics'),
-        budgeting: getText('nav_budgeting')
+        analytics: getText('nav_analytics')
     };
     pageTitle.textContent = titles[viewName] || 'Notebook';
     
@@ -154,11 +153,9 @@ function triggerViewRefresh(viewName) {
         case 'groups':
             group.refreshGroups();
             break;
-        case 'budgeting':
-            budgeting.refreshBudgeting();
-            break;
         case 'analytics':
             analytics.refreshAnalytics();
+            budgeting.refreshBudgeting();
             break;
         // 'settings' case removed
     }

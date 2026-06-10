@@ -1789,25 +1789,8 @@ a {
     z-index: 900;
 }
 
-/* Tooltip and Tag Filter Styles */
+/* Chart.js Tooltip fix */
 .chart-tooltip {
     pointer-events: none !important;
 }
-.tag-stat-badge {
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.tag-stat-badge:hover {
-    border-color: var(--primary) !important;
-    background: rgba(99, 102, 241, 0.05) !important;
-}
-.tag-stat-badge.active {
-    background: var(--primary) !important;
-    border-color: var(--primary) !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 12px var(--primary-glow);
-}
-.tag-stat-badge.active .tag-stat-name,
-.tag-stat-badge.active .tag-stat-val {
-    color: #ffffff !important;
-}
+

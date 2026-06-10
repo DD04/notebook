@@ -4,7 +4,6 @@ import { formatCurrency, escapeHTML } from './dashboard.js';
 import { getText } from './i18n.js';
 
 let transactions = [];
-let activeFilterTag = null; // Currently active tag filter
 
 // Chart.js instances
 let donutChartInstance = null;
@@ -16,7 +15,6 @@ export async function refreshAnalytics() {
         
         renderCategoryDonut();
         renderTrendBarChart();
-        renderTagsAnalytics();
     } catch (e) {
         console.error("Failed to render analytics", e);
     }
@@ -47,10 +45,7 @@ function renderCategoryDonut() {
         donutChartInstance = null;
     }
     
-    // Filter transactions if a tag filter is active
-    const filteredTxs = activeFilterTag
-        ? transactions.filter(t => t.tags && t.tags.some(tag => tag.trim() === activeFilterTag))
-        : transactions;
+    const filteredTxs = transactions;
         
     // Group expense items ONLY
     const catTotals = {};
@@ -140,10 +135,7 @@ function renderTrendBarChart() {
         barChartInstance = null;
     }
     
-    // Filter transactions if a tag filter is active
-    const filteredTxs = activeFilterTag
-        ? transactions.filter(t => t.tags && t.tags.some(tag => tag.trim() === activeFilterTag))
-        : transactions;
+    const filteredTxs = transactions;
         
     // Group values by month (last 6 months, starting from current month)
     const monthlySummary = {};
@@ -264,58 +256,4 @@ function renderTrendBarChart() {
     });
 }
 
-/* ==========================================================================
-   TAG ANALYTICS SUMMARY
-   ========================================================================== */
-function renderTagsAnalytics() {
-    analyticsTagsList.innerHTML = '';
-    
-    // Group expense amounts by tag
-    const tagTotals = {};
-    
-    transactions.forEach(t => {
-        if (t.type === 'expense' && t.tags && Array.isArray(t.tags)) {
-            const val = parseFloat(t.amount);
-            t.tags.forEach(tag => {
-                const normalized = tag.trim();
-                if (normalized) {
-                    tagTotals[normalized] = (tagTotals[normalized] || 0) + val;
-                }
-            });
-        }
-    });
-    
-    const sortedTags = Object.entries(tagTotals)
-        .sort((a, b) => b[1] - a[1]);
-        
-    if (sortedTags.length === 0) {
-        analyticsTagsList.innerHTML = `<p class="text-muted" style="font-size: 14px;">${getText('analytics_no_tags')}</p>`;
-        return;
-    }
-    
-    sortedTags.forEach(([tag, val]) => {
-        const badge = document.createElement('div');
-        badge.className = 'tag-stat-badge';
-        if (activeFilterTag === tag) {
-            badge.classList.add('active');
-        }
-        badge.innerHTML = `
-            <span class="tag-stat-name">#${escapeHTML(tag)}</span>
-            <span class="tag-stat-val">${formatCurrency(val)}</span>
-        `;
-        
-        // Toggle active filter tag and redraw charts
-        badge.addEventListener('click', () => {
-            if (activeFilterTag === tag) {
-                activeFilterTag = null;
-            } else {
-                activeFilterTag = tag;
-            }
-            renderCategoryDonut();
-            renderTrendBarChart();
-            renderTagsAnalytics();
-        });
-        
-        analyticsTagsList.appendChild(badge);
-    });
-}
+

@@ -278,7 +278,7 @@ function renderGroupTransactions() {
     if (activeTransactions.length === 0) {
         groupTxTableBody.innerHTML = `
             <tr class="empty-state-row">
-                <td colspan="8">
+                <td colspan="7">
                     <div class="empty-state" style="padding: 24px 0;">
                         <i data-lucide="receipt"></i>
                         <p>${getText('group_empty_ledger')}</p>
@@ -329,7 +329,6 @@ function renderGroupTransactions() {
                 <td><span class="tag-badge" style="${typeBadgeStyle}">${typeLabel}</span></td>
                 <td>${escapeHTML(t.description)}</td>
                 <td><span class="tag-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted);">${getText('cat_' + t.category)}</span></td>
-                <td>${tagsHtml}</td>
                 <td class="text-right" style="font-weight:700; font-family: 'Outfit'; ${amountStyle}">
                     ${amountDisplay}
                 </td>
