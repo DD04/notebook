@@ -416,7 +416,7 @@ export async function getGroupTransactions(groupId) {
     if (!isCloudMode()) return [];
     const { data, error } = await supabase
         .from('group_transactions')
-        .select('*')
+        .select('*, profiles(username, nickname)')
         .eq('group_id', groupId)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });

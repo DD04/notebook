@@ -470,10 +470,14 @@ function renderGroupTransactions() {
             ? `<button class="action-btn action-btn-delete" data-id="${t.id}" title="${getText('confirm_delete_bill')}"><i data-lucide="trash-2"></i></button>`
             : `<button class="action-btn action-btn-delete" style="opacity: 0.2; cursor: not-allowed;" disabled><i data-lucide="trash-2"></i></button>`;
             
+        const username = t.profiles ? t.profiles.username : null;
+        const nickname = (t.profiles && t.profiles.nickname) || t.member_nickname || 'User';
+        const displayName = username ? `${username} (${nickname})` : nickname;
+
         row.innerHTML = `
             <tr>
                 <td>${t.date}</td>
-                <td style="font-weight:600;">${escapeHTML(t.member_nickname || 'User')}</td>
+                <td style="font-weight:600;">${escapeHTML(displayName)}</td>
                 <td><span class="tag-badge" style="${typeBadgeStyle}">${typeLabel}</span></td>
                 <td><span class="tag-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted);">${getText('cat_' + t.category) || t.category}</span></td>
                 <td>${escapeHTML(t.description)}</td>
