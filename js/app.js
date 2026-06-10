@@ -362,11 +362,15 @@ function updateModeBadge() {
     
     if (isCloud) {
         modeBadge.classList.add('bg-glass');
-        modeBadgeText.textContent = getText('badge_cloud_sync');
+        const text = getText('badge_cloud_sync');
+        modeBadgeText.textContent = text;
+        modeBadge.title = text;
         modeBadge.querySelector('.badge-dot').style.background = 'var(--success)';
         modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--success)';
     } else {
-        modeBadgeText.textContent = getText('badge_db_required');
+        const text = getText('badge_db_required');
+        modeBadgeText.textContent = text;
+        modeBadge.title = text;
         modeBadge.querySelector('.badge-dot').style.background = 'var(--error)';
         modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--error)';
     }

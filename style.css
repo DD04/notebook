@@ -360,24 +360,29 @@ a {
 }
 
 .mode-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    background: var(--primary-glow);
-    border: 1px solid var(--border-color);
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.mode-badge .badge-text {
+    display: none;
 }
 
 .badge-dot {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--primary);
     box-shadow: 0 0 8px var(--primary);
 }
+
 
 .theme-toggle-btn {
     width: 38px;
@@ -622,7 +627,8 @@ a {
     min-width: 250px;
 }
 
-.search-box i {
+.search-box i,
+.search-box svg {
     position: absolute;
     left: 14px;
     top: 50%;
@@ -632,6 +638,7 @@ a {
     height: 18px;
     pointer-events: none;
 }
+
 
 .search-box input {
     width: 100%;

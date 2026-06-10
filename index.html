@@ -304,32 +304,22 @@
                 <!-- VIEW 3: Analytics View -->
                 <section id="view-analytics" class="view-section">
                     <div class="analytics-layout">
-                        <!-- Chart Card 1: Donut breakdown -->
-                        <div class="analytics-card card-box">
-                            <h3 data-i18n="analytics_cat_dist">Category Distribution</h3>
-                            <div class="chart-container donut-chart-container">
-                                <svg class="svg-chart" id="categoryDonutChart" viewBox="0 0 200 200">
-                                    <!-- Drawn dynamically via SVG -->
-                                </svg>
-                                <div class="chart-tooltip" id="donutTooltip"></div>
-                            </div>
-                            <div class="chart-legend" id="categoryLegend"></div>
-                        </div>
-
-                        <!-- Chart Card 2: Income vs Expense Timeline -->
-                        <div class="analytics-card card-box">
-                            <h3 data-i18n="analytics_cash_flow">Monthly Cash Flow</h3>
-                            <div class="chart-container line-chart-container">
-                                <svg class="svg-chart" id="trendBarChart" viewBox="0 0 400 220">
-                                    <!-- Drawn dynamically via SVG -->
-                                </svg>
-                                <div class="chart-tooltip" id="trendTooltip"></div>
-                            </div>
-                            <div class="chart-legend">
-                                <span class="legend-item"><span class="legend-color bg-success"></span><span data-i18n="db_income_type">Income</span></span>
-                                <span class="legend-item"><span class="legend-color bg-error"></span><span data-i18n="db_expense_type">Expense</span></span>
-                            </div>
-                        </div>
+                         <!-- Chart Card 1: Donut breakdown -->
+                         <div class="analytics-card card-box">
+                             <h3 data-i18n="analytics_cat_dist">Category Distribution</h3>
+                             <div class="chart-container donut-chart-container" style="position: relative; display: flex; align-items: center; justify-content: center; height: 220px; width: 100%;">
+                                 <canvas id="categoryDonutChart"></canvas>
+                                 <div id="donutEmptyMessage" class="empty-state text-muted d-none" style="position: absolute;"></div>
+                             </div>
+                         </div>
+ 
+                         <!-- Chart Card 2: Income vs Expense Timeline -->
+                         <div class="analytics-card card-box">
+                             <h3 data-i18n="analytics_cash_flow">Monthly Cash Flow</h3>
+                             <div class="chart-container line-chart-container" style="position: relative; height: 220px; width: 100%;">
+                                 <canvas id="trendBarChart"></canvas>
+                             </div>
+                         </div>
                     </div>
 
                     <!-- Tags breakdown table -->
@@ -599,6 +589,7 @@
 
     <!-- Core App Logic -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

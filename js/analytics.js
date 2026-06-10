@@ -1,32 +1,14 @@
-// js/analytics.js - Dynamic SVG Charting and Analytics Module
+// js/analytics.js - Chart.js refactored Charting and Analytics Module
 import * as storage from './storage.js';
 import { formatCurrency, escapeHTML } from './dashboard.js';
 import { getText } from './i18n.js';
 
-// DOM elements
-const categoryDonutChart = document.getElementById('categoryDonutChart');
-const categoryLegend = document.getElementById('categoryLegend');
-const donutTooltip = document.getElementById('donutTooltip');
-
-const trendBarChart = document.getElementById('trendBarChart');
-const trendTooltip = document.getElementById('trendTooltip');
-
-const analyticsTagsList = document.getElementById('analyticsTagsList');
-
-// Color palette matching the theme variables (Vibrant Tailored Colors)
-const CHART_COLORS = [
-    '#6366F1', // Indigo
-    '#10B981', // Emerald
-    '#EF4444', // Red
-    '#F59E0B', // Amber
-    '#EC4899', // Pink
-    '#8B5CF6', // Purple
-    '#06B6D4', // Cyan
-    '#3B82F6'  // Blue
-];
-
 let transactions = [];
 let activeFilterTag = null; // Currently active tag filter
+
+// Chart.js instances
+let donutChartInstance = null;
+let barChartInstance = null;
 
 export async function refreshAnalytics() {
     try {
@@ -40,19 +22,37 @@ export async function refreshAnalytics() {
     }
 }
 
+// Color palette matching the theme variables (Vibrant Tailored Colors)
+const CHART_COLORS = [
+    '#6366F1', // Indigo
+    '#10B981', // Emerald
+    '#EF4444', // Red
+    '#F59E0B', // Amber
+    '#EC4899', // Pink
+    '#8B5CF6', // Purple
+    '#06B6D4', // Cyan
+    '#3B82F6'  // Blue
+];
+
 /* ==========================================================================
-   DONUT CHART (Category Breakdown)
+   DONUT CHART (Category Breakdown - Expense Only)
    ========================================================================== */
 function renderCategoryDonut() {
-    categoryDonutChart.innerHTML = '';
-    categoryLegend.innerHTML = '';
+    const donutCanvas = document.getElementById('categoryDonutChart');
+    const donutEmptyMessage = document.getElementById('donutEmptyMessage');
+    
+    // Destroy previous instance to avoid canvas reuse errors
+    if (donutChartInstance) {
+        donutChartInstance.destroy();
+        donutChartInstance = null;
+    }
     
     // Filter transactions if a tag filter is active
     const filteredTxs = activeFilterTag
         ? transactions.filter(t => t.tags && t.tags.some(tag => tag.trim() === activeFilterTag))
         : transactions;
         
-    // Group expense items
+    // Group expense items ONLY
     const catTotals = {};
     let totalExpense = 0;
     
@@ -69,122 +69,86 @@ function renderCategoryDonut() {
         .sort((a, b) => b[1] - a[1]);
         
     if (totalExpense === 0 || categoriesSorted.length === 0) {
-        categoryDonutChart.innerHTML = `
-            <text x="100" y="100" text-anchor="middle" fill="var(--text-muted)" font-size="12">
-                ${getText('analytics_no_expense')}
-            </text>
-        `;
+        donutCanvas.classList.add('d-none');
+        donutEmptyMessage.classList.remove('d-none');
+        donutEmptyMessage.textContent = getText('analytics_no_expense') || '無支出數據';
         return;
     }
     
-    // Draw SVG Donut
-    const r = 55;
-    const cx = 100;
-    const cy = 100;
-    const circ = 2 * Math.PI * r;
-    let accumulatedAngle = 0;
+    donutCanvas.classList.remove('d-none');
+    donutEmptyMessage.classList.add('d-none');
     
-    // Background track
-    const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    bgCircle.setAttribute('cx', cx);
-    bgCircle.setAttribute('cy', cy);
-    bgCircle.setAttribute('r', r);
-    bgCircle.setAttribute('fill', 'transparent');
-    bgCircle.setAttribute('stroke', 'rgba(255, 255, 255, 0.05)');
-    bgCircle.setAttribute('stroke-width', '18');
-    categoryDonutChart.appendChild(bgCircle);
+    const labels = categoriesSorted.map(([cat]) => getText('cat_' + cat) || cat);
+    const data = categoriesSorted.map(([, val]) => val);
+    const backgroundColors = categoriesSorted.map((_, idx) => CHART_COLORS[idx % CHART_COLORS.length]);
     
-    categoriesSorted.forEach(([cat, val], idx) => {
-        const color = CHART_COLORS[idx % CHART_COLORS.length];
-        const percent = val / totalExpense;
-        const strokeLength = percent * circ;
-        const strokeOffset = circ - accumulatedAngle;
-        
-        // Add chart segment
-        const slice = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        slice.setAttribute('cx', cx);
-        slice.setAttribute('cy', cy);
-        slice.setAttribute('r', r);
-        slice.setAttribute('fill', 'transparent');
-        slice.setAttribute('stroke', color);
-        slice.setAttribute('stroke-width', '18');
-        slice.setAttribute('stroke-dasharray', `${strokeLength} ${circ}`);
-        slice.setAttribute('stroke-dashoffset', strokeOffset.toString());
-        slice.setAttribute('transform', 'rotate(-90 100 100)'); // Start at top
-        slice.setAttribute('class', 'chart-slice');
-        
-        // Tooltip listeners
-        slice.addEventListener('mouseenter', (e) => {
-            donutTooltip.style.opacity = '1';
-            donutTooltip.innerHTML = `
-                <strong>${getText('cat_' + cat) || cat}</strong><br>
-                ${formatCurrency(val)} (${(percent * 100).toFixed(1)}%)
-            `;
-            updateTooltipPos(donutTooltip, e, categoryDonutChart);
-        });
-        
-        slice.addEventListener('mousemove', (e) => {
-            updateTooltipPos(donutTooltip, e, categoryDonutChart);
-        });
-        
-        slice.addEventListener('mouseleave', () => {
-            donutTooltip.style.opacity = '0';
-        });
-        
-        categoryDonutChart.appendChild(slice);
-        
-        // Accumulate segment angle
-        accumulatedAngle += strokeLength;
-        
-        // Add Legend Element (Using dynamic category translation)
-        const legendItem = document.createElement('span');
-        legendItem.className = 'legend-item';
-        legendItem.innerHTML = `
-            <span class="legend-color" style="background-color: ${color}"></span>
-            ${getText('cat_' + cat) || cat} (${(percent * 100).toFixed(0)}%)
-        `;
-        categoryLegend.appendChild(legendItem);
+    donutChartInstance = new window.Chart(donutCanvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: backgroundColors,
+                borderWidth: 1,
+                borderColor: '#1e1e2e', // Match theme card bg
+                hoverOffset: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#a1a1aa',
+                        boxWidth: 12,
+                        font: {
+                            family: "'Outfit', sans-serif",
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#27273a',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e4e4e7',
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const percent = (value / totalExpense) * 100;
+                            return ` ${context.label}: $${value.toFixed(2)} (${percent.toFixed(1)}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '65%'
+        }
     });
-    
-    // Add Center Summary Text
-    const centerTitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    centerTitle.setAttribute('x', cx.toString());
-    centerTitle.setAttribute('y', (cy - 6).toString());
-    centerTitle.setAttribute('text-anchor', 'middle');
-    centerTitle.setAttribute('fill', 'var(--text-muted)');
-    centerTitle.setAttribute('font-size', '10');
-    centerTitle.setAttribute('font-weight', '500');
-    centerTitle.textContent = getText('analytics_total_exp') || 'TOTAL EXPENSES';
-    categoryDonutChart.appendChild(centerTitle);
-    
-    const centerVal = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    centerVal.setAttribute('x', cx.toString());
-    centerVal.setAttribute('y', (cy + 12).toString());
-    centerVal.setAttribute('text-anchor', 'middle');
-    centerVal.setAttribute('fill', 'var(--text-primary)');
-    centerVal.setAttribute('font-size', '14');
-    centerVal.setAttribute('font-weight', '700');
-    centerVal.setAttribute('font-family', 'Outfit');
-    centerVal.textContent = formatCurrency(totalExpense);
-    categoryDonutChart.appendChild(centerVal);
 }
 
 /* ==========================================================================
    TREND BAR CHART (Monthly Cash Flow)
    ========================================================================== */
 function renderTrendBarChart() {
-    trendBarChart.innerHTML = '';
+    const barCanvas = document.getElementById('trendBarChart');
+    
+    if (barChartInstance) {
+        barChartInstance.destroy();
+        barChartInstance = null;
+    }
     
     // Filter transactions if a tag filter is active
     const filteredTxs = activeFilterTag
         ? transactions.filter(t => t.tags && t.tags.some(tag => tag.trim() === activeFilterTag))
         : transactions;
         
-    // 1. Group transaction values by month (last 6 months, starting from current month YYYY-MM)
+    // Group values by month (last 6 months, starting from current month)
     const monthlySummary = {};
     const monthsArray = [];
     
-    // Build array of last 6 months using safe local year/month to prevent timezone offset issues
     const today = new Date();
     for (let i = 5; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -195,7 +159,6 @@ function renderTrendBarChart() {
         monthlySummary[key] = { income: 0, expense: 0 };
     }
     
-    // Populate summaries
     filteredTxs.forEach(t => {
         if (!t.date) return;
         const mKey = t.date.substring(0, 7);
@@ -209,131 +172,96 @@ function renderTrendBarChart() {
         }
     });
     
-    // Find max value for scaling heights
-    let maxVal = 100; // Minimum default ceiling scale
-    monthsArray.forEach(m => {
-        maxVal = Math.max(maxVal, monthlySummary[m].income, monthlySummary[m].expense);
+    const labels = monthsArray.map(mKey => {
+        const parts = mKey.split('-');
+        return `${parts[0]}年${parts[1]}月`;
     });
     
-    // Draw SVG Bar Elements
-    const chartHeight = 150;
-    const chartWidth = 340;
-    const paddingLeft = 35;
-    const paddingBottom = 30;
-    const colSpacing = (chartWidth - paddingLeft) / 6;
+    const incomeData = monthsArray.map(mKey => monthlySummary[mKey].income);
+    const expenseData = monthsArray.map(mKey => monthlySummary[mKey].expense);
     
-    // Draw Y gridlines and Axis labels
-    const gridLinesCount = 4;
-    for (let i = 0; i <= gridLinesCount; i++) {
-        const gridVal = (maxVal / gridLinesCount) * i;
-        const yPos = chartHeight - ((gridVal / maxVal) * (chartHeight - 10));
-        
-        // Grid Line
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', paddingLeft.toString());
-        line.setAttribute('y1', yPos.toString());
-        line.setAttribute('x2', chartWidth.toString());
-        line.setAttribute('y2', yPos.toString());
-        line.setAttribute('stroke', 'rgba(255, 255, 255, 0.04)');
-        line.setAttribute('stroke-dasharray', '3,3');
-        trendBarChart.appendChild(line);
-        
-        // Grid Label
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', (paddingLeft - 8).toString());
-        text.setAttribute('y', (yPos + 4).toString());
-        text.setAttribute('text-anchor', 'end');
-        text.setAttribute('fill', 'var(--text-muted)');
-        text.setAttribute('font-size', '9');
-        text.textContent = formatAxisValue(gridVal);
-        trendBarChart.appendChild(text);
-    }
-    
-    // Draw monthly side-by-side bars
-    monthsArray.forEach((mKey, idx) => {
-        const stats = monthlySummary[mKey];
-        const xCenter = paddingLeft + (idx * colSpacing) + (colSpacing / 2);
-        
-        // Parse date for locale display
-        const dateParts = mKey.split('-');
-        const dateObj = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, 2);
-        
-        const locale = 'zh-TW';
-        const monthLabel = dateObj.toLocaleDateString(locale, { month: 'short' });
-        
-        // Income Bar (Emerald)
-        const inHeight = (stats.income / maxVal) * (chartHeight - 10);
-        const inRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        inRect.setAttribute('x', (xCenter - 14).toString());
-        inRect.setAttribute('y', (chartHeight - inHeight).toString());
-        inRect.setAttribute('width', '11');
-        inRect.setAttribute('height', Math.max(inHeight, 1).toString());
-        inRect.setAttribute('fill', 'var(--success)');
-        inRect.setAttribute('rx', '3');
-        inRect.setAttribute('class', 'chart-bar');
-        
-        // Expense Bar (Red)
-        const exHeight = (stats.expense / maxVal) * (chartHeight - 10);
-        const exRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        exRect.setAttribute('x', (xCenter + 1).toString());
-        exRect.setAttribute('y', (chartHeight - exHeight).toString());
-        exRect.setAttribute('width', '11');
-        exRect.setAttribute('height', Math.max(exHeight, 1).toString());
-        exRect.setAttribute('fill', 'var(--error)');
-        exRect.setAttribute('rx', '3');
-        exRect.setAttribute('class', 'chart-bar');
-        
-        // Setup hover details for bars
-        [ { el: inRect, val: stats.income, label: getText('db_income_type') }, 
-          { el: exRect, val: stats.expense, label: getText('db_expense_type') } ].forEach(item => {
-            item.el.addEventListener('mouseenter', (e) => {
-                trendTooltip.style.opacity = '1';
-                trendTooltip.innerHTML = `
-                    <strong>${dateParts[0]}年${dateParts[1]}月</strong><br>
-                    ${item.label}: ${formatCurrency(item.val)}
-                `;
-                updateTooltipPos(trendTooltip, e, trendBarChart);
-            });
-            item.el.addEventListener('mousemove', (e) => {
-                updateTooltipPos(trendTooltip, e, trendBarChart);
-            });
-            item.el.addEventListener('mouseleave', () => {
-                trendTooltip.style.opacity = '0';
-            });
-        });
-        
-        trendBarChart.appendChild(inRect);
-        trendBarChart.appendChild(exRect);
-        
-        // Month X Label
-        const xText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        xText.setAttribute('x', xCenter.toString());
-        xText.setAttribute('y', (chartHeight + 20).toString());
-        xText.setAttribute('text-anchor', 'middle');
-        xText.setAttribute('fill', 'var(--text-secondary)');
-        xText.setAttribute('font-size', '10');
-        xText.setAttribute('font-weight', '500');
-        xText.textContent = monthLabel;
-        trendBarChart.appendChild(xText);
+    barChartInstance = new window.Chart(barCanvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: getText('db_income_type') || '收入',
+                    data: incomeData,
+                    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                    hoverBackgroundColor: '#10B981',
+                    borderRadius: 4,
+                    borderWidth: 0
+                },
+                {
+                    label: getText('db_expense_type') || '支出',
+                    data: expenseData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                    hoverBackgroundColor: '#EF4444',
+                    borderRadius: 4,
+                    borderWidth: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.04)'
+                    },
+                    ticks: {
+                        color: '#a1a1aa',
+                        font: {
+                            family: "'Outfit', sans-serif",
+                            size: 10
+                        }
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.04)'
+                    },
+                    ticks: {
+                        color: '#a1a1aa',
+                        font: {
+                            family: "'Outfit', sans-serif",
+                            size: 10
+                        },
+                        callback: function(value) {
+                            return '$' + value;
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#a1a1aa',
+                        boxWidth: 12,
+                        font: {
+                            family: "'Outfit', sans-serif",
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#27273a',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e4e4e7',
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
+        }
     });
-}
-
-// Helpers for tooltip coordinate offsets
-function updateTooltipPos(tooltipEl, event, relativeToSvg) {
-    const rect = relativeToSvg.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    // Display tooltip slightly above and to the right of the mouse pointer
-    tooltipEl.style.left = (x + 12) + 'px';
-    tooltipEl.style.top = (y - 42) + 'px';
-}
-
-function formatAxisValue(val) {
-    if (val >= 1000) {
-        return '$' + (val / 1000).toFixed(1) + 'k';
-    }
-    return '$' + val.toFixed(0);
 }
 
 /* ==========================================================================
