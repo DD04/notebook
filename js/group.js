@@ -51,6 +51,11 @@ let activeGroup = null;
 let activeMembers = [];
 let activeTransactions = [];
 
+// Pagination state (group transactions)
+const GROUP_ITEMS_PER_PAGE = 8;
+let groupCurrentPage = 1;
+let groupFilteredTransactions = [];
+
 // Chart.js instances for group
 let groupDonutChartInstance = null;
 let groupBarChartInstance = null;
@@ -114,6 +119,27 @@ export function initGroups() {
     groupFilterType.addEventListener('change', applyGroupFiltersAndRender);
     groupFilterCategory.addEventListener('change', applyGroupFiltersAndRender);
     groupFilterMonth.addEventListener('change', applyGroupFiltersAndRender);
+
+    // Group Pagination Listeners
+    const groupPrevPageBtn = document.getElementById('groupPrevPageBtn');
+    const groupNextPageBtn = document.getElementById('groupNextPageBtn');
+    if (groupPrevPageBtn) {
+        groupPrevPageBtn.addEventListener('click', () => {
+            if (groupCurrentPage > 1) {
+                groupCurrentPage--;
+                renderGroupTransactions();
+            }
+        });
+    }
+    if (groupNextPageBtn) {
+        groupNextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(groupFilteredTransactions.length / GROUP_ITEMS_PER_PAGE);
+            if (groupCurrentPage < totalPages) {
+                groupCurrentPage++;
+                renderGroupTransactions();
+            }
+        });
+    }
     
     // Group Analytics Button & Modal
     const groupAnalyticsBtn = document.getElementById('groupAnalyticsBtn');
@@ -317,7 +343,12 @@ function renderGroupSummaryCards() {
     }
 }
 
-function renderGroupTransactions(txsList = activeTransactions) {
+function renderGroupTransactions() {
+    const txsList = groupFilteredTransactions;
+    const groupPrevPageBtn = document.getElementById('groupPrevPageBtn');
+    const groupNextPageBtn = document.getElementById('groupNextPageBtn');
+    const groupPaginationInfo = document.getElementById('groupPaginationInfo');
+
     groupTxTableBody.innerHTML = '';
     
     if (txsList.length === 0) {
@@ -332,10 +363,21 @@ function renderGroupTransactions(txsList = activeTransactions) {
             </tr>
         `;
         if (window.lucide) window.lucide.createIcons();
+        if (groupPrevPageBtn) groupPrevPageBtn.disabled = true;
+        if (groupNextPageBtn) groupNextPageBtn.disabled = true;
+        if (groupPaginationInfo) groupPaginationInfo.textContent = getText('db_page_info').replace('{current}', '1').replace('{total}', '1');
         return;
     }
     
-    txsList.forEach(t => {
+    // Pagination math
+    const totalPages = Math.ceil(txsList.length / GROUP_ITEMS_PER_PAGE);
+    if (groupCurrentPage > totalPages) groupCurrentPage = totalPages || 1;
+    
+    const startIndex = (groupCurrentPage - 1) * GROUP_ITEMS_PER_PAGE;
+    const endIndex = Math.min(startIndex + GROUP_ITEMS_PER_PAGE, txsList.length);
+    const pageItems = txsList.slice(startIndex, endIndex);
+    
+    pageItems.forEach(t => {
         const row = document.createElement('tr');
         row.style.animation = 'fadeIn 0.25s ease-out';
         
@@ -386,6 +428,15 @@ function renderGroupTransactions(txsList = activeTransactions) {
     });
     
     if (window.lucide) window.lucide.createIcons();
+
+    // Update pagination controls
+    if (groupPrevPageBtn) groupPrevPageBtn.disabled = groupCurrentPage === 1;
+    if (groupNextPageBtn) groupNextPageBtn.disabled = groupCurrentPage === totalPages;
+    if (groupPaginationInfo) {
+        groupPaginationInfo.textContent = getText('db_page_info')
+            .replace('{current}', groupCurrentPage)
+            .replace('{total}', totalPages);
+    }
 }
 
 /* ==========================================================================
@@ -600,7 +651,7 @@ function applyGroupFiltersAndRender() {
     const catVal = groupFilterCategory.value;
     const monthVal = groupFilterMonth.value;
     
-    const filtered = activeTransactions.filter(t => {
+    groupFilteredTransactions = activeTransactions.filter(t => {
         const matchesSearch = !searchVal || 
             (t.description && t.description.toLowerCase().includes(searchVal)) ||
             (t.member_nickname && t.member_nickname.toLowerCase().includes(searchVal));
@@ -610,8 +661,10 @@ function applyGroupFiltersAndRender() {
         
         return matchesSearch && matchesType && matchesCat && matchesMonth;
     });
-    
-    renderGroupTransactions(filtered);
+
+    // Reset to page 1 whenever filters change
+    groupCurrentPage = 1;
+    renderGroupTransactions();
 }
 
 function renderGroupAnalyticsCharts() {
