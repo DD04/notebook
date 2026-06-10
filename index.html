@@ -360,8 +360,13 @@
                                 <div class="group-transactions-list ledger-container">
                                     <div class="section-header">
                                         <h3 data-i18n="group_ledger_title">Group Ledger</h3>
-                                        <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i>
-                                            <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
+                                        <div class="header-actions" style="display: flex; gap: 8px;">
+                                            <button class="btn btn-secondary" id="refreshGroupTxBtn" title="重新整理" style="width: 41px; height: 41px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                                                <i data-lucide="refresh-cw"></i>
+                                            </button>
+                                            <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i>
+                                                <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
+                                        </div>
                                     </div>
 
                                     <!-- Group Filters panel -->

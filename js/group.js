@@ -16,6 +16,7 @@ const groupActiveDetails = document.getElementById('groupActiveDetails');
 const activeGroupName = document.getElementById('activeGroupName');
 const activeGroupMeta = document.getElementById('activeGroupMeta');
 const addGroupTxBtn = document.getElementById('addGroupTxBtn');
+const refreshGroupTxBtn = document.getElementById('refreshGroupTxBtn');
 
 const groupTxTableBody = document.getElementById('groupTxTableBody');
 
@@ -93,6 +94,9 @@ export function initGroups() {
 
     // Group Transaction Modal (any member can open)
     addGroupTxBtn.addEventListener('click', () => showGroupTxModal());
+    if (refreshGroupTxBtn) {
+        refreshGroupTxBtn.addEventListener('click', refreshGroupTransactions);
+    }
     groupTxModalClose.addEventListener('click', () => hideModal(groupTxModal));
     groupTxModalCancel.addEventListener('click', () => hideModal(groupTxModal));
     groupTxForm.addEventListener('submit', handleGroupTxSubmit);
@@ -307,6 +311,35 @@ async function selectGroup(group) {
     
     populateGroupFilters();
     applyGroupFiltersAndRender();
+}
+
+async function refreshGroupTransactions() {
+    if (!activeGroup) return;
+    
+    const icon = refreshGroupTxBtn ? refreshGroupTxBtn.querySelector('i') : null;
+    if (icon) {
+        icon.classList.add('spin-animation');
+    }
+    if (refreshGroupTxBtn) {
+        refreshGroupTxBtn.disabled = true;
+    }
+    
+    try {
+        activeMembers = await storage.getGroupMembers(activeGroup.id);
+        activeTransactions = await storage.getGroupTransactions(activeGroup.id);
+        renderMembersList();
+        applyGroupFiltersAndRender();
+    } catch (error) {
+        console.error('Failed to refresh group transactions:', error);
+        showToast('無法重新整理群組明細', 'error');
+    } finally {
+        if (icon) {
+            icon.classList.remove('spin-animation');
+        }
+        if (refreshGroupTxBtn) {
+            refreshGroupTxBtn.disabled = false;
+        }
+    }
 }
 
 function renderMembersList() {

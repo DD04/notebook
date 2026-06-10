@@ -435,6 +435,15 @@ a {
     to { transform: translateX(0); }
 }
 
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin-animation {
+    animation: spin 0.8s linear infinite;
+}
+
 /* 4. Common Widgets, Buttons & Cards */
 .card-box {
     background: var(--bg-card);
