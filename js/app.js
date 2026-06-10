@@ -91,7 +91,7 @@ async function initApp() {
     settings.initSettings();
 
     // Profile Edit Modal Setup
-    const userProfileSection = document.getElementById('userProfileSection');
+    const userAvatar = document.getElementById('userAvatar');
     const profileModal = document.getElementById('profileModal');
     const profileModalClose = document.getElementById('profileModalClose');
     const profileModalCancel = document.getElementById('profileModalCancel');
@@ -100,11 +100,8 @@ async function initApp() {
     const profilePasswordInput = document.getElementById('profilePasswordInput');
     const profileError = document.getElementById('profileError');
 
-    if (userProfileSection) {
-        userProfileSection.addEventListener('click', (e) => {
-            if (e.target.closest('#sidebarAuthBtn')) {
-                return;
-            }
+    if (userAvatar) {
+        userAvatar.addEventListener('click', () => {
             if (!currentUser) return;
             
             if (profileNicknameInput) {

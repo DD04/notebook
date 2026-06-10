@@ -530,8 +530,8 @@ async function handleCreateGroup(e) {
 
 async function handleAddMember(e) {
     e.preventDefault();
-    const nickname = memberNicknameInput.value.trim();
-    if (!nickname || !activeGroup) return;
+    const username = memberNicknameInput.value.trim();
+    if (!username || !activeGroup) return;
     
     if (!isGroupCreator) {
         showToast(getText('group_creator_only') || '只有群組建立者才能執行此操作。', 'warning');
@@ -539,8 +539,8 @@ async function handleAddMember(e) {
     }
     
     try {
-        await storage.addGroupMember(activeGroup.id, nickname);
-        showToast(`${getText('toast_member_added') || '已新增成員'} ${nickname}`, 'success');
+        await storage.addGroupMember(activeGroup.id, username);
+        showToast(`${getText('toast_member_added') || '已新增成員'} ${username}`, 'success');
         hideModal(memberModal);
         memberNicknameInput.value = '';
         
@@ -553,7 +553,7 @@ async function handleAddMember(e) {
         if (err.message && err.message.startsWith('USER_NOT_FOUND:')) {
             const name = err.message.split(':')[1];
             showToast(
-                (getText('group_user_not_found') || '找不到此暱稱的使用者：') + name,
+                (getText('group_user_not_found') || '找不到此帳號的使用者：') + name,
                 'error'
             );
         } else if (err.message === 'ALREADY_MEMBER') {

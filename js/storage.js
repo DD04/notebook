@@ -377,25 +377,25 @@ export async function getGroupMembers(groupId) {
     return data;
 }
 
-// Look up a registered user by their profile nickname
-export async function findUserByNickname(nickname) {
+// Look up a registered user by their profile username
+export async function findUserByUsername(username) {
     if (!isCloudMode()) return null;
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, nickname, email')
-        .eq('nickname', nickname)
+        .select('id, nickname, username, email')
+        .eq('username', username)
         .single();
     if (error || !data) return null;
     return data;
 }
 
-export async function addGroupMember(groupId, nickname) {
+export async function addGroupMember(groupId, username) {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
     // Require the target to be a real registered user
-    const targetUser = await findUserByNickname(nickname);
+    const targetUser = await findUserByUsername(username);
     if (!targetUser) {
-        throw new Error(`USER_NOT_FOUND:${nickname}`);
+        throw new Error(`USER_NOT_FOUND:${username}`);
     }
     
     // Check if already a member (by user_id)

@@ -132,7 +132,7 @@ export const translations = {
         'modal_group_create': '建立群組',
 
         'modal_new_member': '新增群組成員',
-        'modal_member_name': '成員名稱 / 暱稱',
+        'modal_member_name': '成員帳號',
         'modal_member_add': '加入成員',
 
         'modal_group_tx': '新增群組交易',
@@ -185,15 +185,15 @@ export const translations = {
         // Group admin / member management
         'group_creator_badge': '建立者',
         'group_creator_only': '只有群組建立者才能執行此操作。',
-        'group_user_not_found': '找不到此暱稱的已註冊使用者：',
+        'group_user_not_found': '找不到此帳號的已註冊使用者：',
         'group_already_member': '此使用者已是群組成員。',
         'group_delete_group': '刪除群組',
         'confirm_delete_group': '確定要刪除此群組？所有群組資料將永久刪除且無法復原。',
         'toast_group_deleted': '群組已成功刪除。',
 
         // Add member modal
-        'modal_member_hint': '請輸入要新增成員的已註冊帳號暱稱。',
-        'modal_member_placeholder': '輸入帳號暱稱…',
+        'modal_member_hint': '請輸入要新增成員的已註冊帳號。',
+        'modal_member_placeholder': '輸入帳號…',
 
         // Settlement modal
         'settle_record_title': '記錄債務結清',
@@ -339,7 +339,7 @@ export const translations = {
         'modal_group_create': 'Create Group',
 
         'modal_new_member': 'Add Group Member',
-        'modal_member_name': 'Nickname / Name',
+        'modal_member_name': 'Username',
         'modal_member_add': 'Add Member',
 
         'modal_group_tx': 'Add Group Transaction',
@@ -392,15 +392,15 @@ export const translations = {
         // Group admin / member management
         'group_creator_badge': 'Creator',
         'group_creator_only': 'Only the group creator can perform this action.',
-        'group_user_not_found': 'No registered user found with nickname: ',
+        'group_user_not_found': 'No registered user found with username: ',
         'group_already_member': 'This user is already a member of the group.',
         'group_delete_group': 'Delete Group',
         'confirm_delete_group': 'Are you sure you want to delete this group? All group data will be permanently deleted.',
         'toast_group_deleted': 'Group deleted successfully.',
 
         // Add member modal
-        'modal_member_hint': 'Enter the registered account nickname of the user you want to add.',
-        'modal_member_placeholder': 'Enter account nickname...',
+        'modal_member_hint': 'Enter the registered username of the user you want to add.',
+        'modal_member_placeholder': 'Enter username...',
 
         // Settlement modal
         'settle_record_title': 'Record Settlement',

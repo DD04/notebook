@@ -262,6 +262,12 @@ a {
     align-items: center;
     justify-content: center;
     border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.user-avatar:hover {
+    transform: scale(1.05);
 }
 
 .user-avatar i {
