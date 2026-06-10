@@ -231,12 +231,10 @@
                         <div class="analytics-card card-box">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                                 <h3 data-i18n="analytics_cash_flow" style="margin-bottom: 0;">Monthly Cash Flow</h3>
-                                <select id="analyticsRangeSelect" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
-                                    <option value="6">最近 6 個月</option>
-                                    <option value="8">最近 8 個月</option>
-                                    <option value="10">最近 10 個月</option>
-                                    <option value="12">最近 12 個月</option>
-                                </select>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label for="analyticsTrendMonthPicker" style="font-size: 13px; color: var(--text-secondary);">結束月份：</label>
+                                    <input type="month" id="analyticsTrendMonthPicker" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
+                                </div>
                             </div>
                             <div class="chart-container line-chart-container"
                                 style="position: relative; height: 220px; width: 100%;">

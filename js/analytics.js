@@ -11,7 +11,7 @@ let barChartInstance = null;
 
 export function initAnalytics() {
     const analyticsMonthSelect = document.getElementById('analyticsMonthSelect');
-    const analyticsRangeSelect = document.getElementById('analyticsRangeSelect');
+    const analyticsTrendMonthPicker = document.getElementById('analyticsTrendMonthPicker');
 
     if (analyticsMonthSelect) {
         analyticsMonthSelect.addEventListener('change', () => {
@@ -19,8 +19,8 @@ export function initAnalytics() {
         });
     }
 
-    if (analyticsRangeSelect) {
-        analyticsRangeSelect.addEventListener('change', () => {
+    if (analyticsTrendMonthPicker) {
+        analyticsTrendMonthPicker.addEventListener('change', () => {
             renderTrendBarChart();
         });
     }
@@ -29,6 +29,14 @@ export function initAnalytics() {
 export async function refreshAnalytics() {
     try {
         transactions = await storage.getTransactions();
+        
+        const analyticsTrendMonthPicker = document.getElementById('analyticsTrendMonthPicker');
+        if (analyticsTrendMonthPicker && !analyticsTrendMonthPicker.value) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            analyticsTrendMonthPicker.value = `${year}-${month}`;
+        }
         
         populateAnalyticsMonthSelect();
         renderCategoryDonut();
@@ -190,16 +198,19 @@ function renderTrendBarChart() {
     
     const filteredTxs = transactions;
     
-    const analyticsRangeSelect = document.getElementById('analyticsRangeSelect');
-    const monthsToDisplay = analyticsRangeSelect ? parseInt(analyticsRangeSelect.value, 10) : 6;
+    const analyticsTrendMonthPicker = document.getElementById('analyticsTrendMonthPicker');
+    let baseDate = new Date();
+    if (analyticsTrendMonthPicker && analyticsTrendMonthPicker.value) {
+        const [year, month] = analyticsTrendMonthPicker.value.split('-');
+        baseDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+    }
         
     // Group values by month
     const monthlySummary = {};
     const monthsArray = [];
     
-    const today = new Date();
-    for (let i = monthsToDisplay - 1; i >= 0; i--) {
-        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const key = `${year}-${month}`;
