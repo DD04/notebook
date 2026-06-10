@@ -377,17 +377,7 @@ export async function getGroupMembers(groupId) {
     return data;
 }
 
-// Look up a registered user by their profile username
-export async function findUserByUsername(username) {
-    if (!isCloudMode()) return null;
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('id, nickname, username, email')
-        .eq('username', username)
-        .single();
-    if (error || !data) return null;
-    return data;
-}
+
 
 export async function addGroupMember(groupId, username) {
     if (!isCloudMode()) throw new Error("Database connection required.");
