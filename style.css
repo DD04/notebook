@@ -410,6 +410,7 @@ a {
 .view-panel {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden; /* blocks handle their own horizontal overflow */
     padding: 32px;
 }
 
@@ -890,6 +891,8 @@ a {
 
 .group-main-panel {
     min-height: 400px;
+    min-width: 0;      /* allow grid column to shrink properly */
+    overflow: hidden;  /* children scroll independently, not the whole page */
 }
 
 .empty-state-card {
@@ -919,6 +922,16 @@ a {
     display: flex;
     flex-direction: column;
     gap: 24px;
+    min-width: 0;   /* allows children to shrink inside flex/grid */
+    overflow: hidden; /* clip overflow; children handle their own scroll */
+}
+
+/* Group summary cards: desktop grid layout */
+.group-summary-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;  /* gap in group-details-container handles spacing */
 }
 
 .group-details-header {
@@ -1753,41 +1766,55 @@ a {
         gap: 12px;
     }
     .group-side-panel {
-        /* Flip to row so "groups list" and "members" sit side by side */
+        /* Flip to row: groups list and members panel side by side, equal width */
         flex-direction: row;
-        gap: 12px;
+        gap: 10px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
     .group-side-panel .panel-section {
-        flex: 0 0 200px;
-        min-width: 0;
+        /* Equal width split: each panel gets half the space */
+        flex: 1 1 0;
+        min-width: 140px;  /* prevent collapse below readable width */
         padding: 12px !important;
     }
     .groups-list, .members-list {
-        max-height: 200px;
+        max-height: 180px;
         margin-top: 10px;
     }
 
-    /* ── Group summary cards: overflow individually ── */
-    .group-summary-cards-container {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 10px !important;
-        padding-bottom: 4px;
-    }
-    .group-summary-cards-container .summary-card {
-        flex: 0 0 200px;
+    /* ── Group main panel: no overflow on container itself ── */
+    .group-main-panel {
+        overflow: hidden;
         min-width: 0;
     }
 
-    /* ── Group transactions ledger ── */
+    /* ── Group details: each child block scrolls independently ── */
+    .group-details-container {
+        overflow: hidden;
+        gap: 12px;
+    }
+
+    /* ── Group summary cards: horizontal scroll row on mobile ── */
+    .group-summary-cards-container {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        gap: 10px !important;
+        margin-bottom: 0;
+        padding-bottom: 4px;  /* space for scrollbar */
+    }
+    .group-summary-cards-container .summary-card {
+        flex: 0 0 180px;
+        min-width: 0;
+    }
+
+    /* ── Group transactions ledger: clips internally via ledger-table-wrapper ── */
     .group-transactions-list.ledger-container {
-        overflow-x: visible;
         padding: 12px;
+        overflow: hidden;
     }
 
     /* ── Analytics ── */
@@ -1845,12 +1872,13 @@ a {
     .summary-card { padding: 12px; min-height: 90px; }
     .card-amount { font-size: 19px; }
 
-    /* Side-panel: narrower cards */
+    /* Side-panel: keep equal split, allow narrower minimum */
     .group-side-panel .panel-section {
-        flex: 0 0 160px;
+        flex: 1 1 0;
+        min-width: 120px;
     }
 
-    /* Group summary cards: even smaller */
+    /* Group summary cards: slightly narrower */
     .group-summary-cards-container .summary-card {
         flex: 0 0 160px;
     }
@@ -1899,7 +1927,8 @@ a {
     }
 
     .group-side-panel .panel-section {
-        flex: 0 0 140px;
+        flex: 1 1 0;
+        min-width: 110px;
         padding: 10px !important;
     }
     .group-summary-cards-container .summary-card {
