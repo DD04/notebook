@@ -1,6 +1,6 @@
 // js/group.js - Group shared bookkeeping ledger logic
 import * as storage from './storage.js';
-import { formatCurrency, escapeHTML } from './dashboard.js';
+import { formatCurrency, escapeHTML, updateCategoryDropdown } from './dashboard.js';
 import { showToast } from './app.js';
 import { getText, getLocale } from './i18n.js';
 
@@ -33,9 +33,11 @@ const memberForm = document.getElementById('memberForm');
 const memberNicknameInput = document.getElementById('memberNickname');
 
 const groupTxModal = document.getElementById('groupTxModal');
+const groupTxModalTitle = document.getElementById('groupTxModalTitle');
 const groupTxModalClose = document.getElementById('groupTxModalClose');
 const groupTxModalCancel = document.getElementById('groupTxModalCancel');
 const groupTxForm = document.getElementById('groupTxForm');
+const gtxId = document.getElementById('gtxId');
 const gtxType = document.getElementById('gtxType');
 const gtxAmount = document.getElementById('gtxAmount');
 const gtxCategory = document.getElementById('gtxCategory');
@@ -88,6 +90,9 @@ export function initGroups() {
     groupTxModal.addEventListener('click', (e) => {
         if (e.target === groupTxModal) hideModal(groupTxModal);
     });
+    
+    // Type change dynamic categories update
+    gtxType.addEventListener('change', () => updateCategoryDropdown(gtxType, gtxCategory));
     
     // Delete group (only creator sees this button)
     const deleteGroupBtn = document.getElementById('deleteGroupBtn');
@@ -306,8 +311,13 @@ function renderGroupTransactions() {
         const amountDisplay = isIncome ? `+${formatCurrency(t.amount)}` : `-${formatCurrency(t.amount)}`;
         const amountStyle = isIncome ? 'color: var(--success);' : 'color: var(--text-primary);';
 
-        // Check permission to delete (Group Creator or Transaction Owner)
+        // Check permission to modify / delete (Group Creator or Transaction Owner)
         const isCreatorOrOwner = isGroupCreator || (currentUserId && t.user_id === currentUserId);
+        
+        const editBtn = isCreatorOrOwner
+            ? `<button class="action-btn action-btn-edit" data-id="${t.id}" title="${getText('modal_edit_tx')}"><i data-lucide="edit-3"></i></button>`
+            : `<button class="action-btn action-btn-edit" style="opacity: 0.2; cursor: not-allowed;" disabled><i data-lucide="edit-3"></i></button>`;
+            
         const deleteBtn = isCreatorOrOwner 
             ? `<button class="action-btn action-btn-delete" data-id="${t.id}" title="${getText('confirm_delete_bill')}"><i data-lucide="trash-2"></i></button>`
             : `<button class="action-btn action-btn-delete" style="opacity: 0.2; cursor: not-allowed;" disabled><i data-lucide="trash-2"></i></button>`;
@@ -325,6 +335,7 @@ function renderGroupTransactions() {
                 </td>
                 <td>
                     <div class="action-btns">
+                        ${editBtn}
                         ${deleteBtn}
                     </div>
                 </td>
@@ -332,6 +343,7 @@ function renderGroupTransactions() {
         `;
         
         if (isCreatorOrOwner) {
+            row.querySelector('.action-btn-edit').addEventListener('click', () => showGroupTxModal(t));
             row.querySelector('.action-btn-delete').addEventListener('click', () => handleGroupTxDelete(t.id));
         }
         groupTxTableBody.appendChild(row);
@@ -413,20 +425,34 @@ async function handleDeleteGroup() {
 }
 
 // Display Bill Modal
-function showGroupTxModal() {
+function showGroupTxModal(existingTx = null) {
     groupTxForm.reset();
     
-    if (gtxType) gtxType.value = 'expense';
-    if (gtxCategory) gtxCategory.value = 'Food';
-    if (gtxTags) gtxTags.value = '';
+    if (existingTx) {
+        groupTxModalTitle.textContent = getText('modal_edit_tx');
+        gtxId.value = existingTx.id;
+        gtxType.value = existingTx.type;
+        updateCategoryDropdown(gtxType, gtxCategory);
+        gtxAmount.value = existingTx.amount;
+        gtxCategory.value = existingTx.category;
+        gtxDate.value = existingTx.date;
+        gtxTags.value = (existingTx.tags || []).join(', ');
+        gtxDescription.value = existingTx.description || '';
+    } else {
+        groupTxModalTitle.textContent = getText('modal_group_tx');
+        gtxId.value = '';
+        gtxType.value = 'expense';
+        updateCategoryDropdown(gtxType, gtxCategory);
+        gtxDate.value = new Date().toISOString().split('T')[0];
+    }
     
-    gtxDate.value = new Date().toISOString().split('T')[0];
     showModal(groupTxModal);
 }
 
 async function handleGroupTxSubmit(e) {
     e.preventDefault();
     
+    const txId = gtxId.value;
     const type = gtxType.value;
     const amount = parseFloat(gtxAmount.value);
     const category = gtxCategory.value;
@@ -448,29 +474,34 @@ async function handleGroupTxSubmit(e) {
     };
     
     try {
-        await storage.addGroupTransaction(activeGroup.id, txData);
-        showToast(getText('toast_bill_added') || '交易已記錄成功！', 'success');
+        if (txId) {
+            await storage.updateGroupTransaction(activeGroup.id, txId, txData);
+            showToast(getText('toast_tx_updated') || '交易紀錄已更新！', 'success');
+        } else {
+            await storage.addGroupTransaction(activeGroup.id, txData);
+            showToast(getText('toast_bill_added') || '交易已記錄成功！', 'success');
+        }
         hideModal(groupTxModal);
         
         // Reload details
         const updated = (await storage.getGroups()).find(g => g.id === activeGroup.id);
         await selectGroup(updated);
     } catch (err) {
-        showToast("Failed to record transaction: " + err.message, "error");
+        showToast("Failed to save transaction: " + err.message, "error");
     }
 }
 
 async function handleGroupTxDelete(txId) {
-    if (!confirm(getText('confirm_delete_bill') || '確定要刪除這筆群組費用嗎？')) return;
+    if (!confirm(getText('confirm_delete_bill') || '確定要刪除這筆群組交易紀錄嗎？')) return;
     
     try {
         await storage.deleteGroupTransaction(activeGroup.id, txId);
-        showToast(getText('toast_bill_deleted') || '費用已刪除成功。', 'success');
+        showToast(getText('toast_bill_deleted') || '交易已刪除成功。', 'success');
         
         // Reload details
         const updated = (await storage.getGroups()).find(g => g.id === activeGroup.id);
         await selectGroup(updated);
     } catch (err) {
-        showToast("Failed to delete bill: " + err.message, "error");
+        showToast("Failed to delete transaction: " + err.message, "error");
     }
 }

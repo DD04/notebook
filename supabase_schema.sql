@@ -258,7 +258,13 @@ WITH CHECK (
     AND auth.uid() = user_id
 );
 
-DROP POLICY IF EXISTS "Users can update/delete transactions in their groups" ON public.group_transactions;
+DROP POLICY IF EXISTS "Users can update group transactions" ON public.group_transactions;
+CREATE POLICY "Users can update group transactions"
+ON public.group_transactions FOR UPDATE
+USING (
+    public.can_delete_group_transaction(group_id, user_id, auth.uid())
+);
+
 DROP POLICY IF EXISTS "Users can delete group transactions" ON public.group_transactions;
 CREATE POLICY "Users can delete group transactions"
 ON public.group_transactions FOR DELETE

@@ -42,6 +42,27 @@ let currentPage = 1;
 const ITEMS_PER_PAGE = 8;
 let changeCallback = null;
 
+export function updateCategoryDropdown(typeSelectEl, categorySelectEl) {
+    const selectedType = typeSelectEl.value; // 'expense' or 'income'
+    const expenseCats = ['Food', 'Transport', 'Entertainment', 'Shopping', 'Housing', 'Other'];
+    const incomeCats = ['Salary', 'Investments', 'Other'];
+    
+    const catsToFill = selectedType === 'income' ? incomeCats : expenseCats;
+    const prevVal = categorySelectEl.value;
+    
+    categorySelectEl.innerHTML = '';
+    catsToFill.forEach(cat => {
+        const localizedName = getText('cat_' + cat) || cat;
+        categorySelectEl.innerHTML += `<option value="${cat}">${localizedName}</option>`;
+    });
+    
+    if (catsToFill.includes(prevVal)) {
+        categorySelectEl.value = prevVal;
+    } else {
+        categorySelectEl.value = catsToFill[0];
+    }
+}
+
 export function initDashboard(onDashboardChange) {
     changeCallback = onDashboardChange;
     
@@ -56,6 +77,9 @@ export function initDashboard(onDashboardChange) {
     });
     
     txForm.addEventListener('submit', handleTxSubmit);
+    
+    // Listen to transaction type changes to update categories dropdown
+    txType.addEventListener('change', () => updateCategoryDropdown(txType, txCategory));
     
     // Filtering listeners
     filterSearch.addEventListener('input', applyFiltersAndRender);
@@ -87,6 +111,7 @@ export function showTxModal(existingTx = null) {
         txModalTitle.textContent = getText('modal_edit_tx');
         txId.value = existingTx.id;
         txType.value = existingTx.type;
+        updateCategoryDropdown(txType, txCategory);
         txAmount.value = existingTx.amount;
         txCategory.value = existingTx.category;
         txDate.value = existingTx.date;
@@ -95,6 +120,8 @@ export function showTxModal(existingTx = null) {
     } else {
         txModalTitle.textContent = getText('modal_add_tx');
         txId.value = '';
+        txType.value = 'expense';
+        updateCategoryDropdown(txType, txCategory);
         // Pre-fill today's date
         txDate.value = new Date().toISOString().split('T')[0];
     }

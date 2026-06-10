@@ -482,10 +482,11 @@
     <div class="modal-overlay" id="groupTxModal">
         <div class="modal-container">
             <div class="modal-header">
-                <h3 data-i18n="modal_group_tx">Add Group Transaction</h3>
+                <h3 id="groupTxModalTitle" data-i18n="modal_group_tx">Add Group Transaction</h3>
                 <button class="modal-close-btn" id="groupTxModalClose"><i data-lucide="x"></i></button>
             </div>
             <form id="groupTxForm" class="modal-form">
+                <input type="hidden" id="gtxId">
                 <div class="form-row-2">
                     <div class="form-group">
                         <label for="gtxType" data-i18n="modal_tx_type">Transaction Type</label>

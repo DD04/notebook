@@ -382,6 +382,26 @@ export async function deleteGroupTransaction(groupId, txId) {
     return true;
 }
 
+export async function updateGroupTransaction(groupId, txId, updatedTx) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    // updatedTx = { type: 'income'|'expense', amount: number, category: string, date: string, description: string, tags: string[] }
+    const { data, error } = await supabase
+        .from('group_transactions')
+        .update({
+            type: updatedTx.type,
+            amount: parseFloat(updatedTx.amount),
+            category: updatedTx.category,
+            date: updatedTx.date,
+            description: updatedTx.description || '',
+            tags: updatedTx.tags || []
+        })
+        .eq('id', txId)
+        .eq('group_id', groupId)
+        .select();
+    if (error) throw error;
+    return data[0];
+}
+
 /* ==========================================================================
    BACKUP & RESET FUNCTIONS (Pure Supabase Cloud Sync)
    ========================================================================== */

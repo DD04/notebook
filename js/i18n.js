@@ -38,7 +38,7 @@ export const translations = {
         // Table headers
         'th_date': '日期',
         'th_desc': '說明',
-        'th_cat': '分類',
+        'th_cat': '交易分類',
         'th_tags': '標籤',
         'th_amount': '金額',
         'th_actions': '操作',
@@ -120,7 +120,7 @@ export const translations = {
         'modal_edit_tx': '編輯交易紀錄',
         'modal_tx_type': '收支類型',
         'modal_tx_amount': '金額',
-        'modal_tx_cat': '分類',
+        'modal_tx_cat': '交易分類',
         'modal_tx_date': '日期',
         'modal_tx_tags': '標籤 (使用半形逗號分隔)',
         'modal_tx_desc': '詳細說明',
