@@ -397,6 +397,41 @@ export function showToast(message, type = 'info') {
     }, 3000);
 }
 
+export async function showConfirm(titleText, text = '') {
+    if (!window.Swal) {
+        return confirm(titleText + (text ? '\n' + text : ''));
+    }
+    const result = await Swal.fire({
+        title: titleText,
+        text: text,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#6366f1',
+        cancelButtonColor: '#374151',
+        confirmButtonText: '確定',
+        cancelButtonText: '取消',
+        background: '#1e1e2e',
+        color: '#f3f4f6'
+    });
+    return result.isConfirmed;
+}
+
+export async function showAlert(titleText, text = '', icon = 'info') {
+    if (!window.Swal) {
+        alert(titleText + (text ? '\n' + text : ''));
+        return;
+    }
+    await Swal.fire({
+        title: titleText,
+        text: text,
+        icon: icon,
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: '確定',
+        background: '#1e1e2e',
+        color: '#f3f4f6'
+    });
+}
+
 function escapeHTML(str) {
     if (!str) return '';
     return str.replace(/[&<>'"]/g, 
