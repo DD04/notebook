@@ -127,6 +127,11 @@ export function showTxModal(existingTx = null) {
     }
     
     txModal.classList.add('active');
+    // Focus amount input after modal opens (rAF waits for CSS transition to begin)
+    requestAnimationFrame(() => {
+        txAmount.focus();
+        txAmount.select();
+    });
 }
 
 export function hideTxModal() {

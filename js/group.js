@@ -535,6 +535,11 @@ function showGroupTxModal(existingTx = null) {
     }
     
     showModal(groupTxModal);
+    // Focus amount input after modal opens
+    requestAnimationFrame(() => {
+        gtxAmount.focus();
+        gtxAmount.select();
+    });
 }
 
 async function handleGroupTxSubmit(e) {
