@@ -61,7 +61,7 @@ BEGIN
     );
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;
 
 -- Recreate trigger
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
@@ -81,7 +81,7 @@ BEGIN
     
     RETURN v_question;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Reset password via security question verification RPC
 CREATE OR REPLACE FUNCTION public.reset_password_by_question(
@@ -114,7 +114,7 @@ BEGIN
     
     RETURN TRUE;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;
 
 
 -- 2. Personal Transactions Table
