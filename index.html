@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notebook - Smart Bookkeeping</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon"><i data-lucide="book-open"></i></span>
+                    <span class="logo-text">Notebook</span>
+                </div>
+                <button class="sidebar-toggle-close" id="sidebarCloseBtn"><i data-lucide="x"></i></button>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#groups" class="nav-item" data-view="groups">
+                    <i data-lucide="users"></i>
+                    <span>Group Ledger</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-view="analytics">
+                    <i data-lucide="pie-chart"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#budgeting" class="nav-item" data-view="budgeting">
+                    <i data-lucide="wallet"></i>
+                    <span>Budgeting</span>
+                </a>
+                <a href="#settings" class="nav-item" data-view="settings">
+                    <i data-lucide="settings"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <!-- User Profile / Session Status -->
+                <div class="user-profile-section" id="userProfileSection">
+                    <div class="user-avatar" id="userAvatar">
+                        <i data-lucide="user"></i>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="profileNickname">Offline User</span>
+                        <span class="user-status" id="profileStatus">Local Mode</span>
+                    </div>
+                    <button class="auth-btn" id="sidebarAuthBtn" title="Log In / Sign Up">
+                        <i data-lucide="log-in"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle-open" id="sidebarOpenBtn"><i data-lucide="menu"></i></button>
+                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <!-- Status Indicators -->
+                    <div class="mode-badge" id="modeBadge">
+                        <span class="badge-dot"></span>
+                        <span class="badge-text" id="modeBadgeText">Local Storage</span>
+                    </div>
+                    <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Theme">
+                        <i data-lucide="moon" class="theme-icon-dark"></i>
+                        <i data-lucide="sun" class="theme-icon-light"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Views container -->
+            <div class="view-panel" id="viewPanel">
+                
+                <!-- VIEW 1: Dashboard View -->
+                <section id="view-dashboard" class="view-section active">
+                    <!-- Summary Cards -->
+                    <div class="dashboard-grid">
+                        <div class="summary-card balance-card">
+                            <div class="card-glass-glow"></div>
+                            <div class="card-header">
+                                <span class="card-label">Net Balance</span>
+                                <div class="card-icon"><i data-lucide="banknote"></i></div>
+                            </div>
+                            <div class="card-amount" id="dbNetBalance">$0.00</div>
+                            <div class="card-footer text-muted">Total financial summary</div>
+                        </div>
+
+                        <div class="summary-card income-card">
+                            <div class="card-glass-glow"></div>
+                            <div class="card-header">
+                                <span class="card-label">Total Income</span>
+                                <div class="card-icon"><i data-lucide="trending-up"></i></div>
+                            </div>
+                            <div class="card-amount text-success" id="dbTotalIncome">$0.00</div>
+                            <div class="card-footer text-success" id="dbIncomeCount">0 entries</div>
+                        </div>
+
+                        <div class="summary-card expense-card">
+                            <div class="card-glass-glow"></div>
+                            <div class="card-header">
+                                <span class="card-label">Total Expenses</span>
+                                <div class="card-icon"><i data-lucide="trending-down"></i></div>
+                            </div>
+                            <div class="card-amount text-error" id="dbTotalExpenses">$0.00</div>
+                            <div class="card-footer text-error" id="dbExpenseCount">0 entries</div>
+                        </div>
+                    </div>
+
+                    <!-- Ledger section -->
+                    <div class="ledger-container">
+                        <div class="section-header">
+                            <h2>Transaction Ledger</h2>
+                            <button class="btn btn-primary" id="addTxBtn">
+                                <i data-lucide="plus"></i> <span>Add Transaction</span>
+                            </button>
+                        </div>
+
+                        <!-- Filters panel -->
+                        <div class="filters-panel">
+                            <div class="search-box">
+                                <i data-lucide="search"></i>
+                                <input type="text" id="filterSearch" placeholder="Search description...">
+                            </div>
+                            <div class="filter-inputs">
+                                <select id="filterType">
+                                    <option value="all">All Types</option>
+                                    <option value="income">Income</option>
+                                    <option value="expense">Expense</option>
+                                </select>
+                                <select id="filterCategory">
+                                    <option value="all">All Categories</option>
+                                    <!-- Dynamic categories -->
+                                </select>
+                                <select id="filterMonth">
+                                    <option value="all">All Months</option>
+                                    <!-- Dynamic months -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Transactions Table / List -->
+                        <div class="ledger-table-wrapper">
+                            <table class="ledger-table" id="ledgerTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Category</th>
+                                        <th>Tags</th>
+                                        <th class="text-right">Amount</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ledgerTableBody">
+                                    <!-- Dynamic Content -->
+                                    <tr class="empty-state-row">
+                                        <td colspan="6">
+                                            <div class="empty-state">
+                                                <i data-lucide="file-text"></i>
+                                                <p>No transactions found. Add one to get started!</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination-container" id="ledgerPagination">
+                            <button class="btn btn-secondary btn-sm" id="prevPageBtn" disabled><i data-lucide="chevron-left"></i></button>
+                            <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+                            <button class="btn btn-secondary btn-sm" id="nextPageBtn" disabled><i data-lucide="chevron-right"></i></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 2: Groups View -->
+                <section id="view-groups" class="view-section">
+                    <div class="group-split-layout">
+                        <!-- Left Panel: Group Selector & Members -->
+                        <div class="group-side-panel">
+                            <div class="panel-section card-box">
+                                <div class="section-header">
+                                    <h3>My Groups</h3>
+                                    <button class="btn btn-secondary btn-xs" id="createGroupBtn"><i data-lucide="plus"></i></button>
+                                </div>
+                                <div class="groups-list" id="groupsList">
+                                    <!-- Dynamically filled -->
+                                </div>
+                            </div>
+
+                            <div class="panel-section card-box d-none" id="groupMembersSection">
+                                <div class="section-header">
+                                    <h3>Group Members</h3>
+                                    <button class="btn btn-secondary btn-xs" id="addMemberBtn"><i data-lucide="user-plus"></i></button>
+                                </div>
+                                <div class="members-list" id="groupMembersList">
+                                    <!-- Dynamically filled -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Active Group Details -->
+                        <div class="group-main-panel">
+                            <div id="noGroupSelected" class="empty-state-card card-box">
+                                <i data-lucide="users"></i>
+                                <h3>No Group Selected</h3>
+                                <p>Select an existing group from the list or create a new one to start tracking splits.</p>
+                            </div>
+
+                            <div id="groupActiveDetails" class="group-details-container d-none">
+                                <div class="group-details-header">
+                                    <div>
+                                        <h2 id="activeGroupName">Group Name</h2>
+                                        <span class="text-muted" id="activeGroupMeta">Created on Date</span>
+                                    </div>
+                                    <div class="header-actions">
+                                        <button class="btn btn-secondary" id="settleUpBtn"><i data-lucide="check-circle-2"></i> <span>Settle Up</span></button>
+                                        <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span>Add Group Bill</span></button>
+                                    </div>
+                                </div>
+
+                                <!-- Settlement Summary Box -->
+                                <div class="settlement-summary-box card-box bg-glass">
+                                    <h4>Settlement Analysis</h4>
+                                    <div class="debts-summary-list" id="debtsSummaryList">
+                                        <!-- Dynamically generated list of who owes who -->
+                                        <div class="all-settled-message"><i data-lucide="sparkles" class="text-success"></i> Everyone is settled up!</div>
+                                    </div>
+                                </div>
+
+                                <!-- Group Transactions List -->
+                                <div class="group-transactions-list card-box">
+                                    <h3>Group Ledger</h3>
+                                    <div class="ledger-table-wrapper">
+                                        <table class="ledger-table" id="groupTxTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Paid By</th>
+                                                    <th>Description</th>
+                                                    <th>Category</th>
+                                                    <th>Split Summary</th>
+                                                    <th class="text-right">Amount</th>
+                                                    <th class="text-center">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="groupTxTableBody">
+                                                <!-- Dynamic entries -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 3: Analytics View -->
+                <section id="view-analytics" class="view-section">
+                    <div class="analytics-layout">
+                        <!-- Chart Card 1: Donut breakdown -->
+                        <div class="analytics-card card-box">
+                            <h3>Category Distribution</h3>
+                            <div class="chart-container donut-chart-container">
+                                <svg class="svg-chart" id="categoryDonutChart" viewBox="0 0 200 200">
+                                    <!-- Drawn dynamically via SVG -->
+                                </svg>
+                                <div class="chart-tooltip" id="donutTooltip"></div>
+                            </div>
+                            <div class="chart-legend" id="categoryLegend"></div>
+                        </div>
+
+                        <!-- Chart Card 2: Income vs Expense Timeline -->
+                        <div class="analytics-card card-box">
+                            <h3>Monthly Cash Flow</h3>
+                            <div class="chart-container line-chart-container">
+                                <svg class="svg-chart" id="trendBarChart" viewBox="0 0 400 220">
+                                    <!-- Drawn dynamically via SVG -->
+                                </svg>
+                                <div class="chart-tooltip" id="trendTooltip"></div>
+                            </div>
+                            <div class="chart-legend">
+                                <span class="legend-item"><span class="legend-color bg-success"></span>Income</span>
+                                <span class="legend-item"><span class="legend-color bg-error"></span>Expense</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tags breakdown table -->
+                    <div class="analytics-tags-section card-box">
+                        <h3>Spending by Tags</h3>
+                        <div class="tags-badge-container" id="analyticsTagsList">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 4: Budgeting View -->
+                <section id="view-budgeting" class="view-section">
+                    <div class="budget-setup-panel card-box">
+                        <div class="section-header">
+                            <h2>Budget Settings</h2>
+                            <div class="budget-month-selector">
+                                <label for="budgetMonthPicker">Month:</label>
+                                <input type="month" id="budgetMonthPicker">
+                            </div>
+                        </div>
+                        <p class="text-muted">Set monthly spending limits for each category. We will track your spending progress in real-time.</p>
+
+                        <div class="budget-sliders-grid" id="budgetSlidersGrid">
+                            <!-- Dynamic category progress bar adjusters -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW 5: Settings View -->
+                <section id="view-settings" class="view-section">
+                    <div class="settings-grid">
+                        <!-- Box 1: Storage Mode -->
+                        <div class="settings-card card-box">
+                            <div class="settings-card-header">
+                                <i data-lucide="database"></i>
+                                <h3>Data Sync Mode</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div class="radio-group">
+                                    <label class="radio-label">
+                                        <input type="radio" name="storageMode" value="local" checked>
+                                        <span class="radio-custom"></span>
+                                        <span class="radio-text">
+                                            <strong>Local Storage Mode (Offline)</strong>
+                                            <small>Keep all data in browser. No account needed.</small>
+                                        </span>
+                                    </label>
+                                    <label class="radio-label">
+                                        <input type="radio" name="storageMode" value="supabase">
+                                        <span class="radio-custom"></span>
+                                        <span class="radio-text">
+                                            <strong>Supabase Cloud Sync (Online)</strong>
+                                            <small>Sync data across devices in real-time. Shared database.</small>
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div class="supabase-config-form d-none" id="supabaseConfigForm">
+                                    <div class="form-group">
+                                        <label for="sbUrl">Supabase API URL</label>
+                                        <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="sbKey">Supabase Anon Key</label>
+                                        <input type="password" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                                    </div>
+                                    <button class="btn btn-secondary btn-sm" id="saveSupabaseConfigBtn">Connect Supabase</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Box 2: Data Backups -->
+                        <div class="settings-card card-box">
+                            <div class="settings-card-header">
+                                <i data-lucide="download"></i>
+                                <h3>Backup & Operations</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <p class="text-muted">Export your local storage transactions and configuration to a JSON file, or restore from a previous backup.</p>
+                                <div class="backup-actions">
+                                    <button class="btn btn-secondary" id="exportBackupBtn"><i data-lucide="download-cloud"></i> Export JSON</button>
+                                    <button class="btn btn-secondary" id="importBackupBtn"><i data-lucide="upload-cloud"></i> Import JSON</button>
+                                    <input type="file" id="importFileSelector" accept=".json" class="d-none">
+                                </div>
+                                <div class="danger-zone">
+                                    <h4>Danger Zone</h4>
+                                    <button class="btn btn-outline-error btn-sm" id="clearLocalDataBtn"><i data-lucide="trash-2"></i> Clear Local Storage</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL 1: Add/Edit Personal Transaction -->
+    <div class="modal-overlay" id="txModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="txModalTitle">Add Transaction</h3>
+                <button class="modal-close-btn" id="txModalClose"><i data-lucide="x"></i></button>
+            </div>
+            <form id="txForm" class="modal-form">
+                <input type="hidden" id="txId">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="txType">Transaction Type</label>
+                        <select id="txType" required>
+                            <option value="expense">Expense</option>
+                            <option value="income">Income</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="txAmount">Amount</label>
+                        <input type="number" step="0.01" min="0.01" id="txAmount" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="txCategory">Category</label>
+                        <select id="txCategory" required>
+                            <option value="Food">Food</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Housing">Housing</option>
+                            <option value="Salary">Salary (Income)</option>
+                            <option value="Investments">Investments (Income)</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="txDate">Date</label>
+                        <input type="date" id="txDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="txTags">Tags (Comma-separated)</label>
+                    <input type="text" id="txTags" placeholder="e.g. dinner, friends, weekend">
+                </div>
+
+                <div class="form-group">
+                    <label for="txDescription">Description</label>
+                    <textarea id="txDescription" rows="2" placeholder="Describe the transaction..."></textarea>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="txModalCancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Create Group -->
+    <div class="modal-overlay" id="groupModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3>Create New Group</h3>
+                <button class="modal-close-btn" id="groupModalClose"><i data-lucide="x"></i></button>
+            </div>
+            <form id="groupForm" class="modal-form">
+                <div class="form-group">
+                    <label for="groupName">Group Name</label>
+                    <input type="text" id="groupName" placeholder="e.g. Trip to Tokyo" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="groupModalCancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Add Group Member -->
+    <div class="modal-overlay" id="memberModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3>Add Group Member</h3>
+                <button class="modal-close-btn" id="memberModalClose"><i data-lucide="x"></i></button>
+            </div>
+            <form id="memberForm" class="modal-form">
+                <div class="form-group">
+                    <label for="memberNickname">Nickname / Name</label>
+                    <input type="text" id="memberNickname" placeholder="e.g. Alice" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="memberModalCancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Add Group Transaction -->
+    <div class="modal-overlay" id="groupTxModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Add Group Expense</h3>
+                <button class="modal-close-btn" id="groupTxModalClose"><i data-lucide="x"></i></button>
+            </div>
+            <form id="groupTxForm" class="modal-form">
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="gtxAmount">Amount</label>
+                        <input type="number" step="0.01" min="0.01" id="gtxAmount" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gtxPayer">Paid By</label>
+                        <select id="gtxPayer" required>
+                            <!-- Dynamic list of members -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label for="gtxCategory">Category</label>
+                        <select id="gtxCategory" required>
+                            <option value="Food">Food</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Entertainment">Entertainment</option>
+                            <option value="Shopping">Shopping</option>
+                            <option value="Housing">Housing</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="gtxDate">Date</label>
+                        <input type="date" id="gtxDate" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="gtxDescription">Description</label>
+                    <input type="text" id="gtxDescription" placeholder="e.g. Dinner at Shibuya" required>
+                </div>
+
+                <!-- Split Details Checkboxes -->
+                <div class="form-group">
+                    <label>Split Between Members (Equally)</label>
+                    <div class="split-checkboxes-grid" id="gtxSplitMembers">
+                        <!-- Dynamic Checkboxes -->
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="groupTxModalCancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Bill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Authenticate (Login / Sign Up) -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3 id="authModalTitle">Sign In</h3>
+                <button class="modal-close-btn" id="authModalClose"><i data-lucide="x"></i></button>
+            </div>
+            
+            <!-- Auth Form -->
+            <form id="authForm" class="modal-form">
+                <div class="form-group" id="authNicknameGroup">
+                    <label for="authNickname">Nickname</label>
+                    <input type="text" id="authNickname" placeholder="Display Name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="authEmail">Email Address</label>
+                    <input type="email" id="authEmail" placeholder="you@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="authPassword">Password</label>
+                    <input type="password" id="authPassword" placeholder="••••••••" required>
+                </div>
+
+                <div class="auth-message-box error text-error d-none" id="authErrorMessage">
+                    Incorrect email or password.
+                </div>
+
+                <div class="modal-footer flex-column">
+                    <button type="submit" class="btn btn-primary w-100" id="authSubmitBtn">Sign In</button>
+                    <p class="auth-toggle-text text-muted text-center mt-3">
+                        <span id="authToggleQuestion">Don't have an account?</span>
+                        <a href="#" id="authToggleBtn">Sign Up</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Global Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Core App Logic -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
