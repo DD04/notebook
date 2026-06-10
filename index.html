@@ -620,9 +620,20 @@
                     <input type="text" id="gwNickname" placeholder="Display Name">
                 </div>
 
-                <div class="form-group d-none" id="gwEmailGroup">
-                    <label for="gwEmail" data-i18n="gw_label_email">Recovery Email (真實備用信箱)</label>
-                    <input type="email" id="gwEmail" placeholder="e.g. user@example.com">
+                <div class="form-group d-none" id="gwRecoveryQuestionGroup">
+                    <label for="gwRecoveryQuestion">密保問題 (Security Question)</label>
+                    <select id="gwRecoveryQuestion">
+                        <option value="您最喜歡的食物？">您最喜歡的食物？</option>
+                        <option value="您第一隻寵物的名字？">您第一隻寵物的名字？</option>
+                        <option value="您母親的姓名？">您母親的姓名？</option>
+                        <option value="您小學班導師的名字？">您小學班導師的名字？</option>
+                        <option value="您最想去的旅遊城市？">您最想去的旅遊城市？</option>
+                    </select>
+                </div>
+
+                <div class="form-group d-none" id="gwRecoveryAnswerGroup">
+                    <label for="gwRecoveryAnswer">密保答案 (Security Answer)</label>
+                    <input type="text" id="gwRecoveryAnswer" placeholder="請填寫密保答案">
                 </div>
                 
                 <div class="form-group">
@@ -648,39 +659,50 @@
                 </div>
             </form>
 
-            <!-- Panel C: Forgot Password -->
+            <!-- Panel C: Forgot Password (密保兩階段重設) -->
             <form id="gatewayForgotForm" class="gateway-panel modal-form d-none">
-                <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;" data-i18n="gw_forgot_desc">
-                    請輸入您的帳號或真實信箱，系統將會發送密碼重設信件至您的信箱。
+                <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;" id="gwForgotDesc">
+                    請輸入您的帳號以查詢密保問題。
                 </p>
-                <div class="form-group">
-                    <label for="gwForgotInput" data-i18n="gw_forgot_label">Username or Email (帳號或真實信箱)</label>
-                    <input type="text" id="gwForgotInput" placeholder="e.g. user123 or user@example.com" required>
+                
+                <!-- Stage 1: Username Input -->
+                <div class="form-group" id="gwForgotStep1Group">
+                    <label for="gwForgotUsername">Username (帳號)</label>
+                    <input type="text" id="gwForgotUsername" placeholder="e.g. user123" required>
+                    <button type="button" class="btn btn-primary w-100 mt-2" id="gwForgotNextBtn">下一步：查詢密保問題</button>
                 </div>
+
+                <!-- Stage 2: Question & Reset (Hidden initially) -->
+                <div id="gwForgotStep2Group" class="d-none" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                    <div class="form-group">
+                        <label>您的密保問題</label>
+                        <div id="gwForgotQuestionText" style="padding: 10px 14px; background: rgba(255, 255, 255, 0.06); border-radius: 8px; font-weight: 500; color: var(--text-primary); border: 1px solid var(--border-color);"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gwForgotAnswer">密保答案 (Security Answer)</label>
+                        <input type="text" id="gwForgotAnswer" placeholder="請輸入答案">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gwForgotNewPassword">New Password (新密碼)</label>
+                        <input type="password" id="gwForgotNewPassword" placeholder="••••••••" minlength="6">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gwForgotConfirmPassword">Confirm Password (確認新密碼)</label>
+                        <input type="password" id="gwForgotConfirmPassword" placeholder="••••••••" minlength="6">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="gwForgotSubmitBtn">重設密碼</button>
+                </div>
+
                 <div class="gateway-message text-error d-none" id="gatewayForgotError"></div>
                 <div class="gateway-message text-success d-none" id="gatewayForgotSuccess"></div>
-                <button type="submit" class="btn btn-primary w-100" id="gatewayForgotSubmitBtn" data-i18n="gw_btn_send_reset">傳送重設信件</button>
+
                 <div class="gateway-switch-text text-muted text-center mt-3">
                     <a href="#" id="gwForgotBackToLoginBtn" data-i18n="gw_back_to_login">返回登入</a>
                 </div>
-            </form>
-
-            <!-- Panel D: Reset Password -->
-            <form id="gatewayResetForm" class="gateway-panel modal-form d-none">
-                <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;">
-                    請輸入您的新密碼。
-                </p>
-                <div class="form-group">
-                    <label for="gwNewPassword">New Password (新密碼)</label>
-                    <input type="password" id="gwNewPassword" placeholder="••••••••" minlength="6" required>
-                </div>
-                <div class="form-group">
-                    <label for="gwConfirmNewPassword">Confirm Password (確認密碼)</label>
-                    <input type="password" id="gwConfirmNewPassword" placeholder="••••••••" minlength="6" required>
-                </div>
-                <div class="gateway-message text-error d-none" id="gatewayResetError"></div>
-                <div class="gateway-message text-success d-none" id="gatewayResetSuccess"></div>
-                <button type="submit" class="btn btn-primary w-100" id="gatewayResetSubmitBtn">更新密碼</button>
             </form>
         </div>
     </div>

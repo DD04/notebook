@@ -111,7 +111,7 @@ export function isCloudMode() {
 /* ==========================================================================
    AUTHENTICATION API
    ========================================================================== */
-export async function signUp(email, password, nickname, username) {
+export async function signUp(username, password, nickname, question, answer) {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
     // Check if username is already taken
@@ -120,11 +120,17 @@ export async function signUp(email, password, nickname, username) {
         throw new Error("該帳號名稱已被使用。");
     }
 
+    const email = `${username.trim()}@notebook.local`;
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            data: { nickname, username }
+            data: { 
+                nickname, 
+                username: username.trim(),
+                recovery_question: question.trim(),
+                recovery_answer: answer.trim()
+            }
         }
     });
     if (error) throw error;
@@ -136,11 +142,7 @@ export async function signIn(emailOrUsername, password) {
     
     let email = emailOrUsername.trim();
     if (!email.includes('@')) {
-        const profile = await findUserByUsername(email);
-        if (!profile) {
-            throw new Error("帳號或密碼錯誤。");
-        }
-        email = profile.email;
+        email = `${email}@notebook.local`;
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -163,33 +165,27 @@ export async function findUserByUsername(username) {
     return data;
 }
 
-export async function sendPasswordResetEmail(emailOrUsername) {
+export async function getUserQuestion(username) {
     if (!isCloudMode()) throw new Error("Database connection required.");
-    
-    let email = emailOrUsername.trim();
-    if (!email.includes('@')) {
-        const profile = await findUserByUsername(email);
-        if (!profile) {
-            throw new Error("找不到該帳號。");
-        }
-        email = profile.email;
-    }
-
-    const redirectTo = window.location.origin + window.location.pathname;
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectTo
+    const { data, error } = await supabase.rpc('get_user_question', {
+        p_username: username.trim()
     });
     if (error) throw error;
-    return true;
+    return data;
 }
 
-export async function updatePassword(newPassword) {
+export async function resetPasswordByQuestion(username, answer, newPassword) {
     if (!isCloudMode()) throw new Error("Database connection required.");
-    const { data, error } = await supabase.auth.updateUser({
-        password: newPassword
+    const { data, error } = await supabase.rpc('reset_password_by_question', {
+        p_username: username.trim(),
+        p_answer: answer.trim(),
+        p_new_password: newPassword
     });
     if (error) throw error;
-    return data.user;
+    if (!data) {
+        throw new Error("帳號或密保答案錯誤。");
+    }
+    return true;
 }
 
 export async function signOut() {

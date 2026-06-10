@@ -1,8 +1,9 @@
 -- Supabase Database Schema for Bookkeeping Web App (notebook)
 -- Run this in your Supabase SQL Editor.
 
--- Enable UUID extension if not enabled
+-- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. Profiles Table (linked to Supabase auth.users)
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -11,13 +12,22 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     username TEXT UNIQUE,
     nickname TEXT,
     superuser BOOLEAN DEFAULT FALSE,
+    recovery_question TEXT,
+    recovery_answer_hash TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- For existing databases, ensure username and superuser columns exist
+-- For existing databases, ensure required columns exist
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT;
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_username_key UNIQUE (username);
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'profiles_username_key') THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT profiles_username_key UNIQUE (username);
+    END IF;
+END $$;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS superuser BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS recovery_question TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS recovery_answer_hash TEXT;
 
 -- Enable RLS for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -36,12 +46,18 @@ USING (auth.uid() = id);
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, username, nickname)
+    INSERT INTO public.profiles (id, email, username, nickname, recovery_question, recovery_answer_hash)
     VALUES (
         new.id, 
         new.email, 
         COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
-        COALESCE(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1))
+        COALESCE(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1)),
+        new.raw_user_meta_data->>'recovery_question',
+        CASE 
+            WHEN new.raw_user_meta_data->>'recovery_answer' IS NOT NULL 
+            THEN crypt(new.raw_user_meta_data->>'recovery_answer', gen_salt('bf'))
+            ELSE NULL
+        END
     );
     RETURN NEW;
 END;
@@ -52,6 +68,53 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Security question lookup helper RPC
+CREATE OR REPLACE FUNCTION public.get_user_question(p_username TEXT)
+RETURNS TEXT AS $$
+DECLARE
+    v_question TEXT;
+BEGIN
+    SELECT recovery_question INTO v_question
+    FROM public.profiles
+    WHERE username = p_username;
+    
+    RETURN v_question;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Reset password via security question verification RPC
+CREATE OR REPLACE FUNCTION public.reset_password_by_question(
+    p_username TEXT,
+    p_answer TEXT,
+    p_new_password TEXT
+) RETURNS BOOLEAN AS $$
+DECLARE
+    v_user_id UUID;
+    v_expected_hash TEXT;
+BEGIN
+    -- 1. Find user ID and answer hash
+    SELECT id, recovery_answer_hash INTO v_user_id, v_expected_hash
+    FROM public.profiles
+    WHERE username = p_username;
+    
+    IF v_user_id IS NULL OR v_expected_hash IS NULL THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- 2. Verify answer using crypt
+    IF v_expected_hash <> crypt(p_answer, v_expected_hash) THEN
+        RETURN FALSE;
+    END IF;
+    
+    -- 3. Update auth.users password
+    UPDATE auth.users
+    SET encrypted_password = crypt(p_new_password, gen_salt('bf'))
+    WHERE id = v_user_id;
+    
+    RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- 2. Personal Transactions Table
