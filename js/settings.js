@@ -1,6 +1,7 @@
 // js/settings.js - Settings & Backup Controller Module (Pure Supabase Mode)
 import * as storage from './storage.js';
 import { showToast, refreshAppState, checkGatewayStatus } from './app.js';
+import { getText } from './i18n.js';
 
 // DOM elements
 const dbConnectedStatus = document.getElementById('dbConnectedStatus');
@@ -114,7 +115,7 @@ async function saveSupabaseConfig() {
 }
 
 async function handleDisconnect() {
-    if (!confirm("Are you sure you want to disconnect from this database? This will log you out and return to the connection page.")) {
+    if (!confirm(getText('confirm_disconnect') || '確定要中斷資料庫連線嗎？這將登出帳號並返回連線設定頁面。')) {
         return;
     }
     
@@ -135,8 +136,8 @@ async function handleDisconnect() {
 async function handleExportBackup() {
     if (exportBackupBtn) {
         exportBackupBtn.disabled = true;
-        exportBackupBtn.innerHTML = '<i data-lucide="loader"></i> Exporting...';
-        if (window.lucide) window.lucide.replace();
+        exportBackupBtn.innerHTML = `<i data-lucide="loader"></i> ${getText('settings_btn_export')}...`;
+        if (window.lucide) window.lucide.createIcons();
     }
 
     try {
@@ -159,8 +160,8 @@ async function handleExportBackup() {
     } finally {
         if (exportBackupBtn) {
             exportBackupBtn.disabled = false;
-            exportBackupBtn.innerHTML = '<i data-lucide="download-cloud"></i> Export JSON';
-            if (window.lucide) window.lucide.replace();
+            exportBackupBtn.innerHTML = `<i data-lucide="download-cloud"></i> ${getText('settings_btn_export')}`;
+            if (window.lucide) window.lucide.createIcons();
         }
     }
 }
@@ -171,8 +172,8 @@ function handleImportBackup(e) {
     
     if (importBackupBtn) {
         importBackupBtn.disabled = true;
-        importBackupBtn.innerHTML = '<i data-lucide="loader"></i> Importing...';
-        if (window.lucide) window.lucide.replace();
+        importBackupBtn.innerHTML = `<i data-lucide="loader"></i> ${getText('settings_btn_import')}...`;
+        if (window.lucide) window.lucide.createIcons();
     }
 
     const reader = new FileReader();
@@ -190,8 +191,8 @@ function handleImportBackup(e) {
             importFileSelector.value = '';
             if (importBackupBtn) {
                 importBackupBtn.disabled = false;
-                importBackupBtn.innerHTML = '<i data-lucide="upload-cloud"></i> Import JSON';
-                if (window.lucide) window.lucide.replace();
+                importBackupBtn.innerHTML = `<i data-lucide="upload-cloud"></i> ${getText('settings_btn_import')}`;
+                if (window.lucide) window.lucide.createIcons();
             }
         }
     };

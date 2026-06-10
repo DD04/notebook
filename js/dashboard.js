@@ -1,6 +1,7 @@
 // js/dashboard.js - Personal Dashboard Ledger Module
 import * as storage from './storage.js';
 import { showToast } from './app.js';
+import { getText, getLocale } from './i18n.js';
 
 // DOM elements
 const dbNetBalance = document.getElementById('dbNetBalance');
@@ -83,7 +84,7 @@ export function showTxModal(existingTx = null) {
     txForm.reset();
     
     if (existingTx) {
-        txModalTitle.textContent = 'Edit Transaction';
+        txModalTitle.textContent = getText('modal_edit_tx');
         txId.value = existingTx.id;
         txType.value = existingTx.type;
         txAmount.value = existingTx.amount;
@@ -92,7 +93,7 @@ export function showTxModal(existingTx = null) {
         txTags.value = (existingTx.tags || []).join(', ');
         txDescription.value = existingTx.description || '';
     } else {
-        txModalTitle.textContent = 'Add Transaction';
+        txModalTitle.textContent = getText('modal_add_tx');
         txId.value = '';
         // Pre-fill today's date
         txDate.value = new Date().toISOString().split('T')[0];
@@ -144,8 +145,8 @@ function calculateSummaryCards() {
     dbNetBalance.textContent = formatCurrency(balance);
     dbTotalIncome.textContent = formatCurrency(income);
     dbTotalExpenses.textContent = formatCurrency(expense);
-    dbIncomeCount.textContent = `${incomeCount} entries`;
-    dbExpenseCount.textContent = `${expenseCount} entries`;
+    dbIncomeCount.textContent = `${incomeCount} ${getText('db_income_count')}`;
+    dbExpenseCount.textContent = `${expenseCount} ${getText('db_expense_count')}`;
     
     // Style balance text color
     dbNetBalance.className = 'card-amount';
@@ -172,16 +173,17 @@ function populateFilterSelectors() {
     const prevMonth = filterMonth.value;
     
     // Fill categories dropdown in filters
-    filterCategory.innerHTML = '<option value="all">All Categories</option>';
+    filterCategory.innerHTML = `<option value="all">${getText('db_all_cats')}</option>`;
     Array.from(categories).sort().forEach(cat => {
-        filterCategory.innerHTML += `<option value="${cat}">${cat}</option>`;
+        filterCategory.innerHTML += `<option value="${cat}">${getText('cat_' + cat) || cat}</option>`;
     });
     
     // Fill months dropdown
-    filterMonth.innerHTML = '<option value="all">All Months</option>';
+    const locale = getLocale() === 'zh' ? 'zh-TW' : 'en-US';
+    filterMonth.innerHTML = `<option value="all">${getText('db_all_months')}</option>`;
     Array.from(months).sort().reverse().forEach(mon => {
         const dateObj = new Date(mon + '-02'); // Add buffer day to avoid TZ offset issues
-        const formatted = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        const formatted = dateObj.toLocaleDateString(locale, { year: 'numeric', month: 'long' });
         filterMonth.innerHTML += `<option value="${mon}">${formatted}</option>`;
     });
     
@@ -224,15 +226,15 @@ function renderTable() {
                 <td colspan="6">
                     <div class="empty-state">
                         <i data-lucide="file-text"></i>
-                        <p>No transactions found. Add one to get started!</p>
+                        <p>${getText('db_empty_state')}</p>
                     </div>
                 </td>
             </tr>
         `;
-        lucide.replace();
+        if (window.lucide) window.lucide.createIcons();
         prevPageBtn.disabled = true;
         nextPageBtn.disabled = true;
-        paginationInfo.textContent = 'Page 1 of 1';
+        paginationInfo.textContent = getText('db_page_info').replace('{current}', '1').replace('{total}', '1');
         return;
     }
     
@@ -280,12 +282,12 @@ function renderTable() {
     });
     
     // Replace Lucide Icons
-    lucide.replace();
+    if (window.lucide) window.lucide.createIcons();
     
     // Update pagination controls
     prevPageBtn.disabled = currentPage === 1;
     nextPageBtn.disabled = currentPage === totalPages;
-    paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    paginationInfo.textContent = getText('db_page_info').replace('{current}', currentPage).replace('{total}', totalPages);
 }
 
 async function handleTxSubmit(e) {
@@ -309,10 +311,10 @@ async function handleTxSubmit(e) {
     try {
         if (id) {
             await storage.updateTransaction(id, txData);
-            showToast("Transaction updated successfully!", "success");
+            showToast(getText('toast_tx_updated') || '交易紀錄已更新！', 'success');
         } else {
             await storage.addTransaction(txData);
-            showToast("Transaction added successfully!", "success");
+            showToast(getText('toast_tx_added') || '交易紀錄已新增！', 'success');
         }
         
         hideTxModal();
@@ -327,11 +329,11 @@ async function handleTxSubmit(e) {
 }
 
 async function handleTxDelete(id) {
-    if (!confirm("Are you sure you want to delete this transaction?")) return;
+    if (!confirm(getText('confirm_delete_tx') || '確定要刪除這筆交易紀錄嗎？')) return;
     
     try {
         await storage.deleteTransaction(id);
-        showToast("Transaction deleted successfully!", "success");
+        showToast(getText('toast_tx_deleted') || '交易紀錄已刪除！', 'success');
         await refreshDashboard();
         if (changeCallback) changeCallback();
     } catch (err) {

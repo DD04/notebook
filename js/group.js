@@ -2,6 +2,7 @@
 import * as storage from './storage.js';
 import { formatCurrency, escapeHTML } from './dashboard.js';
 import { showToast } from './app.js';
+import { getText, getLocale } from './i18n.js';
 
 // DOM elements
 const groupsList = document.getElementById('groupsList');
@@ -123,7 +124,7 @@ function renderGroupsList() {
     groupsList.innerHTML = '';
     
     if (groups.length === 0) {
-        groupsList.innerHTML = '<p class="text-muted" style="font-size: 13px; text-align: center; padding: 12px 0;">No groups yet.</p>';
+        groupsList.innerHTML = `<p class="text-muted" style="font-size: 13px; text-align: center; padding: 12px 0;">${getText('group_empty_list')}</p>`;
         return;
     }
     
@@ -143,7 +144,7 @@ function renderGroupsList() {
         groupsList.appendChild(item);
     });
     
-    lucide.replace();
+    if (window.lucide) window.lucide.createIcons();
 }
 
 async function selectGroup(group) {
@@ -155,8 +156,10 @@ async function selectGroup(group) {
     groupMembersSection.classList.remove('d-none');
     
     activeGroupName.textContent = group.name;
-    const dateStr = new Date(group.created_at).toLocaleDateString();
-    activeGroupMeta.textContent = `Created on ${dateStr}`;
+    const locale = getLocale() === 'zh' ? 'zh-TW' : 'en-US';
+    const dateStr = new Date(group.created_at).toLocaleDateString(locale);
+    const createdLabel = getText('group_created_on') || '建立於 ';
+    activeGroupMeta.textContent = `${createdLabel}${dateStr}`;
     
     // Fetch members and transactions
     activeMembers = await storage.getGroupMembers(group.id);
@@ -179,7 +182,7 @@ function renderMembersList() {
         groupMembersList.appendChild(item);
     });
     
-    lucide.replace();
+    if (window.lucide) window.lucide.createIcons();
 }
 
 /* ==========================================================================
@@ -265,10 +268,10 @@ function renderSettlementPanel() {
         debtsSummaryList.innerHTML = `
             <div class="all-settled-message">
                 <i data-lucide="sparkles" class="text-success"></i> 
-                <span>All caught up! Everyone is settled.</span>
+                <span>${getText('group_all_settled')}</span>
             </div>
         `;
-        lucide.replace();
+        if (window.lucide) window.lucide.createIcons();
         return;
     }
     
@@ -278,14 +281,14 @@ function renderSettlementPanel() {
         line.innerHTML = `
             <i data-lucide="arrow-right-circle"></i>
             <span class="debt-giver">${escapeHTML(d.debtor)}</span>
-            <span class="debt-arrow">owes</span>
+            <span class="debt-arrow">${getText('group_owes')}</span>
             <span class="debt-receiver">${escapeHTML(d.creditor)}</span>
             <span class="debt-val">${formatCurrency(d.amount)}</span>
         `;
         debtsSummaryList.appendChild(line);
     });
     
-    lucide.replace();
+    if (window.lucide) window.lucide.createIcons();
 }
 
 function renderGroupTransactions() {
@@ -297,12 +300,12 @@ function renderGroupTransactions() {
                 <td colspan="7">
                     <div class="empty-state" style="padding: 24px 0;">
                         <i data-lucide="receipt"></i>
-                        <p>No bills added to this group yet.</p>
+                        <p>${getText('group_empty_ledger')}</p>
                     </div>
                 </td>
             </tr>
         `;
-        lucide.replace();
+        if (window.lucide) window.lucide.createIcons();
         return;
     }
     
@@ -310,11 +313,14 @@ function renderGroupTransactions() {
         const row = document.createElement('tr');
         row.style.animation = 'fadeIn 0.25s ease-out';
         
-        // Split details label (e.g. "Split between 3 members" or details)
+        // Split details label
         const splitsCount = (t.splits || []).length;
+        const transferredLabel = getText('group_transferred_to') || '轉帳給';
+        const splitWithLabel = getText('group_split_with') || '與';
+        const memberLabel = getText('group_split_member') || '位成員均分';
         const splitText = t.category === 'Settle' 
-            ? `Transferred to ${escapeHTML(t.splits[0]?.nickname)}` 
-            : `Split with ${splitsCount} member${splitsCount > 1 ? 's' : ''}`;
+            ? `${transferredLabel} ${escapeHTML(t.splits[0]?.nickname)}` 
+            : `${splitWithLabel} ${splitsCount} ${memberLabel}`;
             
         const rowClass = t.category === 'Settle' ? 'style="opacity: 0.85; background: rgba(16, 185, 129, 0.02);"' : '';
         const catBadgeStyle = t.category === 'Settle' 
@@ -343,7 +349,7 @@ function renderGroupTransactions() {
         groupTxTableBody.appendChild(row);
     });
     
-    lucide.replace();
+    if (window.lucide) window.lucide.createIcons();
 }
 
 /* ==========================================================================
@@ -356,7 +362,7 @@ async function handleCreateGroup(e) {
     
     try {
         const newGroup = await storage.createGroup(name);
-        showToast(`Group "${name}" created successfully!`, "success");
+        showToast(`${getText('toast_group_created') || '分帳群組建立成功！'} "${name}"`, 'success');
         hideModal(groupModal);
         
         await refreshGroups();
@@ -373,7 +379,7 @@ async function handleAddMember(e) {
     
     try {
         await storage.addGroupMember(activeGroup.id, nickname);
-        showToast(`Added ${nickname} to group!`, "success");
+        showToast(`${getText('toast_member_added') || '已新增成員'} ${nickname}`, 'success');
         hideModal(memberModal);
         
         // Refresh active details
@@ -389,7 +395,7 @@ async function handleAddMember(e) {
 // Display Bill Modal
 function showGroupTxModal() {
     if (activeMembers.length < 2) {
-        showToast("Please add at least 2 members to the group before splitting bills.", "warning");
+        showToast(getText('warn_min_2_members') || '請至少新增 2 位成員再分撤費用。', 'warning');
         return;
     }
     
@@ -428,7 +434,7 @@ async function handleGroupTxSubmit(e) {
     // Collect split members checked
     const checkedCheckboxes = Array.from(document.querySelectorAll('input[name="splitMember"]:checked'));
     if (checkedCheckboxes.length === 0) {
-        showToast("Please check at least one member to split the bill.", "warning");
+        showToast(getText('warn_check_one_member') || '請勾選至少一位分撤成員。', 'warning');
         return;
     }
     
@@ -450,7 +456,7 @@ async function handleGroupTxSubmit(e) {
     
     try {
         await storage.addGroupTransaction(activeGroup.id, txData);
-        showToast("Bill recorded successfully!", "success");
+        showToast(getText('toast_bill_added') || '費用已記錄成功！', 'success');
         hideModal(groupTxModal);
         
         // Reload details
@@ -462,11 +468,11 @@ async function handleGroupTxSubmit(e) {
 }
 
 async function handleGroupTxDelete(txId) {
-    if (!confirm("Remove this group bill?")) return;
+    if (!confirm(getText('confirm_delete_bill') || '確定要刪除這筆群組費用嗎？')) return;
     
     try {
         await storage.deleteGroupTransaction(activeGroup.id, txId);
-        showToast("Bill deleted successfully", "success");
+        showToast(getText('toast_bill_deleted') || '費用已刪除成功。', 'success');
         
         // Reload details
         const updated = (await storage.getGroups()).find(g => g.id === activeGroup.id);
@@ -481,7 +487,7 @@ async function handleGroupTxDelete(txId) {
    ========================================================================== */
 function handleSettleUpPrompt() {
     if (calculatedDebts.length === 0) {
-        showToast("Everyone is already settled up!", "success");
+        showToast(getText('group_all_settled'), 'success');
         return;
     }
     
@@ -489,7 +495,7 @@ function handleSettleUpPrompt() {
     let optionsHtml = '';
     calculatedDebts.forEach((d, idx) => {
         optionsHtml += `
-            <option value="${idx}">${d.debtor} pays ${d.creditor} -> ${formatCurrency(d.amount)}</option>
+            <option value="${idx}">${d.debtor} ${getText('group_owes')} ${d.creditor} -> ${formatCurrency(d.amount)}</option>
         `;
     });
     
@@ -499,26 +505,26 @@ function handleSettleUpPrompt() {
     settleContainer.innerHTML = `
         <div class="modal-container modal-sm">
             <div class="modal-header">
-                <h3>Record Settlement</h3>
+                <h3>${getText('settle_record_title') || '記錄債務結清'}</h3>
                 <button class="modal-close-btn" id="settleCancelBtn1"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-form">
                 <div class="form-group">
-                    <label for="settleSelect">Select Debt to Clear</label>
+                    <label for="settleSelect">${getText('settle_select_label') || '選擇要結清的債務'}</label>
                     <select id="settleSelect" style="width:100%;">
                         ${optionsHtml}
                     </select>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" id="settleCancelBtn2">Cancel</button>
-                    <button class="btn btn-primary" id="settleSubmitBtn">Record Payment</button>
+                    <button class="btn btn-secondary" id="settleCancelBtn2">${getText('modal_cancel')}</button>
+                    <button class="btn btn-primary" id="settleSubmitBtn">${getText('settle_record_btn') || '確認結清'}</button>
                 </div>
             </div>
         </div>
     `;
     
     document.body.appendChild(settleContainer);
-    lucide.replace();
+    if (window.lucide) window.lucide.createIcons();
     
     const closeOverlay = () => {
         settleContainer.remove();
@@ -547,7 +553,7 @@ function handleSettleUpPrompt() {
         
         try {
             await storage.addGroupTransaction(activeGroup.id, txData);
-            showToast(`Settlement payment of ${formatCurrency(debt.amount)} recorded!`, "success");
+            showToast(`${getText('toast_settled') || '結清成功！'} ${formatCurrency(debt.amount)}`, 'success');
             closeOverlay();
             
             // Reload group details

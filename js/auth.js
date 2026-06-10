@@ -1,5 +1,6 @@
 // js/auth.js - Gateway Authentication UI Controller
 import * as storage from './storage.js';
+import { getText } from './i18n.js';
 
 let authSuccessCallback = null;
 
@@ -60,24 +61,24 @@ function updateAuthPanelUI() {
     if (!gatewayTitle) return;
     
     if (isSignUpMode) {
-        gatewayTitle.textContent = 'Create Account';
-        gatewaySubtitle.textContent = 'Sign up for a cloud account to sync your ledger.';
+        gatewayTitle.textContent = getText('gw_auth_signup');
+        gatewaySubtitle.textContent = getText('gw_auth_signup_desc');
         if (gwNicknameGroup) gwNicknameGroup.classList.remove('d-none');
         if (gwNickname) gwNickname.required = true;
-        if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = 'Sign Up';
-        if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = 'Already have an account?';
-        if (gwAuthToggleBtn) gwAuthToggleBtn.textContent = 'Sign In';
+        if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = getText('gw_btn_signup');
+        if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = getText('gw_switch_to_signin').split('？')[0] + '？';
+        if (gwAuthToggleBtn) gwAuthToggleBtn.textContent = getText('gw_btn_signin');
     } else {
-        gatewayTitle.textContent = 'Sign In';
-        gatewaySubtitle.textContent = 'Please sign in to sync your ledger.';
+        gatewayTitle.textContent = getText('gw_auth_signin');
+        gatewaySubtitle.textContent = getText('gw_auth_signin_desc');
         if (gwNicknameGroup) gwNicknameGroup.classList.add('d-none');
         if (gwNickname) {
             gwNickname.required = false;
             gwNickname.value = '';
         }
-        if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = 'Sign In';
-        if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = "Don't have an account?";
-        if (gwAuthToggleBtn) gwAuthToggleBtn.textContent = 'Sign Up';
+        if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = getText('gw_btn_signin');
+        if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = getText('gw_switch_to_signup').split('？')[0] + '？';
+        if (gwAuthToggleBtn) gwAuthToggleBtn.textContent = getText('gw_btn_signup');
     }
     if (gatewayAuthError) gatewayAuthError.classList.add('d-none');
 }
@@ -96,7 +97,7 @@ async function handleAuthSubmit(e) {
     
     if (gatewayAuthSubmitBtn) {
         gatewayAuthSubmitBtn.disabled = true;
-        gatewayAuthSubmitBtn.textContent = isSignUpMode ? 'Signing Up...' : 'Signing In...';
+        gatewayAuthSubmitBtn.textContent = isSignUpMode ? getText('gw_btn_signup') + '...' : getText('gw_btn_signin') + '...';
     }
     
     try {
@@ -120,7 +121,7 @@ async function handleAuthSubmit(e) {
     } finally {
         if (gatewayAuthSubmitBtn) {
             gatewayAuthSubmitBtn.disabled = false;
-            gatewayAuthSubmitBtn.textContent = isSignUpMode ? 'Sign Up' : 'Sign In';
+            gatewayAuthSubmitBtn.textContent = isSignUpMode ? getText('gw_btn_signup') : getText('gw_btn_signin');
         }
     }
 }

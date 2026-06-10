@@ -134,7 +134,57 @@ export const translations = {
         'modal_gtx_date': '消費日期',
         'modal_gtx_desc': '費用說明',
         'modal_gtx_split': '分攤對象成員 (均分機制)',
-        'modal_gtx_save': '記錄費用'
+        'modal_gtx_save': '記錄費用',
+        
+        // Categories
+        'cat_Food': '餐飲',
+        'cat_Transport': '交通',
+        'cat_Entertainment': '娛樂',
+        'cat_Shopping': '購物',
+        'cat_Housing': '住房',
+        'cat_Salary': '薪資收入',
+        'cat_Investments': '投資收入',
+        'cat_Other': '其他',
+        
+        // Toast messages
+        'toast_tx_added': '交易紀錄已新增！',
+        'toast_tx_updated': '交易紀錄已更新！',
+        'toast_tx_deleted': '交易紀錄已刪除！',
+        'toast_group_created': '分帳群組建立成功！',
+        'toast_member_added': '已新增成員',
+        'toast_bill_added': '費用已記錄成功！',
+        'toast_bill_deleted': '費用已刪除成功。',
+        'toast_settled': '結清成功！',
+        'toast_budget_set': '預算已設定',
+        'toast_budget_fail': '預算儲存失敗：',
+        
+        // Confirm dialogs
+        'confirm_delete_tx': '確定要刪除這筆交易紀錄嗎？',
+        'confirm_delete_bill': '確定要刪除這筆群組費用嗎？',
+        'confirm_disconnect': '確定要中斷資料庫連線嗎？這將登出帳號並返回連線設定頁面。',
+        
+        // Warnings
+        'warn_min_2_members': '請至少新增 2 位成員再分撤費用。',
+        'warn_check_one_member': '請勾選至少一位分撤成員。',
+        
+        // Group dynamic text
+        'group_empty_list': '尚未建立任何分帳群組。',
+        'group_created_on': '建立於',
+        'group_transferred_to': '轉帳給',
+        'group_split_with': '與',
+        'group_split_member': '位成員均分',
+        
+        // Settlement modal
+        'settle_record_title': '記錄債務結清',
+        'settle_select_label': '選擇要結清的債務',
+        'settle_record_btn': '確認結清',
+        
+        // Analytics
+        'analytics_total_exp': '總支出',
+        
+        // Settings
+        'settings_session_title': '帳號與連線狀態',
+        'budget_month': '月份：'
     },
     'en': {
         // Sidebar Navigation
@@ -270,7 +320,57 @@ export const translations = {
         'modal_gtx_date': 'Date',
         'modal_gtx_desc': 'Description',
         'modal_gtx_split': 'Split Between Members (Equally)',
-        'modal_gtx_save': 'Save Bill'
+        'modal_gtx_save': 'Save Bill',
+        
+        // Categories
+        'cat_Food': 'Food',
+        'cat_Transport': 'Transport',
+        'cat_Entertainment': 'Entertainment',
+        'cat_Shopping': 'Shopping',
+        'cat_Housing': 'Housing',
+        'cat_Salary': 'Salary (Income)',
+        'cat_Investments': 'Investments (Income)',
+        'cat_Other': 'Other',
+        
+        // Toast messages
+        'toast_tx_added': 'Transaction added successfully!',
+        'toast_tx_updated': 'Transaction updated successfully!',
+        'toast_tx_deleted': 'Transaction deleted successfully!',
+        'toast_group_created': 'Group created successfully!',
+        'toast_member_added': 'Added member',
+        'toast_bill_added': 'Bill recorded successfully!',
+        'toast_bill_deleted': 'Bill deleted successfully.',
+        'toast_settled': 'Settlement recorded!',
+        'toast_budget_set': 'budget set to',
+        'toast_budget_fail': 'Failed to save budget: ',
+        
+        // Confirm dialogs
+        'confirm_delete_tx': 'Are you sure you want to delete this transaction?',
+        'confirm_delete_bill': 'Remove this group bill?',
+        'confirm_disconnect': 'Are you sure you want to disconnect? This will log you out and return to the connection page.',
+        
+        // Warnings
+        'warn_min_2_members': 'Please add at least 2 members before splitting bills.',
+        'warn_check_one_member': 'Please check at least one member to split the bill.',
+        
+        // Group dynamic text
+        'group_empty_list': 'No groups yet.',
+        'group_created_on': 'Created on',
+        'group_transferred_to': 'Transferred to',
+        'group_split_with': 'Split with',
+        'group_split_member': 'members',
+        
+        // Settlement modal
+        'settle_record_title': 'Record Settlement',
+        'settle_select_label': 'Select Debt to Clear',
+        'settle_record_btn': 'Record Payment',
+        
+        // Analytics
+        'analytics_total_exp': 'TOTAL EXPENSES',
+        
+        // Settings
+        'settings_session_title': 'Account & Connection Status',
+        'budget_month': 'Month:'
     }
 };
 

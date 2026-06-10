@@ -15,10 +15,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Enable RLS for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read all profiles" ON public.profiles;
 CREATE POLICY "Users can read all profiles" 
 ON public.profiles FOR SELECT 
 USING (true);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" 
 ON public.profiles FOR UPDATE 
 USING (auth.uid() = id);
@@ -56,18 +58,22 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 -- Enable RLS for Transactions
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own transactions" ON public.transactions;
 CREATE POLICY "Users can view their own transactions"
 ON public.transactions FOR SELECT
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own transactions" ON public.transactions;
 CREATE POLICY "Users can insert their own transactions"
 ON public.transactions FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own transactions" ON public.transactions;
 CREATE POLICY "Users can update their own transactions"
 ON public.transactions FOR UPDATE
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own transactions" ON public.transactions;
 CREATE POLICY "Users can delete their own transactions"
 ON public.transactions FOR DELETE
 USING (auth.uid() = user_id);
@@ -87,10 +93,12 @@ CREATE TABLE IF NOT EXISTS public.budgets (
 -- Enable RLS for Budgets
 ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own budgets" ON public.budgets;
 CREATE POLICY "Users can view their own budgets"
 ON public.budgets FOR SELECT
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert/update their own budgets" ON public.budgets;
 CREATE POLICY "Users can insert/update their own budgets"
 ON public.budgets FOR ALL
 USING (auth.uid() = user_id);
@@ -112,7 +120,7 @@ ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS public.group_members (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
-    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL, -- Can be null for simulated members
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     nickname TEXT NOT NULL,
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     UNIQUE(group_id, nickname)
@@ -122,96 +130,92 @@ CREATE TABLE IF NOT EXISTS public.group_members (
 ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
 
 
--- 5.5. Security Definer helper function to avoid RLS recursion on group membership queries
+-- 5.5. Security Definer helper functions to avoid RLS recursion
 CREATE OR REPLACE FUNCTION public.is_group_member(p_group_id UUID, p_user_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM public.group_members
-        WHERE group_members.group_id = p_group_id
-        AND group_members.user_id = p_user_id
+        WHERE group_id = p_group_id
+        AND user_id = p_user_id
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Policies for Groups and Group Members using the helper function
+CREATE OR REPLACE FUNCTION public.can_add_member(p_group_id UUID, p_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    -- Allow if the group is empty (first user), or if user is already a member
+    RETURN NOT EXISTS (SELECT 1 FROM public.group_members WHERE group_id = p_group_id)
+           OR public.is_group_member(p_group_id, p_user_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Policies for Groups and Group Members
+DROP POLICY IF EXISTS "Users can view groups they are in" ON public.groups;
 CREATE POLICY "Users can view groups they are in"
 ON public.groups FOR SELECT
-USING (
-    public.is_group_member(id, auth.uid())
-);
+USING (public.is_group_member(id, auth.uid()));
 
+DROP POLICY IF EXISTS "Any authenticated user can create a group" ON public.groups;
 CREATE POLICY "Any authenticated user can create a group"
 ON public.groups FOR INSERT
 WITH CHECK (auth.uid() IS NOT NULL);
 
+DROP POLICY IF EXISTS "Group creator can update/delete group" ON public.groups;
 CREATE POLICY "Group creator can update/delete group"
 ON public.groups FOR ALL
 USING (created_by = auth.uid());
 
 
+DROP POLICY IF EXISTS "Users can view members of their groups" ON public.group_members;
 CREATE POLICY "Users can view members of their groups"
 ON public.group_members FOR SELECT
-USING (
-    public.is_group_member(group_id, auth.uid())
-);
+USING (public.is_group_member(group_id, auth.uid()));
 
+DROP POLICY IF EXISTS "Group members can add other members" ON public.group_members;
 CREATE POLICY "Group members can add other members"
 ON public.group_members FOR INSERT
-WITH CHECK (
-    -- Allow initial insert when creating group
-    NOT EXISTS (
-        SELECT 1 FROM public.group_members AS m 
-        WHERE m.group_id = group_members.group_id
-    )
-    OR
-    public.is_group_member(group_id, auth.uid())
-);
+WITH CHECK (public.can_add_member(group_id, auth.uid()));
 
+DROP POLICY IF EXISTS "Users can update group member nicknames in their groups" ON public.group_members;
 CREATE POLICY "Users can update group member nicknames in their groups"
 ON public.group_members FOR UPDATE
-USING (
-    public.is_group_member(group_id, auth.uid())
-);
+USING (public.is_group_member(group_id, auth.uid()));
 
+DROP POLICY IF EXISTS "Users can delete group members in their groups" ON public.group_members;
 CREATE POLICY "Users can delete group members in their groups"
 ON public.group_members FOR DELETE
-USING (
-    public.is_group_member(group_id, auth.uid())
-);
+USING (public.is_group_member(group_id, auth.uid()));
 
 
 -- 6. Group Transactions Table
 CREATE TABLE IF NOT EXISTS public.group_transactions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
-    paid_by TEXT NOT NULL, -- Member nickname who paid
+    paid_by TEXT NOT NULL,
     amount NUMERIC(12, 2) NOT NULL,
     category TEXT NOT NULL,
     date DATE DEFAULT CURRENT_DATE NOT NULL,
     description TEXT,
-    splits JSONB NOT NULL, -- JSON array of splits, e.g. [{"nickname": "Alice", "amount": 10}, {"nickname": "Bob", "amount": 10}]
+    splits JSONB NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Enable RLS for Group Transactions
 ALTER TABLE public.group_transactions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view transactions in their groups" ON public.group_transactions;
 CREATE POLICY "Users can view transactions in their groups"
 ON public.group_transactions FOR SELECT
-USING (
-    public.is_group_member(group_id, auth.uid())
-);
+USING (public.is_group_member(group_id, auth.uid()));
 
+DROP POLICY IF EXISTS "Users can insert transactions in their groups" ON public.group_transactions;
 CREATE POLICY "Users can insert transactions in their groups"
 ON public.group_transactions FOR INSERT
-WITH CHECK (
-    public.is_group_member(group_id, auth.uid())
-);
+WITH CHECK (public.is_group_member(group_id, auth.uid()));
 
+DROP POLICY IF EXISTS "Users can update/delete transactions in their groups" ON public.group_transactions;
 CREATE POLICY "Users can update/delete transactions in their groups"
 ON public.group_transactions FOR ALL
-USING (
-    public.is_group_member(group_id, auth.uid())
-);
+USING (public.is_group_member(group_id, auth.uid()));

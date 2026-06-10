@@ -1,6 +1,7 @@
 // js/analytics.js - Dynamic SVG Charting and Analytics Module
 import * as storage from './storage.js';
 import { formatCurrency, escapeHTML } from './dashboard.js';
+import { getText } from './i18n.js';
 
 // DOM elements
 const categoryDonutChart = document.getElementById('categoryDonutChart');
@@ -64,7 +65,7 @@ function renderCategoryDonut() {
     if (totalExpense === 0 || categoriesSorted.length === 0) {
         categoryDonutChart.innerHTML = `
             <text x="100" y="100" text-anchor="middle" fill="var(--text-muted)" font-size="12">
-                No expense data
+                ${getText('analytics_no_expense')}
             </text>
         `;
         return;
@@ -147,7 +148,7 @@ function renderCategoryDonut() {
     centerTitle.setAttribute('fill', 'var(--text-muted)');
     centerTitle.setAttribute('font-size', '10');
     centerTitle.setAttribute('font-weight', '500');
-    centerTitle.textContent = 'TOTAL EXPENSES';
+    centerTitle.textContent = getText('analytics_total_exp') || 'TOTAL EXPENSES';
     categoryDonutChart.appendChild(centerTitle);
     
     const centerVal = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -266,8 +267,8 @@ function renderTrendBarChart() {
         exRect.setAttribute('class', 'chart-bar');
         
         // Setup hover details for bars
-        [ { el: inRect, val: stats.income, label: 'Income' }, 
-          { el: exRect, val: stats.expense, label: 'Expense' } ].forEach(item => {
+        [ { el: inRect, val: stats.income, label: getText('db_income_type') }, 
+          { el: exRect, val: stats.expense, label: getText('db_expense_type') } ].forEach(item => {
             item.el.addEventListener('mouseenter', (e) => {
                 trendTooltip.style.opacity = '1';
                 trendTooltip.innerHTML = `
@@ -343,7 +344,7 @@ function renderTagsAnalytics() {
         .sort((a, b) => b[1] - a[1]);
         
     if (sortedTags.length === 0) {
-        analyticsTagsList.innerHTML = '<p class="text-muted" style="font-size: 14px;">No tags found in expenses.</p>';
+        analyticsTagsList.innerHTML = `<p class="text-muted" style="font-size: 14px;">${getText('analytics_no_tags')}</p>`;
         return;
     }
     

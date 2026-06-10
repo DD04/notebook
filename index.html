@@ -339,8 +339,8 @@
                 <!-- VIEW 5: Settings View -->
                 <section id="view-settings" class="view-section">
                     <div class="settings-grid">
-                        <!-- Box 1: Supabase Configuration -->
-                        <div class="settings-card card-box">
+                        <!-- Box 1: Supabase Configuration (Hidden - managed internally / via Gateway) -->
+                        <div class="settings-card card-box d-none" id="supabaseConfigCard">
                             <div class="settings-card-header">
                                 <i data-lucide="database"></i>
                                 <h3 data-i18n="settings_db_title">Supabase Configuration</h3>
@@ -354,7 +354,6 @@
                                     <i data-lucide="alert-circle"></i>
                                     <span data-i18n="settings_disconnected">Database Disconnected</span>
                                 </div>
-
                                 <div class="supabase-config-form" id="supabaseConfigForm">
                                     <div class="form-group">
                                         <label for="sbUrl" data-i18n="settings_sb_url">Supabase API URL</label>
@@ -366,8 +365,24 @@
                                     </div>
                                     <div class="config-actions">
                                         <button class="btn btn-primary btn-sm" id="saveSupabaseConfigBtn" data-i18n="settings_btn_connect">Connect Database</button>
-                                        <button class="btn btn-outline-error btn-sm d-none" id="disconnectSupabaseBtn" data-i18n="settings_btn_disconnect">Disconnect</button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Session Info Card (visible, shows current user / logout) -->
+                        <div class="settings-card card-box">
+                            <div class="settings-card-header">
+                                <i data-lucide="shield-check"></i>
+                                <h3 data-i18n="settings_session_title">帳號與連線狀態</h3>
+                            </div>
+                            <div class="settings-card-body">
+                                <div id="dbConnectedStatusVis" class="db-status-banner connected">
+                                    <i data-lucide="check-circle-2"></i>
+                                    <span data-i18n="settings_connected">Database Connected</span>
+                                </div>
+                                <div class="config-actions" style="margin-top: 12px;">
+                                    <button class="btn btn-outline-error btn-sm" id="disconnectSupabaseBtn" data-i18n="settings_btn_disconnect">Disconnect</button>
                                 </div>
                             </div>
                         </div>
@@ -376,7 +391,7 @@
                         <div class="settings-card card-box">
                             <div class="settings-card-header">
                                 <i data-lucide="download"></i>
-                                <h3 data-i18n="settings_backup_title">Backup & Operations</h3>
+                                <h3 data-i18n="settings_backup_title">Backup &amp; Operations</h3>
                             </div>
                             <div class="settings-card-body">
                                 <p class="text-muted" data-i18n="settings_backup_desc">Export your Supabase transactions, budgets, and groups to a JSON file, or restore from a previous JSON backup into the database.</p>
@@ -603,7 +618,7 @@
                 
                 <div class="gateway-switch-text text-muted text-center mt-3">
                     <span id="gwAuthToggleQuestion" data-i18n="gw_switch_to_signup">Don't have an account?</span>
-                    <a href="#" id="gwAuthToggleBtn" data-i18n="gw_switch_to_signup">Sign Up</a>
+                    <a href="#" id="gwAuthToggleBtn" data-i18n="gw_btn_signup">Sign Up</a>
                 </div>
             </form>
         </div>

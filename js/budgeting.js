@@ -1,6 +1,7 @@
 // js/budgeting.js - Budget Management Dashboard Module
 import * as storage from './storage.js';
 import { formatCurrency, showToast } from './app.js';
+import { getText } from './i18n.js';
 
 // DOM elements
 const budgetMonthPicker = document.getElementById('budgetMonthPicker');
@@ -81,12 +82,12 @@ function renderBudgetDashboard() {
         
         row.innerHTML = `
             <div class="budget-row-meta">
-                <span class="budget-cat-name">${cat}</span>
+                <span class="budget-cat-name">${getText('cat_' + cat) || cat}</span>
                 <div class="budget-limits">
                     <span class="budget-spent ${totalSpent > budgetLimit && budgetLimit > 0 ? 'text-error' : ''}">
                         ${formatCurrency(totalSpent)}
                     </span>
-                    <span class="budget-limit-val"> / ${budgetLimit > 0 ? formatCurrency(budgetLimit) : 'No Limit'}</span>
+                    <span class="budget-limit-val"> / ${budgetLimit > 0 ? formatCurrency(budgetLimit) : getText('budget_no_limit')}</span>
                 </div>
             </div>
             
@@ -95,7 +96,7 @@ function renderBudgetDashboard() {
             </div>
             
             <div class="budget-input-wrapper">
-                <label for="slider-${cat}">Set Limit:</label>
+                <label for="slider-${cat}">${getText('budget_set_limit')}</label>
                 <input type="range" class="budget-slider" id="slider-${cat}" min="0" max="3000" step="50" value="${budgetLimit}">
                 <span style="font-family: 'Outfit'; font-size: 13px; font-weight:600; min-width:50px; text-align:right;" id="slider-val-${cat}">
                     $${budgetLimit}
@@ -117,13 +118,13 @@ function renderBudgetDashboard() {
             const newLimit = parseFloat(e.target.value);
             try {
                 await storage.setBudget(cat, newLimit, activeMonth);
-                showToast(`Budget for ${cat} set to $${newLimit}`, "success");
+                showToast(`${getText('cat_' + cat) || cat} ${getText('toast_budget_set') || '預算已設定'} $${newLimit}`, 'success');
                 
                 // Reload data
                 await refreshBudgeting();
             } catch (err) {
-                console.error("Set budget limit error:", err);
-                showToast("Failed to save budget: " + err.message, "error");
+                console.error('Set budget limit error:', err);
+                showToast((getText('toast_budget_fail') || '預算儲存失敗：') + err.message, 'error');
             }
         });
         
