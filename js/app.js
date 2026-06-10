@@ -5,7 +5,7 @@ import * as dashboard from './dashboard.js';
 import * as group from './group.js';
 import * as budgeting from './budgeting.js';
 import * as analytics from './analytics.js';
-import * as settings from './settings.js';
+// Note: settings.js removed - DB config is code-only (config.js)
 
 // Lucide API compatibility polyfill
 if (window.lucide && !window.lucide.replace) {
@@ -66,7 +66,7 @@ async function initApp() {
     dashboard.initDashboard(onLedgerDataChange);
     group.initGroups();
     budgeting.initBudgeting();
-    settings.initSettings();
+    // settings.initSettings() removed - settings page no longer exists
 
     // 6. Setup SPA Navigation
     initRouter();
@@ -136,8 +136,7 @@ function switchView(viewName) {
         dashboard: getText('nav_dashboard'),
         groups: getText('nav_groups'),
         analytics: getText('nav_analytics'),
-        budgeting: getText('nav_budgeting'),
-        settings: getText('nav_settings')
+        budgeting: getText('nav_budgeting')
     };
     pageTitle.textContent = titles[viewName] || 'Notebook';
     
@@ -161,9 +160,7 @@ function triggerViewRefresh(viewName) {
         case 'analytics':
             analytics.refreshAnalytics();
             break;
-        case 'settings':
-            settings.refreshSettingsView();
-            break;
+        // 'settings' case removed
     }
 }
 
@@ -277,8 +274,7 @@ function initGateway() {
                 const success = await storage.saveConfig({ sbUrl: url, sbKey: key });
                 if (success) {
                     showToast("Supabase Database Connected!", "success");
-                    // Sync views with connected DB
-                    settings.refreshSettingsView();
+                    // Sync views with connected DB (no settings page to refresh)
                     const ready = await checkGatewayStatus();
                     if (ready) {
                         await refreshAppState();
@@ -307,6 +303,9 @@ function initGateway() {
    ========================================================================== */
 async function refreshUserSession() {
     currentUser = await storage.getCurrentUser();
+    
+    // Notify group module about current user (for creator-only access control)
+    group.setCurrentUser(currentUser);
     
     if (currentUser) {
         profileNickname.textContent = currentUser.nickname || 'Active User';
@@ -351,6 +350,8 @@ async function handleAuthBtnClick() {
 function handleAuthSuccess(user) {
     showToast(`Welcome, ${user.nickname || 'User'}!`, "success");
     refreshUserSession().then(() => {
+        // Update group module with new user after login
+        group.setCurrentUser(currentUser);
         refreshAppState();
     });
 }

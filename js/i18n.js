@@ -174,6 +174,19 @@ export const translations = {
         'group_split_with': '與',
         'group_split_member': '位成員均分',
         
+        // Group admin / member management
+        'group_creator_badge': '建立者',
+        'group_creator_only': '只有群組建立者才能執行此操作。',
+        'group_user_not_found': '找不到此暱稱的已註冊使用者：',
+        'group_already_member': '此使用者已是群組成員。',
+        'group_delete_group': '刪除群組',
+        'confirm_delete_group': '確定要刪除此群組？所有群組資料將永久刪除且無法復原。',
+        'toast_group_deleted': '群組已成功刪除。',
+        
+        // Add member modal
+        'modal_member_hint': '請輸入要新增成員的已註冊帳號暱稱。',
+        'modal_member_placeholder': '輸入帳號暱稱…',
+        
         // Settlement modal
         'settle_record_title': '記錄債務結清',
         'settle_select_label': '選擇要結清的債務',
@@ -359,6 +372,19 @@ export const translations = {
         'group_transferred_to': 'Transferred to',
         'group_split_with': 'Split with',
         'group_split_member': 'members',
+        
+        // Group admin / member management
+        'group_creator_badge': 'Creator',
+        'group_creator_only': 'Only the group creator can perform this action.',
+        'group_user_not_found': 'No registered user found with nickname: ',
+        'group_already_member': 'This user is already a member of the group.',
+        'group_delete_group': 'Delete Group',
+        'confirm_delete_group': 'Are you sure you want to delete this group? All group data will be permanently deleted.',
+        'toast_group_deleted': 'Group deleted successfully.',
+        
+        // Add member modal
+        'modal_member_hint': 'Enter the registered account nickname of the user you want to add.',
+        'modal_member_placeholder': 'Enter account nickname...',
         
         // Settlement modal
         'settle_record_title': 'Record Settlement',

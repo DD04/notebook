@@ -267,7 +267,7 @@ export async function createGroup(name) {
         .single();
     if (gError) throw gError;
     
-    // 2. Automatically add creator as member
+    // 2. Automatically add creator as member (with their real user_id and nickname)
     const { error: mError } = await supabase
         .from('group_members')
         .insert([{
@@ -291,21 +291,49 @@ export async function getGroupMembers(groupId) {
     return data;
 }
 
+// Look up a registered user by their profile nickname
+export async function findUserByNickname(nickname) {
+    if (!isCloudMode()) return null;
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nickname, email')
+        .eq('nickname', nickname)
+        .single();
+    if (error || !data) return null;
+    return data;
+}
+
 export async function addGroupMember(groupId, nickname) {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
-    // Check if nickname already exists in group
+    // Require the target to be a real registered user
+    const targetUser = await findUserByNickname(nickname);
+    if (!targetUser) {
+        throw new Error(`USER_NOT_FOUND:${nickname}`);
+    }
+    
+    // Check if already a member (by user_id)
     const members = await getGroupMembers(groupId);
-    if (members.some(m => m.nickname.toLowerCase() === nickname.toLowerCase())) {
-        throw new Error("Member nickname already exists in group.");
+    if (members.some(m => m.user_id === targetUser.id)) {
+        throw new Error('ALREADY_MEMBER');
     }
     
     const { data, error } = await supabase
         .from('group_members')
-        .insert([{ group_id: groupId, nickname }])
+        .insert([{ group_id: groupId, user_id: targetUser.id, nickname: targetUser.nickname }])
         .select();
     if (error) throw error;
     return data[0];
+}
+
+export async function deleteGroup(groupId) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', groupId);
+    if (error) throw error;
+    return true;
 }
 
 export async function getGroupTransactions(groupId) {

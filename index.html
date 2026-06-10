@@ -43,10 +43,7 @@
                     <i data-lucide="wallet"></i>
                     <span data-i18n="nav_budgeting">Budgeting</span>
                 </a>
-                <a href="#settings" class="nav-item" data-view="settings">
-                    <i data-lucide="settings"></i>
-                    <span data-i18n="nav_settings">Settings</span>
-                </a>
+                <!-- Settings nav removed: DB config is code-only -->
             </nav>
 
             <div class="sidebar-footer">
@@ -237,6 +234,7 @@
                                         <span class="text-muted" id="activeGroupMeta">Created on Date</span>
                                     </div>
                                     <div class="header-actions">
+                                        <button class="btn btn-outline-error btn-sm" id="deleteGroupBtn" data-i18n="group_delete_group" style="display:none;"><i data-lucide="trash-2"></i> <span data-i18n="group_delete_group">Delete Group</span></button>
                                         <button class="btn btn-secondary" id="settleUpBtn"><i data-lucide="check-circle-2"></i> <span data-i18n="group_settle_btn">Settle Up</span></button>
                                         <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
                                     </div>
@@ -335,77 +333,22 @@
                         </div>
                     </div>
                 </section>
-
-                <!-- VIEW 5: Settings View -->
-                <section id="view-settings" class="view-section">
-                    <div class="settings-grid">
-                        <!-- Box 1: Supabase Configuration (Hidden - managed internally / via Gateway) -->
-                        <div class="settings-card card-box d-none" id="supabaseConfigCard">
-                            <div class="settings-card-header">
-                                <i data-lucide="database"></i>
-                                <h3 data-i18n="settings_db_title">Supabase Configuration</h3>
-                            </div>
-                            <div class="settings-card-body">
-                                <div id="dbConnectedStatus" class="db-status-banner connected d-none">
-                                    <i data-lucide="check-circle-2"></i>
-                                    <span data-i18n="settings_connected">Database Connected</span>
-                                </div>
-                                <div id="dbDisconnectedStatus" class="db-status-banner disconnected">
-                                    <i data-lucide="alert-circle"></i>
-                                    <span data-i18n="settings_disconnected">Database Disconnected</span>
-                                </div>
-                                <div class="supabase-config-form" id="supabaseConfigForm">
-                                    <div class="form-group">
-                                        <label for="sbUrl" data-i18n="settings_sb_url">Supabase API URL</label>
-                                        <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="sbKey" data-i18n="settings_sb_key">Supabase Anon Key</label>
-                                        <input type="password" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-                                    </div>
-                                    <div class="config-actions">
-                                        <button class="btn btn-primary btn-sm" id="saveSupabaseConfigBtn" data-i18n="settings_btn_connect">Connect Database</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Session Info Card (visible, shows current user / logout) -->
-                        <div class="settings-card card-box">
-                            <div class="settings-card-header">
-                                <i data-lucide="shield-check"></i>
-                                <h3 data-i18n="settings_session_title">帳號與連線狀態</h3>
-                            </div>
-                            <div class="settings-card-body">
-                                <div id="dbConnectedStatusVis" class="db-status-banner connected">
-                                    <i data-lucide="check-circle-2"></i>
-                                    <span data-i18n="settings_connected">Database Connected</span>
-                                </div>
-                                <div class="config-actions" style="margin-top: 12px;">
-                                    <button class="btn btn-outline-error btn-sm" id="disconnectSupabaseBtn" data-i18n="settings_btn_disconnect">Disconnect</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Box 2: Data Backups -->
-                        <div class="settings-card card-box">
-                            <div class="settings-card-header">
-                                <i data-lucide="download"></i>
-                                <h3 data-i18n="settings_backup_title">Backup &amp; Operations</h3>
-                            </div>
-                            <div class="settings-card-body">
-                                <p class="text-muted" data-i18n="settings_backup_desc">Export your Supabase transactions, budgets, and groups to a JSON file, or restore from a previous JSON backup into the database.</p>
-                                <div class="backup-actions">
-                                    <button class="btn btn-secondary" id="exportBackupBtn"><i data-lucide="download-cloud"></i> <span data-i18n="settings_btn_export">Export JSON</span></button>
-                                    <button class="btn btn-secondary" id="importBackupBtn"><i data-lucide="upload-cloud"></i> <span data-i18n="settings_btn_import">Import JSON</span></button>
-                                    <input type="file" id="importFileSelector" accept=".json" class="d-none">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
+                <!-- VIEW 4: Budgeting View ends here -->
+            </div><!-- /.view-panel -->
         </main>
+    </div><!-- /.app-layout -->
+
+    <!-- Hidden placeholder elements for settings.js refs (kept to avoid null refs) -->
+    <div style="display:none;">
+        <div id="dbConnectedStatus"></div>
+        <div id="dbDisconnectedStatus"></div>
+        <input id="sbUrl">
+        <input id="sbKey">
+        <button id="saveSupabaseConfigBtn"></button>
+        <button id="disconnectSupabaseBtn"></button>
+        <button id="exportBackupBtn"></button>
+        <button id="importBackupBtn"></button>
+        <input id="importFileSelector" type="file">
     </div>
 
     <!-- MODAL 1: Add/Edit Personal Transaction -->
@@ -489,7 +432,7 @@
         </div>
     </div>
 
-    <!-- MODAL 3: Add Group Member -->
+    <!-- MODAL 3: Add Group Member (Creator only - search by registered nickname) -->
     <div class="modal-overlay" id="memberModal">
         <div class="modal-container modal-sm">
             <div class="modal-header">
@@ -497,9 +440,10 @@
                 <button class="modal-close-btn" id="memberModalClose"><i data-lucide="x"></i></button>
             </div>
             <form id="memberForm" class="modal-form">
+                <p class="text-muted" style="font-size: 13px; margin-bottom: 12px;" data-i18n="modal_member_hint">Enter the registered account nickname of the user you want to add.</p>
                 <div class="form-group">
-                    <label for="memberNickname" data-i18n="modal_member_name">Nickname / Name</label>
-                    <input type="text" id="memberNickname" placeholder="e.g. Alice" required>
+                    <label for="memberNickname" data-i18n="modal_member_name">Account Nickname</label>
+                    <input type="text" id="memberNickname" data-i18n-placeholder="modal_member_placeholder" placeholder="e.g. alice123" required>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="memberModalCancel" data-i18n="modal_cancel">Cancel</button>

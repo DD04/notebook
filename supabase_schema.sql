@@ -142,12 +142,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Function 2: Check if the current user can add a member to a group.
+-- ONLY the group creator can add members.
+-- This SECURITY DEFINER function bypasses RLS to avoid infinite recursion.
 CREATE OR REPLACE FUNCTION public.can_add_member(p_group_id UUID, p_user_id UUID)
 RETURNS BOOLEAN AS $$
+DECLARE
+    v_created_by UUID;
 BEGIN
-    -- Allow if the group is empty (first user), or if user is already a member
-    RETURN NOT EXISTS (SELECT 1 FROM public.group_members WHERE group_id = p_group_id)
-           OR public.is_group_member(p_group_id, p_user_id);
+    SELECT created_by INTO v_created_by FROM public.groups WHERE id = p_group_id;
+    -- Only the group creator can add members (initial self-add + subsequent member adds)
+    RETURN v_created_by = p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -173,20 +178,29 @@ CREATE POLICY "Users can view members of their groups"
 ON public.group_members FOR SELECT
 USING (public.is_group_member(group_id, auth.uid()));
 
+-- FIX: Use can_add_member() SECURITY DEFINER function to avoid
+-- "infinite recursion detected in policy for relation group_members" error.
 DROP POLICY IF EXISTS "Group members can add other members" ON public.group_members;
-CREATE POLICY "Group members can add other members"
+CREATE POLICY "Only creator can add group members"
 ON public.group_members FOR INSERT
-WITH CHECK (public.can_add_member(group_id, auth.uid()));
+WITH CHECK (
+    public.can_add_member(group_id, auth.uid())
+);
 
 DROP POLICY IF EXISTS "Users can update group member nicknames in their groups" ON public.group_members;
 CREATE POLICY "Users can update group member nicknames in their groups"
 ON public.group_members FOR UPDATE
-USING (public.is_group_member(group_id, auth.uid()));
+USING (
+    public.is_group_member(group_id, auth.uid())
+);
 
+-- Only the group creator can remove members
 DROP POLICY IF EXISTS "Users can delete group members in their groups" ON public.group_members;
-CREATE POLICY "Users can delete group members in their groups"
+CREATE POLICY "Only creator can remove group members"
 ON public.group_members FOR DELETE
-USING (public.is_group_member(group_id, auth.uid()));
+USING (
+    EXISTS(SELECT 1 FROM public.groups WHERE id = group_id AND created_by = auth.uid())
+);
 
 
 -- 6. Group Transactions Table

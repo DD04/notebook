@@ -52,6 +52,18 @@ let activeMembers = [];
 let activeTransactions = [];
 let calculatedDebts = []; // Array of { debtor, creditor, amount }
 
+// Current authenticated user
+let currentUserId = null;
+let currentUserNickname = null;
+let isGroupCreator = false; // Is current user the creator of the active group?
+
+// Called by app.js after login/session restore
+export function setCurrentUser(user) {
+    currentUserId = user ? user.id : null;
+    currentUserNickname = user ? user.nickname : null;
+    isGroupCreator = false; // Reset until a group is selected
+}
+
 export function initGroups() {
     // Group Modal
     createGroupBtn.addEventListener('click', () => showModal(groupModal));
@@ -62,7 +74,7 @@ export function initGroups() {
         if (e.target === groupModal) hideModal(groupModal);
     });
 
-    // Member Modal
+    // Member Modal (only creator can open - button visibility controlled in renderMembersList)
     addMemberBtn.addEventListener('click', () => showModal(memberModal));
     memberModalClose.addEventListener('click', () => hideModal(memberModal));
     memberModalCancel.addEventListener('click', () => hideModal(memberModal));
@@ -71,7 +83,7 @@ export function initGroups() {
         if (e.target === memberModal) hideModal(memberModal);
     });
 
-    // Group Transaction Modal
+    // Group Transaction Modal (any member can open)
     addGroupTxBtn.addEventListener('click', () => showGroupTxModal());
     groupTxModalClose.addEventListener('click', () => hideModal(groupTxModal));
     groupTxModalCancel.addEventListener('click', () => hideModal(groupTxModal));
@@ -80,8 +92,14 @@ export function initGroups() {
         if (e.target === groupTxModal) hideModal(groupTxModal);
     });
 
-    // Settle up click
+    // Settle up
     settleUpBtn.addEventListener('click', handleSettleUpPrompt);
+    
+    // Delete group (only creator sees this button)
+    const deleteGroupBtn = document.getElementById('deleteGroupBtn');
+    if (deleteGroupBtn) {
+        deleteGroupBtn.addEventListener('click', handleDeleteGroup);
+    }
 }
 
 function showModal(modalEl) {
@@ -135,8 +153,16 @@ function renderGroupsList() {
             item.classList.add('active');
         }
         
+        const isCreator = g.created_by === currentUserId;
+        const creatorBadge = isCreator 
+            ? `<span class="group-creator-badge">${getText('group_creator_badge')}</span>` 
+            : '';
+        
         item.innerHTML = `
-            <span class="group-item-name">${escapeHTML(g.name)}</span>
+            <div class="group-item-info">
+                <span class="group-item-name">${escapeHTML(g.name)}</span>
+                ${creatorBadge}
+            </div>
             <span class="group-item-count"><i data-lucide="chevron-right" style="width:12px; height:12px;"></i></span>
         `;
         
@@ -149,6 +175,8 @@ function renderGroupsList() {
 
 async function selectGroup(group) {
     activeGroup = group;
+    isGroupCreator = currentUserId && group.created_by === currentUserId;
+    
     renderGroupsList(); // Re-render to highlight active
     
     noGroupSelected.classList.add('d-none');
@@ -158,8 +186,14 @@ async function selectGroup(group) {
     activeGroupName.textContent = group.name;
     const locale = getLocale() === 'zh' ? 'zh-TW' : 'en-US';
     const dateStr = new Date(group.created_at).toLocaleDateString(locale);
-    const createdLabel = getText('group_created_on') || '建立於 ';
-    activeGroupMeta.textContent = `${createdLabel}${dateStr}`;
+    const createdLabel = getText('group_created_on') || '建立於';
+    activeGroupMeta.textContent = `${createdLabel} ${dateStr}`;
+    
+    // Show delete group button only for creator
+    const deleteGroupBtn = document.getElementById('deleteGroupBtn');
+    if (deleteGroupBtn) {
+        deleteGroupBtn.style.display = isGroupCreator ? '' : 'none';
+    }
     
     // Fetch members and transactions
     activeMembers = await storage.getGroupMembers(group.id);
@@ -173,11 +207,21 @@ async function selectGroup(group) {
 function renderMembersList() {
     groupMembersList.innerHTML = '';
     
+    // Only show the add member button if current user is the group creator
+    if (addMemberBtn) {
+        addMemberBtn.style.display = isGroupCreator ? '' : 'none';
+    }
+    
     activeMembers.forEach(m => {
         const item = document.createElement('div');
         item.className = 'member-item';
+        const isCreatorMember = m.user_id === activeGroup?.created_by;
         item.innerHTML = `
-            <span><i data-lucide="user" style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle; color:var(--text-muted);"></i>${escapeHTML(m.nickname)}</span>
+            <span>
+                <i data-lucide="user" style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle; color:var(--text-muted);"></i>
+                ${escapeHTML(m.nickname)}
+                ${isCreatorMember ? `<span style="font-size:10px; color:var(--primary); margin-left:4px;">(${getText('group_creator_badge')})</span>` : ''}
+            </span>
         `;
         groupMembersList.appendChild(item);
     });
@@ -377,10 +421,16 @@ async function handleAddMember(e) {
     const nickname = memberNicknameInput.value.trim();
     if (!nickname || !activeGroup) return;
     
+    if (!isGroupCreator) {
+        showToast(getText('group_creator_only') || '只有群組建立者才能執行此操作。', 'warning');
+        return;
+    }
+    
     try {
         await storage.addGroupMember(activeGroup.id, nickname);
         showToast(`${getText('toast_member_added') || '已新增成員'} ${nickname}`, 'success');
         hideModal(memberModal);
+        memberNicknameInput.value = '';
         
         // Refresh active details
         if (activeGroup) {
@@ -388,7 +438,33 @@ async function handleAddMember(e) {
             await selectGroup(updated);
         }
     } catch (err) {
-        showToast("Failed to add member: " + err.message, "error");
+        if (err.message && err.message.startsWith('USER_NOT_FOUND:')) {
+            const name = err.message.split(':')[1];
+            showToast(
+                (getText('group_user_not_found') || '找不到此暱稱的使用者：') + name,
+                'error'
+            );
+        } else if (err.message === 'ALREADY_MEMBER') {
+            showToast(getText('group_already_member') || '此使用者已是群組成員。', 'warning');
+        } else {
+            showToast('Failed to add member: ' + err.message, 'error');
+        }
+    }
+}
+
+async function handleDeleteGroup() {
+    if (!isGroupCreator || !activeGroup) return;
+    
+    const confirmMsg = getText('confirm_delete_group') || `確定要刪除群組「${activeGroup.name}」嗎？所有群組資料將永久刪除。`;
+    if (!confirm(confirmMsg)) return;
+    
+    try {
+        await storage.deleteGroup(activeGroup.id);
+        showToast(getText('toast_group_deleted') || '群組已刪除。', 'success');
+        deselectGroup();
+        await refreshGroups();
+    } catch (err) {
+        showToast('Failed to delete group: ' + err.message, 'error');
     }
 }
 
