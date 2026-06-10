@@ -180,6 +180,7 @@ USING (public.is_group_member(group_id, auth.uid()));
 
 -- FIX: Use can_add_member() SECURITY DEFINER function to avoid
 -- "infinite recursion detected in policy for relation group_members" error.
+DROP POLICY IF EXISTS "Only creator can add group members" ON public.group_members;
 DROP POLICY IF EXISTS "Group members can add other members" ON public.group_members;
 CREATE POLICY "Only creator can add group members"
 ON public.group_members FOR INSERT
@@ -195,6 +196,7 @@ USING (
 );
 
 -- Only the group creator can remove members
+DROP POLICY IF EXISTS "Only creator can remove group members" ON public.group_members;
 DROP POLICY IF EXISTS "Users can delete group members in their groups" ON public.group_members;
 CREATE POLICY "Only creator can remove group members"
 ON public.group_members FOR DELETE
@@ -204,6 +206,7 @@ USING (
 
 
 -- 6. Group Transactions Table
+DROP TABLE IF EXISTS public.group_transactions CASCADE;
 CREATE TABLE IF NOT EXISTS public.group_transactions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
