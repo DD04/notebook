@@ -207,17 +207,40 @@ USING (
 CREATE TABLE IF NOT EXISTS public.group_transactions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE NOT NULL,
-    paid_by TEXT NOT NULL,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    member_nickname TEXT NOT NULL,
+    type TEXT CHECK (type IN ('income', 'expense')) NOT NULL,
     amount NUMERIC(12, 2) NOT NULL,
     category TEXT NOT NULL,
     date DATE DEFAULT CURRENT_DATE NOT NULL,
     description TEXT,
-    splits JSONB NOT NULL,
+    tags TEXT[] DEFAULT '{}'::TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- Enable RLS for Group Transactions
 ALTER TABLE public.group_transactions ENABLE ROW LEVEL SECURITY;
+
+-- Helper to check if a user can delete a group transaction (creator of group or owner of transaction)
+CREATE OR REPLACE FUNCTION public.can_delete_group_transaction(
+    p_group_id UUID,
+    p_tx_user_id UUID,
+    p_user_id UUID
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+    v_created_by UUID;
+BEGIN
+    -- Owner of the transaction can delete it
+    IF p_tx_user_id = p_user_id THEN
+        RETURN TRUE;
+    END IF;
+    
+    -- Group creator can delete any transaction in the group
+    SELECT created_by INTO v_created_by FROM public.groups WHERE id = p_group_id;
+    RETURN v_created_by = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP POLICY IF EXISTS "Users can view transactions in their groups" ON public.group_transactions;
 CREATE POLICY "Users can view transactions in their groups"
@@ -227,9 +250,15 @@ USING (public.is_group_member(group_id, auth.uid()));
 DROP POLICY IF EXISTS "Users can insert transactions in their groups" ON public.group_transactions;
 CREATE POLICY "Users can insert transactions in their groups"
 ON public.group_transactions FOR INSERT
-WITH CHECK (public.is_group_member(group_id, auth.uid()));
+WITH CHECK (
+    public.is_group_member(group_id, auth.uid())
+    AND auth.uid() = user_id
+);
 
 DROP POLICY IF EXISTS "Users can update/delete transactions in their groups" ON public.group_transactions;
-CREATE POLICY "Users can update/delete transactions in their groups"
-ON public.group_transactions FOR ALL
-USING (public.is_group_member(group_id, auth.uid()));
+DROP POLICY IF EXISTS "Users can delete group transactions" ON public.group_transactions;
+CREATE POLICY "Users can delete group transactions"
+ON public.group_transactions FOR DELETE
+USING (
+    public.can_delete_group_transaction(group_id, user_id, auth.uid())
+);

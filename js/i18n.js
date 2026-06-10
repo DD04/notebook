@@ -3,7 +3,7 @@ export const translations = {
     'zh': {
         // Sidebar Navigation
         'nav_dashboard': '主頁主控台',
-        'nav_groups': '群組記帳分帳',
+        'nav_groups': '群組共同記帳',
         'nav_analytics': '收支數據分析',
         'nav_budgeting': '消費預算管理',
         'nav_settings': '資料庫與設定',
@@ -44,21 +44,29 @@ export const translations = {
         'th_actions': '操作',
         
         // Groups View
-        'group_title': '群組記帳分帳',
-        'group_list_title': '我的分帳群組',
+        'group_title': '群組共同記帳',
+        'group_list_title': '我的記帳群組',
         'group_members_title': '群組成員名單',
         'group_no_selection_title': '尚未選取群組',
-        'group_no_selection_desc': '請從左側列表選擇一個分帳群組，或建立一個新群組來開始分攤帳目。',
+        'group_no_selection_desc': '請從左側列表選擇一個記帳群組，或建立一個新群組來開始共同記帳。',
         'group_settle_btn': '記錄債務結清',
-        'group_add_bill_btn': '新增群組開銷',
-        'group_analysis_title': '最優結算分析 (誰該給誰多少錢)',
-        'group_all_settled': '太棒了！目前所有人帳目皆已結清！',
-        'group_ledger_title': '群組費用明細',
+        'group_add_bill_btn': '新增群組交易',
+        'group_analysis_title': '群組財務分析',
+        'group_all_settled': '此群組尚未有交易紀錄。',
+        'group_ledger_title': '群組記帳明細',
         'th_paid_by': '付款人',
         'th_split_desc': '分攤摘要',
-        'group_empty_ledger': '此群組目前沒有任何費用紀錄。',
+        'group_empty_ledger': '此群組目前沒有任何交易紀錄。',
         'group_owes': '應給付給',
         'group_owes_text': '應付',
+        'group_balance': '群組淨結餘',
+        'group_balance_desc': '此群組之累計收支結餘',
+        'group_income': '群組總收入',
+        'group_income_count': '筆收入交易',
+        'group_expense': '群組總支出',
+        'group_expense_count': '筆支出交易',
+        'th_member': '記帳者',
+        'th_type': '類型',
         
         // Analytics View
         'analytics_title': '收支數據分析',
@@ -119,7 +127,7 @@ export const translations = {
         'modal_tx_save': '儲存交易',
         'modal_cancel': '取消',
         
-        'modal_new_group': '建立新分帳群組',
+        'modal_new_group': '建立新記帳群組',
         'modal_group_name': '群組名稱',
         'modal_group_create': '建立群組',
         
@@ -127,14 +135,14 @@ export const translations = {
         'modal_member_name': '成員名稱 / 暱稱',
         'modal_member_add': '加入成員',
         
-        'modal_group_tx': '新增群組費用',
-        'modal_gtx_amount': '費用金額',
+        'modal_group_tx': '新增群組交易',
+        'modal_gtx_amount': '交易金額',
         'modal_gtx_payer': '誰付的錢？',
-        'modal_gtx_cat': '費用分類',
-        'modal_gtx_date': '消費日期',
-        'modal_gtx_desc': '費用說明',
+        'modal_gtx_cat': '交易分類',
+        'modal_gtx_date': '交易日期',
+        'modal_gtx_desc': '交易說明',
         'modal_gtx_split': '分攤對象成員 (均分機制)',
-        'modal_gtx_save': '記錄費用',
+        'modal_gtx_save': '記錄交易',
         
         // Categories
         'cat_Food': '餐飲',
@@ -150,25 +158,25 @@ export const translations = {
         'toast_tx_added': '交易紀錄已新增！',
         'toast_tx_updated': '交易紀錄已更新！',
         'toast_tx_deleted': '交易紀錄已刪除！',
-        'toast_group_created': '分帳群組建立成功！',
+        'toast_group_created': '記帳群組建立成功！',
         'toast_member_added': '已新增成員',
-        'toast_bill_added': '費用已記錄成功！',
-        'toast_bill_deleted': '費用已刪除成功。',
+        'toast_bill_added': '交易已記錄成功！',
+        'toast_bill_deleted': '交易已刪除成功。',
         'toast_settled': '結清成功！',
         'toast_budget_set': '預算已設定',
         'toast_budget_fail': '預算儲存失敗：',
         
         // Confirm dialogs
         'confirm_delete_tx': '確定要刪除這筆交易紀錄嗎？',
-        'confirm_delete_bill': '確定要刪除這筆群組費用嗎？',
+        'confirm_delete_bill': '確定要刪除這筆群組交易紀錄嗎？',
         'confirm_disconnect': '確定要中斷資料庫連線嗎？這將登出帳號並返回連線設定頁面。',
         
         // Warnings
-        'warn_min_2_members': '請至少新增 2 位成員再分撤費用。',
-        'warn_check_one_member': '請勾選至少一位分撤成員。',
+        'warn_min_2_members': '請至少新增 2 位成員再進行記帳。',
+        'warn_check_one_member': '請確認交易資訊是否正確。',
         
         // Group dynamic text
-        'group_empty_list': '尚未建立任何分帳群組。',
+        'group_empty_list': '尚未建立任何記帳群組。',
         'group_created_on': '建立於',
         'group_transferred_to': '轉帳給',
         'group_split_with': '與',
@@ -202,7 +210,7 @@ export const translations = {
     'en': {
         // Sidebar Navigation
         'nav_dashboard': 'Dashboard',
-        'nav_groups': 'Group Ledger',
+        'nav_groups': 'Group Shared Ledger',
         'nav_analytics': 'Analytics & Trends',
         'nav_budgeting': 'Monthly Budgeting',
         'nav_settings': 'Configuration Settings',
@@ -243,21 +251,29 @@ export const translations = {
         'th_actions': 'Actions',
         
         // Groups View
-        'group_title': 'Group Ledger',
-        'group_list_title': 'My Groups',
+        'group_title': 'Group Shared Ledger',
+        'group_list_title': 'My Ledger Groups',
         'group_members_title': 'Group Members',
         'group_no_selection_title': 'No Group Selected',
-        'group_no_selection_desc': 'Select an existing group from the list or create a new one to start tracking splits.',
+        'group_no_selection_desc': 'Select an existing group from the list or create a new one to start shared bookkeeping.',
         'group_settle_btn': 'Settle Up',
-        'group_add_bill_btn': 'Add Group Bill',
-        'group_analysis_title': 'Settlement Analysis',
-        'group_all_settled': 'Everyone is settled up!',
+        'group_add_bill_btn': 'Add Group Transaction',
+        'group_analysis_title': 'Group Financial Analysis',
+        'group_all_settled': 'No transactions recorded yet in this group.',
         'group_ledger_title': 'Group Ledger',
         'th_paid_by': 'Paid By',
         'th_split_desc': 'Split Summary',
-        'group_empty_ledger': 'No bills added to this group yet.',
+        'group_empty_ledger': 'No transactions added to this group yet.',
         'group_owes': 'owes',
         'group_owes_text': 'owes',
+        'group_balance': 'Group Net Balance',
+        'group_balance_desc': 'Total group financial summary',
+        'group_income': 'Group Total Income',
+        'group_income_count': 'income entries',
+        'group_expense': 'Group Total Expenses',
+        'group_expense_count': 'expense entries',
+        'th_member': 'Recorded By',
+        'th_type': 'Type',
         
         // Analytics View
         'analytics_title': 'Analytics & Trends',
@@ -318,7 +334,7 @@ export const translations = {
         'modal_tx_save': 'Save Transaction',
         'modal_cancel': 'Cancel',
         
-        'modal_new_group': 'Create New Group',
+        'modal_new_group': 'Create New Ledger Group',
         'modal_group_name': 'Group Name',
         'modal_group_create': 'Create Group',
         
@@ -326,14 +342,14 @@ export const translations = {
         'modal_member_name': 'Nickname / Name',
         'modal_member_add': 'Add Member',
         
-        'modal_group_tx': 'Add Group Expense',
+        'modal_group_tx': 'Add Group Transaction',
         'modal_gtx_amount': 'Amount',
         'modal_gtx_payer': 'Paid By',
         'modal_gtx_cat': 'Category',
         'modal_gtx_date': 'Date',
         'modal_gtx_desc': 'Description',
         'modal_gtx_split': 'Split Between Members (Equally)',
-        'modal_gtx_save': 'Save Bill',
+        'modal_gtx_save': 'Save Transaction',
         
         // Categories
         'cat_Food': 'Food',
@@ -349,22 +365,22 @@ export const translations = {
         'toast_tx_added': 'Transaction added successfully!',
         'toast_tx_updated': 'Transaction updated successfully!',
         'toast_tx_deleted': 'Transaction deleted successfully!',
-        'toast_group_created': 'Group created successfully!',
+        'toast_group_created': 'Ledger group created successfully!',
         'toast_member_added': 'Added member',
-        'toast_bill_added': 'Bill recorded successfully!',
-        'toast_bill_deleted': 'Bill deleted successfully.',
+        'toast_bill_added': 'Transaction recorded successfully!',
+        'toast_bill_deleted': 'Transaction deleted successfully.',
         'toast_settled': 'Settlement recorded!',
         'toast_budget_set': 'budget set to',
         'toast_budget_fail': 'Failed to save budget: ',
         
         // Confirm dialogs
         'confirm_delete_tx': 'Are you sure you want to delete this transaction?',
-        'confirm_delete_bill': 'Remove this group bill?',
+        'confirm_delete_bill': 'Are you sure you want to delete this group transaction?',
         'confirm_disconnect': 'Are you sure you want to disconnect? This will log you out and return to the connection page.',
         
         // Warnings
-        'warn_min_2_members': 'Please add at least 2 members before splitting bills.',
-        'warn_check_one_member': 'Please check at least one member to split the bill.',
+        'warn_min_2_members': 'Please add members to start tracking.',
+        'warn_check_one_member': 'Please verify transaction details.',
         
         // Group dynamic text
         'group_empty_list': 'No groups yet.',

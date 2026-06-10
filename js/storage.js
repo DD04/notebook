@@ -350,17 +350,22 @@ export async function getGroupTransactions(groupId) {
 
 export async function addGroupTransaction(groupId, tx) {
     if (!isCloudMode()) throw new Error("Database connection required.");
-    // tx = { paid_by: string, amount: num, category: string, date: YYYY-MM-DD, description: string, splits: [ { nickname, amount } ] }
+    const user = await getCurrentUser();
+    if (!user) throw new Error("Authentication required.");
+    
+    // tx = { type: 'income'|'expense', amount: number, category: string, date: string, description: string, tags: string[] }
     const { data, error } = await supabase
         .from('group_transactions')
         .insert([{
             group_id: groupId,
-            paid_by: tx.paid_by,
+            user_id: user.id,
+            member_nickname: user.nickname,
+            type: tx.type,
             amount: parseFloat(tx.amount),
             category: tx.category,
             date: tx.date,
-            description: tx.description,
-            splits: tx.splits // array of { nickname, amount }
+            description: tx.description || '',
+            tags: tx.tags || []
         }])
         .select();
     if (error) throw error;
@@ -485,15 +490,16 @@ export async function importStateFromJSON(jsonString) {
                 // Add group transactions
                 if (g.transactions && Array.isArray(g.transactions)) {
                     const groupTxs = g.transactions.map(gt => {
-                        const splits = gt.splits || [];
                         return {
                             group_id: newGroup.id,
-                            paid_by: gt.paid_by,
+                            user_id: user.id,
+                            member_nickname: gt.member_nickname || gt.paid_by || user.nickname,
+                            type: gt.type || 'expense',
                             amount: parseFloat(gt.amount),
                             category: gt.category || 'Other',
                             date: gt.date || new Date().toISOString().split('T')[0],
                             description: gt.description || '',
-                            splits: splits
+                            tags: gt.tags || []
                         };
                     });
                     

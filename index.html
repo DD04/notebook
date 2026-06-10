@@ -235,17 +235,41 @@
                                     </div>
                                     <div class="header-actions">
                                         <button class="btn btn-outline-error btn-sm" id="deleteGroupBtn" data-i18n="group_delete_group" style="display:none;"><i data-lucide="trash-2"></i> <span data-i18n="group_delete_group">Delete Group</span></button>
-                                        <button class="btn btn-secondary" id="settleUpBtn"><i data-lucide="check-circle-2"></i> <span data-i18n="group_settle_btn">Settle Up</span></button>
+                                        <button class="btn btn-secondary" id="settleUpBtn" style="display:none;"><i data-lucide="check-circle-2"></i> <span data-i18n="group_settle_btn">Settle Up</span></button>
                                         <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
                                     </div>
                                 </div>
 
-                                <!-- Settlement Summary Box -->
-                                <div class="settlement-summary-box card-box bg-glass">
-                                    <h4 data-i18n="group_analysis_title">Settlement Analysis</h4>
-                                    <div class="debts-summary-list" id="debtsSummaryList">
-                                        <!-- Dynamically generated list of who owes who -->
-                                        <div class="all-settled-message"><i data-lucide="sparkles" class="text-success"></i> <span data-i18n="group_all_settled">Everyone is settled up!</span></div>
+                                <!-- Group Summary Cards -->
+                                <div class="group-summary-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                                    <div class="summary-card balance-card">
+                                        <div class="card-glass-glow"></div>
+                                        <div class="card-header">
+                                            <span class="card-label" data-i18n="group_balance">Group Net Balance</span>
+                                            <div class="card-icon"><i data-lucide="banknote"></i></div>
+                                        </div>
+                                        <div class="card-amount" id="groupNetBalance">$0.00</div>
+                                        <div class="card-footer text-muted" data-i18n="group_balance_desc">Total group financial summary</div>
+                                    </div>
+
+                                    <div class="summary-card income-card">
+                                        <div class="card-glass-glow"></div>
+                                        <div class="card-header">
+                                            <span class="card-label" data-i18n="group_income">Group Total Income</span>
+                                            <div class="card-icon"><i data-lucide="trending-up"></i></div>
+                                        </div>
+                                        <div class="card-amount text-success" id="groupTotalIncome">$0.00</div>
+                                        <div class="card-footer text-success" id="groupIncomeCount">0 entries</div>
+                                    </div>
+
+                                    <div class="summary-card expense-card">
+                                        <div class="card-glass-glow"></div>
+                                        <div class="card-header">
+                                            <span class="card-label" data-i18n="group_expense">Group Total Expenses</span>
+                                            <div class="card-icon"><i data-lucide="trending-down"></i></div>
+                                        </div>
+                                        <div class="card-amount text-error" id="groupTotalExpenses">$0.00</div>
+                                        <div class="card-footer text-error" id="groupExpenseCount">0 entries</div>
                                     </div>
                                 </div>
 
@@ -257,10 +281,11 @@
                                             <thead>
                                                 <tr>
                                                     <th data-i18n="th_date">Date</th>
-                                                    <th data-i18n="th_paid_by">Paid By</th>
+                                                    <th data-i18n="th_member">Recorded By</th>
+                                                    <th data-i18n="th_type">Type</th>
                                                     <th data-i18n="th_desc">Description</th>
                                                     <th data-i18n="th_cat">Category</th>
-                                                    <th data-i18n="th_split_desc">Split Summary</th>
+                                                    <th data-i18n="th_tags">Tags</th>
                                                     <th class="text-right" data-i18n="th_amount">Amount</th>
                                                     <th class="text-center" data-i18n="th_actions">Actions</th>
                                                 </tr>
@@ -457,20 +482,21 @@
     <div class="modal-overlay" id="groupTxModal">
         <div class="modal-container">
             <div class="modal-header">
-                <h3 data-i18n="modal_group_tx">Add Group Expense</h3>
+                <h3 data-i18n="modal_group_tx">Add Group Transaction</h3>
                 <button class="modal-close-btn" id="groupTxModalClose"><i data-lucide="x"></i></button>
             </div>
             <form id="groupTxForm" class="modal-form">
                 <div class="form-row-2">
                     <div class="form-group">
-                        <label for="gtxAmount" data-i18n="modal_gtx_amount">Amount</label>
-                        <input type="number" step="0.01" min="0.01" id="gtxAmount" placeholder="0.00" required>
+                        <label for="gtxType" data-i18n="modal_tx_type">Transaction Type</label>
+                        <select id="gtxType" required>
+                            <option value="expense" data-i18n="db_expense_type">Expense</option>
+                            <option value="income" data-i18n="db_income_type">Income</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label for="gtxPayer" data-i18n="modal_gtx_payer">Paid By</label>
-                        <select id="gtxPayer" required>
-                            <!-- Dynamic list of members -->
-                        </select>
+                        <label for="gtxAmount" data-i18n="modal_gtx_amount">Amount</label>
+                        <input type="number" step="0.01" min="0.01" id="gtxAmount" placeholder="0.00" required>
                     </div>
                 </div>
 
@@ -483,6 +509,8 @@
                             <option value="Entertainment">Entertainment</option>
                             <option value="Shopping">Shopping</option>
                             <option value="Housing">Housing</option>
+                            <option value="Salary">Salary (Income)</option>
+                            <option value="Investments">Investments (Income)</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
@@ -493,21 +521,18 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="gtxTags" data-i18n="modal_tx_tags">Tags (Comma-separated)</label>
+                    <input type="text" id="gtxTags" placeholder="e.g. dinner, friends, weekend">
+                </div>
+
+                <div class="form-group">
                     <label for="gtxDescription" data-i18n="modal_tx_desc">Description</label>
                     <input type="text" id="gtxDescription" placeholder="e.g. Dinner at Shibuya" required>
                 </div>
 
-                <!-- Split Details Checkboxes -->
-                <div class="form-group">
-                    <label data-i18n="modal_gtx_split">Split Between Members (Equally)</label>
-                    <div class="split-checkboxes-grid" id="gtxSplitMembers">
-                        <!-- Dynamic Checkboxes -->
-                    </div>
-                </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="groupTxModalCancel" data-i18n="modal_cancel">Cancel</button>
-                    <button type="submit" class="btn btn-primary" data-i18n="modal_gtx_save">Save Bill</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="modal_gtx_save">Save Transaction</button>
                 </div>
             </form>
         </div>

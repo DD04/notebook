@@ -1,4 +1,4 @@
-// js/group.js - Group splitting ledger and debt settlement algorithm
+// js/group.js - Group shared bookkeeping ledger logic
 import * as storage from './storage.js';
 import { formatCurrency, escapeHTML } from './dashboard.js';
 import { showToast } from './app.js';
@@ -15,10 +15,8 @@ const noGroupSelected = document.getElementById('noGroupSelected');
 const groupActiveDetails = document.getElementById('groupActiveDetails');
 const activeGroupName = document.getElementById('activeGroupName');
 const activeGroupMeta = document.getElementById('activeGroupMeta');
-const settleUpBtn = document.getElementById('settleUpBtn');
 const addGroupTxBtn = document.getElementById('addGroupTxBtn');
 
-const debtsSummaryList = document.getElementById('debtsSummaryList');
 const groupTxTableBody = document.getElementById('groupTxTableBody');
 
 // Modals DOM
@@ -38,19 +36,18 @@ const groupTxModal = document.getElementById('groupTxModal');
 const groupTxModalClose = document.getElementById('groupTxModalClose');
 const groupTxModalCancel = document.getElementById('groupTxModalCancel');
 const groupTxForm = document.getElementById('groupTxForm');
+const gtxType = document.getElementById('gtxType');
 const gtxAmount = document.getElementById('gtxAmount');
-const gtxPayer = document.getElementById('gtxPayer');
 const gtxCategory = document.getElementById('gtxCategory');
 const gtxDate = document.getElementById('gtxDate');
 const gtxDescription = document.getElementById('gtxDescription');
-const gtxSplitMembers = document.getElementById('gtxSplitMembers');
+const gtxTags = document.getElementById('gtxTags');
 
 // State
 let groups = [];
 let activeGroup = null;
 let activeMembers = [];
 let activeTransactions = [];
-let calculatedDebts = []; // Array of { debtor, creditor, amount }
 
 // Current authenticated user
 let currentUserId = null;
@@ -91,9 +88,6 @@ export function initGroups() {
     groupTxModal.addEventListener('click', (e) => {
         if (e.target === groupTxModal) hideModal(groupTxModal);
     });
-
-    // Settle up
-    settleUpBtn.addEventListener('click', handleSettleUpPrompt);
     
     // Delete group (only creator sees this button)
     const deleteGroupBtn = document.getElementById('deleteGroupBtn');
@@ -200,7 +194,7 @@ async function selectGroup(group) {
     activeTransactions = await storage.getGroupTransactions(group.id);
     
     renderMembersList();
-    calculateGroupSettlements();
+    renderGroupSummaryCards();
     renderGroupTransactions();
 }
 
@@ -229,110 +223,48 @@ function renderMembersList() {
     if (window.lucide) window.lucide.createIcons();
 }
 
-/* ==========================================================================
-   DEBT SIMPLIFICATION ALGORITHM (Splitwise Core)
-   ========================================================================== */
-function calculateGroupSettlements() {
-    // 1. Initialize balances map for all group members
-    const balances = {};
-    activeMembers.forEach(m => {
-        balances[m.nickname] = 0.00;
-    });
-    
-    // 2. Accumulate payouts and split debts
-    activeTransactions.forEach(tx => {
-        const paidBy = tx.paid_by;
-        const total = parseFloat(tx.amount);
-        
-        // Payer gets credited full amount
-        if (balances[paidBy] !== undefined) {
-            balances[paidBy] += total;
-        }
-        
-        // Split shares are debited from members specified in the split array
-        const splits = tx.splits || []; // array of { nickname, amount }
-        splits.forEach(s => {
-            if (balances[s.nickname] !== undefined) {
-                balances[s.nickname] -= parseFloat(s.amount);
-            }
-        });
-    });
-    
-    // 3. Separate Debtors (net < 0) and Creditors (net > 0)
-    const debtors = [];
-    const creditors = [];
-    
-    Object.entries(balances).forEach(([name, bal]) => {
-        // Round to 2 decimals to prevent floating-point mismatch
-        const roundedBal = Math.round(bal * 100) / 100;
-        if (roundedBal < -0.01) {
-            debtors.push({ name, amount: -roundedBal });
-        } else if (roundedBal > 0.01) {
-            creditors.push({ name, amount: roundedBal });
-        }
-    });
-    
-    // 4. Match Debtors and Creditors greedily
-    calculatedDebts = [];
-    
-    // Sort descending by amount to resolve largest transactions first
-    debtors.sort((a, b) => b.amount - a.amount);
-    creditors.sort((a, b) => b.amount - a.amount);
-    
-    let dIdx = 0;
-    let cIdx = 0;
-    
-    while (dIdx < debtors.length && cIdx < creditors.length) {
-        const debtor = debtors[dIdx];
-        const creditor = creditors[cIdx];
-        
-        const settledAmount = Math.min(debtor.amount, creditor.amount);
-        
-        calculatedDebts.push({
-            debtor: debtor.name,
-            creditor: creditor.name,
-            amount: settledAmount
-        });
-        
-        debtor.amount -= settledAmount;
-        creditor.amount -= settledAmount;
-        
-        if (debtor.amount < 0.01) dIdx++;
-        if (creditor.amount < 0.01) cIdx++;
-    }
-    
-    // 5. Render Settlement Panel
-    renderSettlementPanel();
-}
+function renderGroupSummaryCards() {
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let incomeCount = 0;
+    let expenseCount = 0;
 
-function renderSettlementPanel() {
-    debtsSummaryList.innerHTML = '';
-    
-    if (calculatedDebts.length === 0) {
-        debtsSummaryList.innerHTML = `
-            <div class="all-settled-message">
-                <i data-lucide="sparkles" class="text-success"></i> 
-                <span>${getText('group_all_settled')}</span>
-            </div>
-        `;
-        if (window.lucide) window.lucide.createIcons();
-        return;
-    }
-    
-    calculatedDebts.forEach(d => {
-        const line = document.createElement('div');
-        line.className = 'debt-line';
-        line.innerHTML = `
-            <i data-lucide="arrow-right-circle"></i>
-            <span class="debt-giver">${escapeHTML(d.debtor)}</span>
-            <span class="debt-arrow">${getText('group_owes')}</span>
-            <span class="debt-receiver">${escapeHTML(d.creditor)}</span>
-            <span class="debt-val">${formatCurrency(d.amount)}</span>
-        `;
-        debtsSummaryList.appendChild(line);
+    activeTransactions.forEach(t => {
+        const amount = parseFloat(t.amount);
+        if (t.type === 'income') {
+            totalIncome += amount;
+            incomeCount++;
+        } else {
+            totalExpense += amount;
+            expenseCount++;
+        }
     });
+
+    const netBalance = totalIncome - totalExpense;
+
+    const groupNetBalanceEl = document.getElementById('groupNetBalance');
+    const groupTotalIncomeEl = document.getElementById('groupTotalIncome');
+    const groupTotalExpensesEl = document.getElementById('groupTotalExpenses');
+    const groupIncomeCountEl = document.getElementById('groupIncomeCount');
+    const groupExpenseCountEl = document.getElementById('groupExpenseCount');
+
+    if (groupNetBalanceEl) {
+        groupNetBalanceEl.textContent = formatCurrency(netBalance);
+        if (netBalance >= 0) {
+            groupNetBalanceEl.className = 'card-amount';
+        } else {
+            groupNetBalanceEl.className = 'card-amount text-error';
+        }
+    }
+    if (groupTotalIncomeEl) groupTotalIncomeEl.textContent = formatCurrency(totalIncome);
+    if (groupTotalExpensesEl) groupTotalExpensesEl.textContent = formatCurrency(totalExpense);
     
-    if (window.lucide) window.lucide.createIcons();
+    if (groupIncomeCountEl) {
+        groupIncomeCountEl.textContent = `${incomeCount} ${getText('group_income_count') || '筆收入交易'}`;
+    }
+    if (groupExpenseCountEl) {
+        groupExpenseCountEl.textContent = `${expenseCount} ${getText('group_expense_count') || '筆支出交易'}`;
+    }
 }
 
 function renderGroupTransactions() {
@@ -341,7 +273,7 @@ function renderGroupTransactions() {
     if (activeTransactions.length === 0) {
         groupTxTableBody.innerHTML = `
             <tr class="empty-state-row">
-                <td colspan="7">
+                <td colspan="8">
                     <div class="empty-state" style="padding: 24px 0;">
                         <i data-lucide="receipt"></i>
                         <p>${getText('group_empty_ledger')}</p>
@@ -357,39 +289,51 @@ function renderGroupTransactions() {
         const row = document.createElement('tr');
         row.style.animation = 'fadeIn 0.25s ease-out';
         
-        // Split details label
-        const splitsCount = (t.splits || []).length;
-        const transferredLabel = getText('group_transferred_to') || '轉帳給';
-        const splitWithLabel = getText('group_split_with') || '與';
-        const memberLabel = getText('group_split_member') || '位成員均分';
-        const splitText = t.category === 'Settle' 
-            ? `${transferredLabel} ${escapeHTML(t.splits[0]?.nickname)}` 
-            : `${splitWithLabel} ${splitsCount} ${memberLabel}`;
-            
-        const rowClass = t.category === 'Settle' ? 'style="opacity: 0.85; background: rgba(16, 185, 129, 0.02);"' : '';
-        const catBadgeStyle = t.category === 'Settle' 
+        // Tags rendering
+        let tagsHtml = '';
+        if (t.tags && Array.isArray(t.tags) && t.tags.length > 0) {
+            t.tags.forEach(tag => {
+                tagsHtml += `<span class="tag-badge" style="background: rgba(99, 102, 241, 0.08); color: var(--primary); margin-right: 4px; font-size: 11px;">${escapeHTML(tag)}</span>`;
+            });
+        }
+        
+        const isIncome = t.type === 'income';
+        const typeLabel = isIncome ? getText('db_income_type') : getText('db_expense_type');
+        const typeBadgeStyle = isIncome
             ? 'background: rgba(16, 185, 129, 0.1); color: var(--success);'
-            : 'background: rgba(99, 102, 241, 0.08); color: var(--primary);';
+            : 'background: rgba(239, 68, 68, 0.1); color: var(--error);';
+            
+        const amountDisplay = isIncome ? `+${formatCurrency(t.amount)}` : `-${formatCurrency(t.amount)}`;
+        const amountStyle = isIncome ? 'color: var(--success);' : 'color: var(--text-primary);';
+
+        // Check permission to delete (Group Creator or Transaction Owner)
+        const isCreatorOrOwner = isGroupCreator || (currentUserId && t.user_id === currentUserId);
+        const deleteBtn = isCreatorOrOwner 
+            ? `<button class="action-btn action-btn-delete" data-id="${t.id}" title="${getText('confirm_delete_bill')}"><i data-lucide="trash-2"></i></button>`
+            : `<button class="action-btn action-btn-delete" style="opacity: 0.2; cursor: not-allowed;" disabled><i data-lucide="trash-2"></i></button>`;
             
         row.innerHTML = `
-            <tr ${rowClass}>
+            <tr>
                 <td>${t.date}</td>
-                <td style="font-weight:600;">${escapeHTML(t.paid_by)}</td>
+                <td style="font-weight:600;">${escapeHTML(t.member_nickname || 'User')}</td>
+                <td><span class="tag-badge" style="${typeBadgeStyle}">${typeLabel}</span></td>
                 <td>${escapeHTML(t.description)}</td>
-                <td><span class="tag-badge" style="${catBadgeStyle}">${t.category}</span></td>
-                <td class="text-muted" style="font-size:12px;">${splitText}</td>
-                <td class="text-right" style="font-weight:700; font-family: 'Outfit'; color: var(--text-primary);">
-                    ${formatCurrency(t.amount)}
+                <td><span class="tag-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted);">${getText('cat_' + t.category)}</span></td>
+                <td>${tagsHtml}</td>
+                <td class="text-right" style="font-weight:700; font-family: 'Outfit'; ${amountStyle}">
+                    ${amountDisplay}
                 </td>
                 <td>
                     <div class="action-btns">
-                        <button class="action-btn action-btn-delete" data-id="${t.id}" title="Delete Bill"><i data-lucide="trash-2"></i></button>
+                        ${deleteBtn}
                     </div>
                 </td>
             </tr>
         `;
         
-        row.querySelector('.action-btn-delete').addEventListener('click', () => handleGroupTxDelete(t.id));
+        if (isCreatorOrOwner) {
+            row.querySelector('.action-btn-delete').addEventListener('click', () => handleGroupTxDelete(t.id));
+        }
         groupTxTableBody.appendChild(row);
     });
     
@@ -406,7 +350,7 @@ async function handleCreateGroup(e) {
     
     try {
         const newGroup = await storage.createGroup(name);
-        showToast(`${getText('toast_group_created') || '分帳群組建立成功！'} "${name}"`, 'success');
+        showToast(`${getText('toast_group_created') || '記帳群組建立成功！'} "${name}"`, 'success');
         hideModal(groupModal);
         
         await refreshGroups();
@@ -470,29 +414,11 @@ async function handleDeleteGroup() {
 
 // Display Bill Modal
 function showGroupTxModal() {
-    if (activeMembers.length < 2) {
-        showToast(getText('warn_min_2_members') || '請至少新增 2 位成員再分撤費用。', 'warning');
-        return;
-    }
-    
     groupTxForm.reset();
     
-    // Fill paid by options
-    gtxPayer.innerHTML = '';
-    activeMembers.forEach(m => {
-        gtxPayer.innerHTML += `<option value="${m.nickname}">${m.nickname}</option>`;
-    });
-    
-    // Fill split members checkboxes list
-    gtxSplitMembers.innerHTML = '';
-    activeMembers.forEach(m => {
-        gtxSplitMembers.innerHTML += `
-            <label class="checkbox-label">
-                <input type="checkbox" name="splitMember" value="${m.nickname}" checked>
-                <span>${escapeHTML(m.nickname)}</span>
-            </label>
-        `;
-    });
+    if (gtxType) gtxType.value = 'expense';
+    if (gtxCategory) gtxCategory.value = 'Food';
+    if (gtxTags) gtxTags.value = '';
     
     gtxDate.value = new Date().toISOString().split('T')[0];
     showModal(groupTxModal);
@@ -501,45 +427,36 @@ function showGroupTxModal() {
 async function handleGroupTxSubmit(e) {
     e.preventDefault();
     
+    const type = gtxType.value;
     const amount = parseFloat(gtxAmount.value);
-    const paidBy = gtxPayer.value;
     const category = gtxCategory.value;
     const date = gtxDate.value;
     const description = gtxDescription.value.trim();
     
-    // Collect split members checked
-    const checkedCheckboxes = Array.from(document.querySelectorAll('input[name="splitMember"]:checked'));
-    if (checkedCheckboxes.length === 0) {
-        showToast(getText('warn_check_one_member') || '請勾選至少一位分撤成員。', 'warning');
-        return;
-    }
-    
-    // Equal split calculation
-    const splitAmount = amount / checkedCheckboxes.length;
-    const splits = checkedCheckboxes.map(cb => ({
-        nickname: cb.value,
-        amount: splitAmount
-    }));
-    
+    const tagsVal = gtxTags ? gtxTags.value.trim() : '';
+    const tags = tagsVal
+        ? tagsVal.split(',').map(t => t.trim()).filter(t => t.length > 0)
+        : [];
+        
     const txData = {
-        paid_by: paidBy,
+        type,
         amount,
         category,
         date,
         description,
-        splits
+        tags
     };
     
     try {
         await storage.addGroupTransaction(activeGroup.id, txData);
-        showToast(getText('toast_bill_added') || '費用已記錄成功！', 'success');
+        showToast(getText('toast_bill_added') || '交易已記錄成功！', 'success');
         hideModal(groupTxModal);
         
         // Reload details
         const updated = (await storage.getGroups()).find(g => g.id === activeGroup.id);
         await selectGroup(updated);
     } catch (err) {
-        showToast("Failed to record bill: " + err.message, "error");
+        showToast("Failed to record transaction: " + err.message, "error");
     }
 }
 
@@ -556,87 +473,4 @@ async function handleGroupTxDelete(txId) {
     } catch (err) {
         showToast("Failed to delete bill: " + err.message, "error");
     }
-}
-
-/* ==========================================================================
-   SETTLEMENT SELECTION
-   ========================================================================== */
-function handleSettleUpPrompt() {
-    if (calculatedDebts.length === 0) {
-        showToast(getText('group_all_settled'), 'success');
-        return;
-    }
-    
-    // Create an inline form or prompt to select which debt to settle
-    let optionsHtml = '';
-    calculatedDebts.forEach((d, idx) => {
-        optionsHtml += `
-            <option value="${idx}">${d.debtor} ${getText('group_owes')} ${d.creditor} -> ${formatCurrency(d.amount)}</option>
-        `;
-    });
-    
-    // Set up a simple dynamic choice box inside a settle modal or direct prompt
-    const settleContainer = document.createElement('div');
-    settleContainer.className = 'modal-overlay active';
-    settleContainer.innerHTML = `
-        <div class="modal-container modal-sm">
-            <div class="modal-header">
-                <h3>${getText('settle_record_title') || '記錄債務結清'}</h3>
-                <button class="modal-close-btn" id="settleCancelBtn1"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-form">
-                <div class="form-group">
-                    <label for="settleSelect">${getText('settle_select_label') || '選擇要結清的債務'}</label>
-                    <select id="settleSelect" style="width:100%;">
-                        ${optionsHtml}
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" id="settleCancelBtn2">${getText('modal_cancel')}</button>
-                    <button class="btn btn-primary" id="settleSubmitBtn">${getText('settle_record_btn') || '確認結清'}</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(settleContainer);
-    if (window.lucide) window.lucide.createIcons();
-    
-    const closeOverlay = () => {
-        settleContainer.remove();
-    };
-    
-    settleContainer.querySelector('#settleCancelBtn1').addEventListener('click', closeOverlay);
-    settleContainer.querySelector('#settleCancelBtn2').addEventListener('click', closeOverlay);
-    
-    settleContainer.querySelector('#settleSubmitBtn').addEventListener('click', async () => {
-        const choiceIdx = parseInt(settleContainer.querySelector('#settleSelect').value);
-        const debt = calculatedDebts[choiceIdx];
-        if (!debt) return;
-        
-        // Record a transaction: Giver pays Receiver
-        const txData = {
-            paid_by: debt.debtor,
-            amount: debt.amount,
-            category: 'Settle',
-            date: new Date().toISOString().split('T')[0],
-            description: `${debt.debtor} settled up with ${debt.creditor}`,
-            splits: [{
-                nickname: debt.creditor,
-                amount: debt.amount
-            }]
-        };
-        
-        try {
-            await storage.addGroupTransaction(activeGroup.id, txData);
-            showToast(`${getText('toast_settled') || '結清成功！'} ${formatCurrency(debt.amount)}`, 'success');
-            closeOverlay();
-            
-            // Reload group details
-            const updated = (await storage.getGroups()).find(g => g.id === activeGroup.id);
-            await selectGroup(updated);
-        } catch (err) {
-            showToast("Failed to settle: " + err.message, "error");
-        }
-    });
 }
