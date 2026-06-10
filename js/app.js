@@ -7,6 +7,11 @@ import * as budgeting from './budgeting.js';
 import * as analytics from './analytics.js';
 import * as settings from './settings.js';
 
+// Lucide API compatibility polyfill
+if (window.lucide && !window.lucide.replace) {
+    window.lucide.replace = window.lucide.createIcons;
+}
+
 // DOM elements
 const sidebar = document.getElementById('sidebar');
 const sidebarOpenBtn = document.getElementById('sidebarOpenBtn');
