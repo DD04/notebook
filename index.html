@@ -156,26 +156,26 @@
                         <!-- Transactions Table / List -->
                         <div class="ledger-table-wrapper">
                             <table class="ledger-table" id="ledgerTable">
-                                <thead>
-                                    <tr>
-                                        <th data-i18n="th_date">Date</th>
-                                        <th data-i18n="th_desc">Description</th>
-                                        <th data-i18n="th_cat">Category</th>
-                                        <th class="text-right" data-i18n="th_amount">Amount</th>
-                                        <th class="text-center" data-i18n="th_actions">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ledgerTableBody">
-                                    <!-- Dynamic Content -->
-                                    <tr class="empty-state-row">
-                                        <td colspan="5">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 12.5%;" data-i18n="th_date">Date</th>
+                                            <th style="width: 12.5%;" data-i18n="th_type">Type</th>
+                                            <th style="width: 12.5%;" data-i18n="th_cat">Category</th>
+                                            <th style="width: 30%;" data-i18n="th_desc">Description</th>
+                                            <th style="width: 12.5%;" class="text-right" data-i18n="th_amount">Amount</th>
+                                            <th style="width: 20%;" class="text-center" data-i18n="th_actions">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ledgerTableBody">
+                                        <!-- Dynamic Content -->
+                                        <tr class="empty-state-row">
+                                            <td colspan="6">
                                             <div class="empty-state">
                                                 <i data-lucide="file-text"></i>
                                                 <p data-i18n="db_empty_state">No transactions found. Add one to get started!</p>
                                             </div>
                                         </td>
-                                    </tr>
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
 
@@ -229,9 +229,10 @@
                                         <span class="text-muted" id="activeGroupMeta">Created on Date</span>
                                     </div>
                                     <div class="header-actions">
-                                        <button class="btn btn-outline-error btn-sm" id="deleteGroupBtn" data-i18n="group_delete_group" style="display:none;"><i data-lucide="trash-2"></i> <span data-i18n="group_delete_group">Delete Group</span></button>
-                                        <button class="btn btn-secondary" id="settleUpBtn" style="display:none;"><i data-lucide="check-circle-2"></i> <span data-i18n="group_settle_btn">Settle Up</span></button>
-                                        <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
+                                         <button class="btn btn-secondary btn-sm" id="groupAnalyticsBtn" style="display:none;"><i data-lucide="pie-chart"></i> <span>群組分析</span></button>
+                                         <button class="btn btn-outline-error btn-sm" id="deleteGroupBtn" data-i18n="group_delete_group" style="display:none;"><i data-lucide="trash-2"></i> <span data-i18n="group_delete_group">Delete Group</span></button>
+                                         <button class="btn btn-secondary" id="settleUpBtn" style="display:none;"><i data-lucide="check-circle-2"></i> <span data-i18n="group_settle_btn">Settle Up</span></button>
+                                         <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
                                     </div>
                                 </div>
 
@@ -268,22 +269,44 @@
                                     </div>
                                 </div>
 
-                                <!-- Group Transactions List -->
-                                <div class="group-transactions-list card-box">
-                                    <h3 data-i18n="group_ledger_title">Group Ledger</h3>
-                                    <div class="ledger-table-wrapper">
-                                        <table class="ledger-table" id="groupTxTable">
-                                            <thead>
-                                                <tr>
-                                                    <th data-i18n="th_date">Date</th>
-                                                    <th data-i18n="th_member">Recorded By</th>
-                                                    <th data-i18n="th_type">Type</th>
-                                                    <th data-i18n="th_desc">Description</th>
-                                                    <th data-i18n="th_cat">Category</th>
-                                                    <th class="text-right" data-i18n="th_amount">Amount</th>
-                                                    <th class="text-center" data-i18n="th_actions">Actions</th>
-                                                </tr>
-                                            </thead>
+                                 <!-- Group Transactions List -->
+                                 <div class="group-transactions-list card-box">
+                                     <h3 data-i18n="group_ledger_title">Group Ledger</h3>
+                                     
+                                     <!-- Group Filters panel -->
+                                     <div class="filters-panel" style="margin-bottom: 20px;">
+                                         <div class="search-box">
+                                             <i data-lucide="search"></i>
+                                             <input type="text" id="groupFilterSearch" data-i18n-placeholder="db_search" placeholder="搜尋描述...">
+                                         </div>
+                                         <div class="filter-inputs">
+                                             <select id="groupFilterType">
+                                                 <option value="all" data-i18n="db_all_types">所有類型</option>
+                                                 <option value="income" data-i18n="db_income_type">收入</option>
+                                                 <option value="expense" data-i18n="db_expense_type">支出</option>
+                                             </select>
+                                             <select id="groupFilterCategory">
+                                                 <option value="all" data-i18n="db_all_cats">所有分類</option>
+                                             </select>
+                                             <select id="groupFilterMonth">
+                                                 <option value="all" data-i18n="db_all_months">所有月份</option>
+                                             </select>
+                                         </div>
+                                     </div>
+
+                                     <div class="ledger-table-wrapper">
+                                         <table class="ledger-table" id="groupTxTable">
+                                             <thead>
+                                                 <tr>
+                                                     <th style="width: 10%;" data-i18n="th_date">Date</th>
+                                                     <th style="width: 10%;" data-i18n="th_member">Recorded By</th>
+                                                     <th style="width: 10%;" data-i18n="th_type">Type</th>
+                                                     <th style="width: 10%;" data-i18n="th_cat">Category</th>
+                                                     <th style="width: 30%;" data-i18n="th_desc">Description</th>
+                                                     <th style="width: 10%;" class="text-right" data-i18n="th_amount">Amount</th>
+                                                     <th style="width: 20%;" class="text-center" data-i18n="th_actions">Actions</th>
+                                                 </tr>
+                                             </thead>
                                             <tbody id="groupTxTableBody">
                                                 <!-- Dynamic entries -->
                                             </tbody>
@@ -510,6 +533,39 @@
                     <button type="submit" class="btn btn-primary" data-i18n="modal_gtx_save">Save Transaction</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Group Analytics -->
+    <div class="modal-overlay" id="groupAnalyticsModal">
+        <div class="modal-container" style="max-width: 800px; width: 90%;">
+            <div class="modal-header">
+                <h3 id="groupAnalyticsModalTitle">群組收支分析</h3>
+                <button class="modal-close-btn" id="groupAnalyticsModalClose"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body" style="padding-top: 10px;">
+                <div class="analytics-layout" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                     <!-- Chart Card 1: Donut breakdown -->
+                     <div class="analytics-card card-box" style="margin-bottom: 0;">
+                         <h3 data-i18n="analytics_cat_dist">Category Distribution</h3>
+                         <div class="chart-container donut-chart-container" style="position: relative; display: flex; align-items: center; justify-content: center; height: 220px; width: 100%;">
+                             <canvas id="groupCategoryDonutChart"></canvas>
+                             <div id="groupDonutEmptyMessage" class="empty-state text-muted d-none" style="position: absolute;">無支出數據</div>
+                         </div>
+                     </div>
+  
+                     <!-- Chart Card 2: Income vs Expense Timeline -->
+                     <div class="analytics-card card-box" style="margin-bottom: 0;">
+                         <h3 data-i18n="analytics_cash_flow">Monthly Cash Flow</h3>
+                         <div class="chart-container line-chart-container" style="position: relative; height: 220px; width: 100%;">
+                             <canvas id="groupTrendBarChart"></canvas>
+                         </div>
+                     </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="groupAnalyticsModalCloseBtn">關閉</button>
+            </div>
         </div>
     </div>
 

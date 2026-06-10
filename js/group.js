@@ -51,6 +51,10 @@ let activeGroup = null;
 let activeMembers = [];
 let activeTransactions = [];
 
+// Chart.js instances for group
+let groupDonutChartInstance = null;
+let groupBarChartInstance = null;
+
 // Current authenticated user
 let currentUserId = null;
 let currentUserNickname = null;
@@ -99,6 +103,34 @@ export function initGroups() {
     if (deleteGroupBtn) {
         deleteGroupBtn.addEventListener('click', handleDeleteGroup);
     }
+
+    // Group Filter Listeners
+    const groupFilterSearch = document.getElementById('groupFilterSearch');
+    const groupFilterType = document.getElementById('groupFilterType');
+    const groupFilterCategory = document.getElementById('groupFilterCategory');
+    const groupFilterMonth = document.getElementById('groupFilterMonth');
+    
+    groupFilterSearch.addEventListener('input', applyGroupFiltersAndRender);
+    groupFilterType.addEventListener('change', applyGroupFiltersAndRender);
+    groupFilterCategory.addEventListener('change', applyGroupFiltersAndRender);
+    groupFilterMonth.addEventListener('change', applyGroupFiltersAndRender);
+    
+    // Group Analytics Button & Modal
+    const groupAnalyticsBtn = document.getElementById('groupAnalyticsBtn');
+    const groupAnalyticsModal = document.getElementById('groupAnalyticsModal');
+    const groupAnalyticsModalClose = document.getElementById('groupAnalyticsModalClose');
+    const groupAnalyticsModalCloseBtn = document.getElementById('groupAnalyticsModalCloseBtn');
+    
+    groupAnalyticsBtn.addEventListener('click', () => {
+        showModal(groupAnalyticsModal);
+        renderGroupAnalyticsCharts();
+    });
+    const hideGroupAnalytics = () => hideModal(groupAnalyticsModal);
+    groupAnalyticsModalClose.addEventListener('click', hideGroupAnalytics);
+    groupAnalyticsModalCloseBtn.addEventListener('click', hideGroupAnalytics);
+    groupAnalyticsModal.addEventListener('click', (e) => {
+        if (e.target === groupAnalyticsModal) hideGroupAnalytics();
+    });
 }
 
 function showModal(modalEl) {
@@ -135,6 +167,10 @@ function deselectGroup() {
     noGroupSelected.classList.remove('d-none');
     groupActiveDetails.classList.add('d-none');
     groupMembersSection.classList.add('d-none');
+    const groupAnalyticsBtn = document.getElementById('groupAnalyticsBtn');
+    if (groupAnalyticsBtn) {
+        groupAnalyticsBtn.style.display = 'none';
+    }
 }
 
 function renderGroupsList() {
@@ -200,7 +236,15 @@ async function selectGroup(group) {
     
     renderMembersList();
     renderGroupSummaryCards();
-    renderGroupTransactions();
+    
+    // Show the analytics button for selected group
+    const groupAnalyticsBtn = document.getElementById('groupAnalyticsBtn');
+    if (groupAnalyticsBtn) {
+        groupAnalyticsBtn.style.display = 'inline-flex';
+    }
+    
+    populateGroupFilters();
+    applyGroupFiltersAndRender();
 }
 
 function renderMembersList() {
@@ -272,10 +316,10 @@ function renderGroupSummaryCards() {
     }
 }
 
-function renderGroupTransactions() {
+function renderGroupTransactions(txsList = activeTransactions) {
     groupTxTableBody.innerHTML = '';
     
-    if (activeTransactions.length === 0) {
+    if (txsList.length === 0) {
         groupTxTableBody.innerHTML = `
             <tr class="empty-state-row">
                 <td colspan="7">
@@ -290,17 +334,9 @@ function renderGroupTransactions() {
         return;
     }
     
-    activeTransactions.forEach(t => {
+    txsList.forEach(t => {
         const row = document.createElement('tr');
         row.style.animation = 'fadeIn 0.25s ease-out';
-        
-        // Tags rendering
-        let tagsHtml = '';
-        if (t.tags && Array.isArray(t.tags) && t.tags.length > 0) {
-            t.tags.forEach(tag => {
-                tagsHtml += `<span class="tag-badge" style="background: rgba(99, 102, 241, 0.08); color: var(--primary); margin-right: 4px; font-size: 11px;">${escapeHTML(tag)}</span>`;
-            });
-        }
         
         const isIncome = t.type === 'income';
         const typeLabel = isIncome ? getText('db_income_type') : getText('db_expense_type');
@@ -327,8 +363,8 @@ function renderGroupTransactions() {
                 <td>${t.date}</td>
                 <td style="font-weight:600;">${escapeHTML(t.member_nickname || 'User')}</td>
                 <td><span class="tag-badge" style="${typeBadgeStyle}">${typeLabel}</span></td>
+                <td><span class="tag-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted);">${getText('cat_' + t.category) || t.category}</span></td>
                 <td>${escapeHTML(t.description)}</td>
-                <td><span class="tag-badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted);">${getText('cat_' + t.category)}</span></td>
                 <td class="text-right" style="font-weight:700; font-family: 'Outfit'; ${amountStyle}">
                     ${amountDisplay}
                 </td>
@@ -506,3 +542,265 @@ async function handleGroupTxDelete(txId) {
         showToast("Failed to delete transaction: " + err.message, "error");
     }
 }
+
+/* ==========================================================================
+   FILTERING & ANALYTICS HELPER FUNCTIONS
+   ========================================================================== */
+function populateGroupFilters() {
+    const groupFilterCategory = document.getElementById('groupFilterCategory');
+    const groupFilterMonth = document.getElementById('groupFilterMonth');
+    
+    const categories = new Set();
+    const months = new Set();
+    
+    activeTransactions.forEach(t => {
+        if (t.category) categories.add(t.category);
+        if (t.date) {
+            const monthKey = t.date.substring(0, 7); // YYYY-MM
+            months.add(monthKey);
+        }
+    });
+    
+    const prevCat = groupFilterCategory.value;
+    const prevMonth = groupFilterMonth.value;
+    
+    // Fill categories
+    groupFilterCategory.innerHTML = `<option value="all">${getText('db_all_cats')}</option>`;
+    Array.from(categories).sort().forEach(cat => {
+        groupFilterCategory.innerHTML += `<option value="${cat}">${getText('cat_' + cat) || cat}</option>`;
+    });
+    
+    // Fill months
+    const locale = getLocale() === 'zh' ? 'zh-TW' : 'en-US';
+    groupFilterMonth.innerHTML = `<option value="all">${getText('db_all_months')}</option>`;
+    Array.from(months).sort().reverse().forEach(mon => {
+        const dateObj = new Date(mon + '-02'); // Buffer day
+        const formatted = dateObj.toLocaleDateString(locale, { year: 'numeric', month: 'long' });
+        groupFilterMonth.innerHTML += `<option value="${mon}">${formatted}</option>`;
+    });
+    
+    // Re-select if still valid
+    if (Array.from(categories).includes(prevCat)) {
+        groupFilterCategory.value = prevCat;
+    }
+    if (Array.from(months).includes(prevMonth)) {
+        groupFilterMonth.value = prevMonth;
+    }
+}
+
+function applyGroupFiltersAndRender() {
+    const groupFilterSearch = document.getElementById('groupFilterSearch');
+    const groupFilterType = document.getElementById('groupFilterType');
+    const groupFilterCategory = document.getElementById('groupFilterCategory');
+    const groupFilterMonth = document.getElementById('groupFilterMonth');
+
+    const searchVal = groupFilterSearch.value.trim().toLowerCase();
+    const typeVal = groupFilterType.value;
+    const catVal = groupFilterCategory.value;
+    const monthVal = groupFilterMonth.value;
+    
+    const filtered = activeTransactions.filter(t => {
+        const matchesSearch = !searchVal || 
+            (t.description && t.description.toLowerCase().includes(searchVal)) ||
+            (t.member_nickname && t.member_nickname.toLowerCase().includes(searchVal));
+        const matchesType = typeVal === 'all' || t.type === typeVal;
+        const matchesCat = catVal === 'all' || t.category === catVal;
+        const matchesMonth = monthVal === 'all' || (t.date && t.date.startsWith(monthVal));
+        
+        return matchesSearch && matchesType && matchesCat && matchesMonth;
+    });
+    
+    renderGroupTransactions(filtered);
+}
+
+function renderGroupAnalyticsCharts() {
+    const donutCanvas = document.getElementById('groupCategoryDonutChart');
+    const donutEmptyMessage = document.getElementById('groupDonutEmptyMessage');
+    const barCanvas = document.getElementById('groupTrendBarChart');
+    
+    // Destroy previous Chart.js instances
+    if (groupDonutChartInstance) {
+        groupDonutChartInstance.destroy();
+        groupDonutChartInstance = null;
+    }
+    if (groupBarChartInstance) {
+        groupBarChartInstance.destroy();
+        groupBarChartInstance = null;
+    }
+    
+    // 1. Group expenses for Category Donut Chart
+    const catTotals = {};
+    let totalExpense = 0;
+    
+    activeTransactions.forEach(t => {
+        if (t.type === 'expense') {
+            const cat = t.category || 'Other';
+            const val = parseFloat(t.amount);
+            catTotals[cat] = (catTotals[cat] || 0) + val;
+            totalExpense += val;
+        }
+    });
+    
+    const categoriesSorted = Object.entries(catTotals)
+        .sort((a, b) => b[1] - a[1]);
+        
+    if (totalExpense === 0 || categoriesSorted.length === 0) {
+        donutCanvas.classList.add('d-none');
+        donutEmptyMessage.classList.remove('d-none');
+    } else {
+        donutCanvas.classList.remove('d-none');
+        donutEmptyMessage.classList.add('d-none');
+        
+        const labels = categoriesSorted.map(([cat]) => getText('cat_' + cat) || cat);
+        const data = categoriesSorted.map(([, val]) => val);
+        const CHART_COLORS = [
+            '#6366F1', '#10B981', '#EF4444', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#3B82F6'
+        ];
+        const backgroundColors = categoriesSorted.map((_, idx) => CHART_COLORS[idx % CHART_COLORS.length]);
+        
+        groupDonutChartInstance = new window.Chart(donutCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1,
+                    borderColor: '#1e1e2e',
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#a1a1aa',
+                            boxWidth: 12,
+                            font: { family: "'Outfit', sans-serif", size: 11 }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#27273a',
+                        titleColor: '#ffffff',
+                        bodyColor: '#e4e4e7',
+                        borderColor: 'rgba(255, 255, 255, 0.08)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed;
+                                const percent = (value / totalExpense) * 100;
+                                return ` ${context.label}: $${value.toFixed(2)} (${percent.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+    }
+    
+    // 2. Group values by month for Monthly Cash Flow (Bar Chart)
+    const monthlySummary = {};
+    const monthsArray = [];
+    
+    const today = new Date();
+    for (let i = 5; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const key = `${year}-${month}`;
+        monthsArray.push(key);
+        monthlySummary[key] = { income: 0, expense: 0 };
+    }
+    
+    activeTransactions.forEach(t => {
+        if (!t.date) return;
+        const mKey = t.date.substring(0, 7);
+        if (monthlySummary[mKey]) {
+            const val = parseFloat(t.amount);
+            if (t.type === 'income') {
+                monthlySummary[mKey].income += val;
+            } else {
+                monthlySummary[mKey].expense += val;
+            }
+        }
+    });
+    
+    const barLabels = monthsArray.map(mKey => {
+        const parts = mKey.split('-');
+        return `${parts[0]}年${parts[1]}月`;
+    });
+    
+    const incomeData = monthsArray.map(mKey => monthlySummary[mKey].income);
+    const expenseData = monthsArray.map(mKey => monthlySummary[mKey].expense);
+    
+    groupBarChartInstance = new window.Chart(barCanvas, {
+        type: 'bar',
+        data: {
+            labels: barLabels,
+            datasets: [
+                {
+                    label: getText('db_income_type') || '收入',
+                    data: incomeData,
+                    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                    hoverBackgroundColor: '#10B981',
+                    borderRadius: 4,
+                    borderWidth: 0
+                },
+                {
+                    label: getText('db_expense_type') || '支出',
+                    data: expenseData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                    hoverBackgroundColor: '#EF4444',
+                    borderRadius: 4,
+                    borderWidth: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                    ticks: { color: '#a1a1aa', font: { family: "'Outfit', sans-serif", size: 10 } }
+                },
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.04)' },
+                    ticks: {
+                        color: '#a1a1aa',
+                        font: { family: "'Outfit', sans-serif", size: 10 },
+                        callback: function(value) { return '$' + value; }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#a1a1aa',
+                        boxWidth: 12,
+                        font: { family: "'Outfit', sans-serif", size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#27273a',
+                    titleColor: '#ffffff',
+                    bodyColor: '#e4e4e7',
+                    borderColor: 'rgba(255, 255, 255, 0.08)',
+                    borderWidth: 1,
+                    tooltipDecimals: 2,
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+

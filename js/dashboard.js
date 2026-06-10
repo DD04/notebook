@@ -250,7 +250,7 @@ function renderTable() {
     if (filteredTransactions.length === 0) {
         ledgerTableBody.innerHTML = `
             <tr class="empty-state-row">
-                <td colspan="5">
+                <td colspan="6">
                     <div class="empty-state">
                         <i data-lucide="file-text"></i>
                         <p>${getText('db_empty_state')}</p>
@@ -277,18 +277,21 @@ function renderTable() {
         const row = document.createElement('tr');
         row.style.animation = 'fadeIn 0.25s ease-out';
         
-        // Tags badges HTML
-        const tagsHtml = (t.tags || []).map(tag => `<span class="tag-badge">${escapeHTML(tag)}</span>`).join('');
-        
-        // Amount color formatting
+        // Amount and Type formatting
         const isExpense = t.type === 'expense';
         const amountClass = isExpense ? 'text-error' : 'text-success';
         const amountPrefix = isExpense ? '-' : '+';
         
+        const typeLabel = isExpense ? getText('db_expense_type') : getText('db_income_type');
+        const typeBadgeStyle = isExpense
+            ? 'background: rgba(239, 68, 68, 0.1); color: var(--error);'
+            : 'background: rgba(16, 185, 129, 0.1); color: var(--success);';
+        
         row.innerHTML = `
             <td>${t.date}</td>
+            <td><span class="tag-badge" style="${typeBadgeStyle}">${typeLabel}</span></td>
+            <td><span class="tag-badge" style="background: rgba(99, 102, 241, 0.08); color: var(--primary);">${getText('cat_' + t.category) || t.category}</span></td>
             <td style="font-weight: 500;">${escapeHTML(t.description || 'Untitled')}</td>
-            <td><span class="tag-badge" style="background: rgba(99, 102, 241, 0.08); color: var(--primary);">${t.category}</span></td>
             <td class="text-right ${amountClass}" style="font-weight: 600; font-family: 'Outfit';">
                 ${amountPrefix}${formatCurrency(t.amount)}
             </td>
