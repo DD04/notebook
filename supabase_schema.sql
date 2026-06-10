@@ -270,13 +270,14 @@ USING (
     public.is_group_member(group_id, auth.uid())
 );
 
--- Only the group creator can remove members
+-- Creator can remove members, or members can remove themselves (leave group)
 DROP POLICY IF EXISTS "Only creator can remove group members" ON public.group_members;
 DROP POLICY IF EXISTS "Users can delete group members in their groups" ON public.group_members;
-CREATE POLICY "Only creator can remove group members"
+CREATE POLICY "Creator can remove members, or members can remove themselves"
 ON public.group_members FOR DELETE
 USING (
     EXISTS(SELECT 1 FROM public.groups WHERE id = group_id AND created_by = auth.uid())
+    OR user_id = auth.uid()
 );
 
 

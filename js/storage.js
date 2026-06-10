@@ -729,3 +729,42 @@ export async function importStateFromJSON(jsonString) {
 export function clearLocalStorageState() {
     localStorage.removeItem('notebook_config');
 }
+
+export async function leaveGroup(groupId) {
+    if (!supabase) throw new Error("Database not connected");
+    const user = supabase.auth.user ? supabase.auth.user() : (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error("User not logged in");
+
+    const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', user.id);
+
+    if (error) throw error;
+}
+
+export async function updateProfile(newNickname, newPassword) {
+    if (!supabase) throw new Error("Database not connected");
+    const user = supabase.auth.user ? supabase.auth.user() : (await supabase.auth.getUser()).data.user;
+    if (!user) throw new Error("User not logged in");
+
+    if (newPassword) {
+        const { error: pwdError } = await supabase.auth.updateUser({ password: newPassword });
+        if (pwdError) throw pwdError;
+    }
+
+    if (newNickname) {
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ nickname: newNickname })
+            .eq('id', user.id);
+            
+        if (profileError) throw profileError;
+
+        const { error: authError } = await supabase.auth.updateUser({
+            data: { nickname: newNickname }
+        });
+        if (authError) throw authError;
+    }
+}

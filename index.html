@@ -312,6 +312,9 @@
                                             data-i18n="group_delete_group" style="display:none;"><i
                                                 data-lucide="trash-2"></i> <span data-i18n="group_delete_group">Delete
                                                 Group</span></button>
+                                        <button class="btn btn-outline-error btn-sm" id="leaveGroupBtn"
+                                            style="display:none;"><i
+                                                data-lucide="log-out"></i> <span>退出群組</span></button>
                                         <button class="btn btn-secondary" id="settleUpBtn" style="display:none;"><i
                                                 data-lucide="check-circle-2"></i> <span
                                                 data-i18n="group_settle_btn">Settle Up</span></button>
@@ -615,7 +618,12 @@
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                     <!-- Chart Card 1: Donut breakdown -->
                     <div class="analytics-card card-box" style="margin-bottom: 0;">
-                        <h3 data-i18n="analytics_cat_dist">Category Distribution</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                            <h3 data-i18n="analytics_cat_dist" style="margin-bottom: 0;">Category Distribution</h3>
+                            <select id="groupAnalyticsMonthSelect" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
+                                <option value="all">所有月份</option>
+                            </select>
+                        </div>
                         <div class="chart-container donut-chart-container"
                             style="position: relative; display: flex; align-items: center; justify-content: center; height: 220px; width: 100%;">
                             <canvas id="groupCategoryDonutChart"></canvas>
@@ -626,7 +634,13 @@
 
                     <!-- Chart Card 2: Income vs Expense Timeline -->
                     <div class="analytics-card card-box" style="margin-bottom: 0;">
-                        <h3 data-i18n="analytics_cash_flow">Monthly Cash Flow</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                            <h3 data-i18n="analytics_cash_flow" style="margin-bottom: 0;">Monthly Cash Flow</h3>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label for="groupAnalyticsTrendMonthPicker" style="font-size: 13px; color: var(--text-secondary);">結束月份：</label>
+                                <input type="month" id="groupAnalyticsTrendMonthPicker" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
+                            </div>
+                        </div>
                         <div class="chart-container line-chart-container"
                             style="position: relative; height: 220px; width: 100%;">
                             <canvas id="groupTrendBarChart"></canvas>
@@ -637,6 +651,31 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" id="groupAnalyticsModalCloseBtn">關閉</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: Edit User Profile -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <h3>修改個人資料</h3>
+                <button class="modal-close-btn" id="profileModalClose"><i data-lucide="x"></i></button>
+            </div>
+            <form id="profileForm" class="modal-form">
+                <div class="form-group">
+                    <label for="profileNicknameInput">顯示名稱 / 暱稱</label>
+                    <input type="text" id="profileNicknameInput" placeholder="新暱稱" required>
+                </div>
+                <div class="form-group">
+                    <label for="profilePasswordInput">新密碼 (若不修改請留空)</label>
+                    <input type="password" id="profilePasswordInput" placeholder="••••••••" minlength="6">
+                </div>
+                <div class="gateway-message text-error d-none" id="profileError"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="profileModalCancel">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存修改</button>
+                </div>
+            </form>
         </div>
     </div>
 

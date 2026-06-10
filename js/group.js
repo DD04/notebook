@@ -108,6 +108,12 @@ export function initGroups() {
     if (deleteGroupBtn) {
         deleteGroupBtn.addEventListener('click', handleDeleteGroup);
     }
+    
+    // Leave group (only guest members see this button)
+    const leaveGroupBtn = document.getElementById('leaveGroupBtn');
+    if (leaveGroupBtn) {
+        leaveGroupBtn.addEventListener('click', handleLeaveGroup);
+    }
 
     // Group Filter Listeners
     const groupFilterSearch = document.getElementById('groupFilterSearch');
@@ -150,9 +156,31 @@ export function initGroups() {
     const groupAnalyticsModalClose = document.getElementById('groupAnalyticsModalClose');
     const groupAnalyticsModalCloseBtn = document.getElementById('groupAnalyticsModalCloseBtn');
     
+    const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
+    const groupAnalyticsTrendMonthPicker = document.getElementById('groupAnalyticsTrendMonthPicker');
+    
+    if (groupAnalyticsMonthSelect) {
+        groupAnalyticsMonthSelect.addEventListener('change', () => {
+            renderGroupCategoryDonutChart();
+        });
+    }
+    if (groupAnalyticsTrendMonthPicker) {
+        groupAnalyticsTrendMonthPicker.addEventListener('change', () => {
+            renderGroupTrendBarChart();
+        });
+    }
+    
     groupAnalyticsBtn.addEventListener('click', () => {
+        if (groupAnalyticsTrendMonthPicker && !groupAnalyticsTrendMonthPicker.value) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            groupAnalyticsTrendMonthPicker.value = `${year}-${month}`;
+        }
         showModal(groupAnalyticsModal);
-        renderGroupAnalyticsCharts();
+        populateGroupAnalyticsMonthSelect();
+        renderGroupCategoryDonutChart();
+        renderGroupTrendBarChart();
     });
     const hideGroupAnalytics = () => hideModal(groupAnalyticsModal);
     groupAnalyticsModalClose.addEventListener('click', hideGroupAnalytics);
@@ -257,6 +285,12 @@ async function selectGroup(group) {
     const deleteGroupBtn = document.getElementById('deleteGroupBtn');
     if (deleteGroupBtn) {
         deleteGroupBtn.style.display = isGroupCreator ? '' : 'none';
+    }
+    
+    // Show leave group button only for invited members
+    const leaveGroupBtn = document.getElementById('leaveGroupBtn');
+    if (leaveGroupBtn) {
+        leaveGroupBtn.style.display = isGroupCreator ? 'none' : '';
     }
     
     // Fetch members and transactions
@@ -514,6 +548,23 @@ async function handleDeleteGroup() {
     }
 }
 
+async function handleLeaveGroup() {
+    if (!activeGroup) return;
+    
+    const confirmMsg = `確定要退出群組「${activeGroup.name}」嗎？退出後您將無法再查看此群組的任何交易紀錄。`;
+    const isConfirmed = await showConfirm(confirmMsg);
+    if (!isConfirmed) return;
+    
+    try {
+        await storage.leaveGroup(activeGroup.id);
+        showToast("已成功退出群組。", "success");
+        deselectGroup();
+        await refreshGroups();
+    } catch (err) {
+        showToast("退出群組失敗: " + err.message, "error");
+    }
+}
+
 // Display Bill Modal
 function showGroupTxModal(existingTx = null) {
     groupTxForm.reset();
@@ -704,26 +755,57 @@ function applyGroupFiltersAndRender() {
     renderGroupTransactions();
 }
 
-function renderGroupAnalyticsCharts() {
+function populateGroupAnalyticsMonthSelect() {
+    const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
+    if (!groupAnalyticsMonthSelect) return;
+
+    const months = new Set();
+    activeTransactions.forEach(t => {
+        if (t.date) {
+            months.add(t.date.substring(0, 7)); // YYYY-MM
+        }
+    });
+
+    const prevMonth = groupAnalyticsMonthSelect.value;
+    
+    groupAnalyticsMonthSelect.innerHTML = `<option value="all">${getText('db_all_months') || '所有月份'}</option>`;
+    
+    Array.from(months).sort().reverse().forEach(mon => {
+        const dateObj = new Date(mon + '-02'); // Buffer day
+        const formatted = dateObj.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
+        groupAnalyticsMonthSelect.innerHTML += `<option value="${mon}">${formatted}</option>`;
+    });
+
+    // Restore previous selection if still valid
+    if (Array.from(months).includes(prevMonth) || prevMonth === 'all') {
+        groupAnalyticsMonthSelect.value = prevMonth;
+    } else {
+        groupAnalyticsMonthSelect.value = 'all';
+    }
+}
+
+function renderGroupCategoryDonutChart() {
     const donutCanvas = document.getElementById('groupCategoryDonutChart');
     const donutEmptyMessage = document.getElementById('groupDonutEmptyMessage');
-    const barCanvas = document.getElementById('groupTrendBarChart');
     
-    // Destroy previous Chart.js instances
     if (groupDonutChartInstance) {
         groupDonutChartInstance.destroy();
         groupDonutChartInstance = null;
     }
-    if (groupBarChartInstance) {
-        groupBarChartInstance.destroy();
-        groupBarChartInstance = null;
-    }
+    
+    const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
+    const selectedMonth = groupAnalyticsMonthSelect ? groupAnalyticsMonthSelect.value : 'all';
+
+    const filteredTxs = activeTransactions.filter(t => {
+        if (selectedMonth === 'all') return true;
+        return t.date && t.date.startsWith(selectedMonth);
+    });
     
     // 1. Group expenses for Category Donut Chart
     const catTotals = {};
     let totalExpense = 0;
     
-    activeTransactions.forEach(t => {
+    filteredTxs.forEach(t => {
         if (t.type === 'expense') {
             const cat = t.category || 'Other';
             const val = parseFloat(t.amount);
@@ -792,14 +874,29 @@ function renderGroupAnalyticsCharts() {
             }
         });
     }
+}
+
+function renderGroupTrendBarChart() {
+    const barCanvas = document.getElementById('groupTrendBarChart');
+    
+    if (groupBarChartInstance) {
+        groupBarChartInstance.destroy();
+        groupBarChartInstance = null;
+    }
+    
+    const groupAnalyticsTrendMonthPicker = document.getElementById('groupAnalyticsTrendMonthPicker');
+    let baseDate = new Date();
+    if (groupAnalyticsTrendMonthPicker && groupAnalyticsTrendMonthPicker.value) {
+        const [year, month] = groupAnalyticsTrendMonthPicker.value.split('-');
+        baseDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+    }
     
     // 2. Group values by month for Monthly Cash Flow (Bar Chart)
     const monthlySummary = {};
     const monthsArray = [];
     
-    const today = new Date();
     for (let i = 5; i >= 0; i--) {
-        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const d = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const key = `${year}-${month}`;
@@ -873,7 +970,6 @@ function renderGroupAnalyticsCharts() {
                     position: 'top',
                     labels: {
                         color: '#a1a1aa',
-                        boxWidth: 12,
                         font: { family: "'Outfit', sans-serif", size: 11 }
                     }
                 },
@@ -883,7 +979,6 @@ function renderGroupAnalyticsCharts() {
                     bodyColor: '#e4e4e7',
                     borderColor: 'rgba(255, 255, 255, 0.08)',
                     borderWidth: 1,
-                    tooltipDecimals: 2,
                     callbacks: {
                         label: function(context) {
                             return ` ${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;

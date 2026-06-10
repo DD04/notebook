@@ -90,6 +90,89 @@ async function initApp() {
     analytics.initAnalytics();
     settings.initSettings();
 
+    // Profile Edit Modal Setup
+    const userProfileSection = document.getElementById('userProfileSection');
+    const profileModal = document.getElementById('profileModal');
+    const profileModalClose = document.getElementById('profileModalClose');
+    const profileModalCancel = document.getElementById('profileModalCancel');
+    const profileForm = document.getElementById('profileForm');
+    const profileNicknameInput = document.getElementById('profileNicknameInput');
+    const profilePasswordInput = document.getElementById('profilePasswordInput');
+    const profileError = document.getElementById('profileError');
+
+    if (userProfileSection) {
+        userProfileSection.addEventListener('click', (e) => {
+            if (e.target.closest('#sidebarAuthBtn')) {
+                return;
+            }
+            if (!currentUser) return;
+            
+            if (profileNicknameInput) {
+                profileNicknameInput.value = currentUser.nickname || '';
+            }
+            if (profilePasswordInput) {
+                profilePasswordInput.value = '';
+            }
+            if (profileError) {
+                profileError.classList.add('d-none');
+                profileError.textContent = '';
+            }
+            if (profileModal) {
+                profileModal.classList.add('active');
+            }
+        });
+    }
+
+    if (profileModalClose) {
+        profileModalClose.addEventListener('click', () => {
+            if (profileModal) profileModal.classList.remove('active');
+        });
+    }
+    if (profileModalCancel) {
+        profileModalCancel.addEventListener('click', () => {
+            if (profileModal) profileModal.classList.remove('active');
+        });
+    }
+    if (profileModal) {
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) profileModal.classList.remove('active');
+        });
+    }
+
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (profileError) {
+                profileError.classList.add('d-none');
+                profileError.textContent = '';
+            }
+            
+            const nickname = profileNicknameInput.value.trim();
+            const password = profilePasswordInput.value;
+            
+            if (!nickname) {
+                if (profileError) {
+                    profileError.textContent = "暱稱不能留空";
+                    profileError.classList.remove('d-none');
+                }
+                return;
+            }
+
+            try {
+                await storage.updateProfile(nickname, password);
+                showToast("個人資料更新成功！", "success");
+                if (profileModal) profileModal.classList.remove('active');
+                await refreshUserSession();
+            } catch (err) {
+                console.error("更新個人資料失敗", err);
+                if (profileError) {
+                    profileError.textContent = "更新失敗: " + err.message;
+                    profileError.classList.remove('d-none');
+                }
+            }
+        });
+    }
+
     // 6. Setup SPA Navigation
     initRouter();
 
