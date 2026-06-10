@@ -13,7 +13,7 @@ const gatewayDbForm = document.getElementById('gatewayDbForm');
 
 const gwNicknameGroup = document.getElementById('gwNicknameGroup');
 const gwNickname = document.getElementById('gwNickname');
-const gwEmail = document.getElementById('gwEmail');
+const gwUsername = document.getElementById('gwUsername');
 const gwPassword = document.getElementById('gwPassword');
 const gatewayAuthError = document.getElementById('gatewayAuthError');
 const gatewayAuthSubmitBtn = document.getElementById('gatewayAuthSubmitBtn');
@@ -86,7 +86,11 @@ async function handleAuthSubmit(e) {
     e.preventDefault();
     if (gatewayAuthError) gatewayAuthError.classList.add('d-none');
     
-    const email = gwEmail.value.trim();
+    const username = gwUsername.value.trim();
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        throw new Error("帳號只能包含英文、數字與下劃線。");
+    }
+    const email = `${username}@notebook.local`;
     const password = gwPassword.value;
     const nickname = gwNickname ? gwNickname.value.trim() : '';
     
