@@ -1607,9 +1607,13 @@ a {
 /* ==========================================================================
    Responsive Adaptation (RWD)
    ========================================================================== */
+/* ==========================================================================
+   Responsive Adaptation (RWD)
+   ========================================================================== */
 @media (max-width: 992px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
     .group-split-layout {
         grid-template-columns: 1fr;
@@ -1653,18 +1657,111 @@ a {
     
     .filters-panel {
         flex-direction: column;
+        gap: 12px;
     }
     
     .filter-inputs {
         width: 100%;
+        gap: 8px;
     }
     
     .filter-inputs select {
         flex: 1;
+        min-width: 100px;
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+    
+    .search-box input {
+        font-size: 13px;
+        padding: 8px 12px 8px 38px;
+    }
+    
+    .search-box i, .search-box svg {
+        left: 12px;
+        width: 16px;
+        height: 16px;
     }
     
     .backup-actions {
         flex-direction: column;
+    }
+    
+    /* Responsive Table to prevent breaking layout on mobile */
+    .ledger-table {
+        min-width: 650px;
+    }
+    
+    .ledger-container {
+        padding: 16px;
+    }
+    
+    .card-box {
+        padding: 16px;
+    }
+    
+    .summary-card {
+        padding: 16px;
+        min-height: 120px;
+    }
+    
+    .card-amount {
+        font-size: 26px;
+    }
+    
+    .group-summary-cards-container {
+        gap: 12px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .page-title {
+        font-size: 18px;
+    }
+    
+    .header-right {
+        gap: 8px;
+    }
+    
+    #superuserBackupSection {
+        gap: 4px !important;
+        margin-right: 6px !important;
+    }
+    
+    .theme-toggle-btn, .mode-badge {
+        width: 34px;
+        height: 34px;
+    }
+    
+    /* Group analytics modal responsive charts columns */
+    #groupAnalyticsModal .analytics-layout {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-container {
+        padding: 16px 0;
+        width: 95%;
+    }
+    
+    .modal-header, .modal-form {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    
+    .modal-header {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+    
+    .modal-footer {
+        padding: 16px;
+    }
+    
+    .form-row-2 {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
 }
 
