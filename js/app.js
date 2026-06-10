@@ -38,6 +38,27 @@ let currentUser = null;
 
 // Initialize App Function
 async function initApp() {
+    // 0. Pre-apply view from hash immediately to prevent flash
+    const initialHash = window.location.hash.replace('#', '');
+    const validViews = ['dashboard', 'groups', 'analytics'];
+    if (initialHash && validViews.includes(initialHash)) {
+        // Immediately switch view sections without data loading
+        viewSections.forEach(section => {
+            if (section.id === `view-${initialHash}`) {
+                section.classList.add('active');
+            } else {
+                section.classList.remove('active');
+            }
+        });
+        navItems.forEach(nav => {
+            if (nav.getAttribute('data-view') === initialHash) {
+                nav.classList.add('active');
+            } else {
+                nav.classList.remove('active');
+            }
+        });
+    }
+
     // 1. Initialize Theme
     initTheme();
 

@@ -1014,14 +1014,14 @@ a {
 .analytics-card {
     display: flex;
     flex-direction: column;
-    min-height: 350px;
+    min-height: 300px;
 }
 
 .analytics-card h3 {
     font-family: 'Outfit', sans-serif;
     font-size: 16px;
     font-weight: 600;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
     color: var(--text-secondary);
 }
 
@@ -1610,22 +1610,53 @@ a {
 /* ==========================================================================
    Responsive Adaptation (RWD)
    ========================================================================== */
+
+/* Fix analytics-card spacing inside analytics-layout (gap already provides separation) */
+.analytics-layout {
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+/* Each analytics-card has its own box - no additional margin needed */
+.analytics-card.card-box {
+    margin-bottom: 0 !important;
+}
+
+/* Each scrollable block handles its own overflow independently */
+.dashboard-grid,
+.ledger-container,
+.group-side-panel .panel-section,
+.group-summary-cards-container,
+.group-transactions-list.ledger-container,
+.budget-setup-panel {
+    min-width: 0;
+}
+
+.ledger-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ─── 992px ─── Tablet landscape */
 @media (max-width: 992px) {
     .dashboard-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 16px;
-    }
-    .group-split-layout {
-        grid-template-columns: 1fr;
     }
     .analytics-layout {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
     .settings-grid {
         grid-template-columns: 1fr;
     }
+    /* Keep group split layout at this size */
+    .group-split-layout {
+        gap: 16px;
+    }
 }
 
+/* ─── 768px ─── Tablet portrait & large phone */
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
@@ -1633,136 +1664,250 @@ a {
         top: 0;
         bottom: 0;
         transform: translateX(-100%);
+        z-index: 200;
     }
-    
     .sidebar.active {
         transform: translateX(0);
     }
-    
-    .sidebar-toggle-close {
-        display: flex;
-    }
-    
-    .sidebar-toggle-open {
-        display: flex;
-    }
-    
+    .sidebar-toggle-close { display: flex; }
+    .sidebar-toggle-open  { display: flex; }
+
     .top-header {
-        padding: 0 16px;
+        padding: 0 12px;
+        height: 56px;
     }
-    
+
     .view-panel {
-        padding: 16px;
+        padding: 12px;
     }
-    
+
+    /* ── Dashboard cards: 3 columns squish to 1 ── */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        padding: 14px 16px;
+        min-height: 100px;
+    }
+    .card-amount { font-size: 22px; }
+    .card-label  { font-size: 12px; }
+    .card-footer { font-size: 11px; }
+
+    /* ── Ledger container ── */
+    .ledger-container {
+        padding: 12px;
+    }
+    .section-header {
+        margin-bottom: 14px;
+    }
+
+    /* ── Table scrolls inside its own wrapper ── */
+    .ledger-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 8px;
+    }
+    .ledger-table {
+        min-width: 560px;
+        font-size: 13px;
+    }
+    .ledger-table th { padding: 10px 12px; font-size: 11px; }
+    .ledger-table td { padding: 10px 12px; }
+
+    /* ── Filters ── */
     .filters-panel {
         flex-direction: column;
-        gap: 12px;
+        gap: 10px;
+        margin-bottom: 14px !important;
     }
-    
+    .search-box {
+        min-width: 0;
+    }
+    .search-box input {
+        font-size: 13px;
+        padding: 8px 12px 8px 36px;
+    }
+    .search-box i, .search-box svg {
+        left: 11px;
+        width: 15px;
+        height: 15px;
+    }
     .filter-inputs {
         width: 100%;
         gap: 8px;
+        flex-wrap: wrap;
     }
-    
     .filter-inputs select {
         flex: 1;
-        min-width: 100px;
-        font-size: 13px;
-        padding: 8px 12px;
+        min-width: 90px;
+        font-size: 12px;
+        padding: 7px 10px;
     }
-    
-    .search-box input {
-        font-size: 13px;
-        padding: 8px 12px 8px 38px;
-    }
-    
-    .search-box i, .search-box svg {
-        left: 12px;
-        width: 16px;
-        height: 16px;
-    }
-    
-    .backup-actions {
-        flex-direction: column;
-    }
-    
-    /* Responsive Table to prevent breaking layout on mobile */
-    .ledger-table {
-        min-width: 650px;
-    }
-    
-    .ledger-container {
-        padding: 16px;
-    }
-    
-    .card-box {
-        padding: 16px;
-    }
-    
-    .summary-card {
-        padding: 16px;
-        min-height: 120px;
-    }
-    
-    .card-amount {
-        font-size: 26px;
-    }
-    
-    .group-summary-cards-container {
-        gap: 12px !important;
-    }
-}
 
-@media (max-width: 576px) {
-    .page-title {
-        font-size: 18px;
-    }
-    
-    .header-right {
-        gap: 8px;
-    }
-    
-    #superuserBackupSection {
-        gap: 4px !important;
-        margin-right: 6px !important;
-    }
-    
-    .theme-toggle-btn, .mode-badge {
-        width: 34px;
-        height: 34px;
-    }
-    
-    /* Group analytics modal responsive charts columns */
-    #groupAnalyticsModal .analytics-layout {
-        grid-template-columns: 1fr !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .modal-container {
-        padding: 16px 0;
-        width: 95%;
-    }
-    
-    .modal-header, .modal-form {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-    
-    .modal-header {
-        padding-top: 12px;
-        padding-bottom: 12px;
-    }
-    
-    .modal-footer {
-        padding: 16px;
-    }
-    
-    .form-row-2 {
+    /* ── Group: side-panel goes HORIZONTAL on mobile ── */
+    .group-split-layout {
         grid-template-columns: 1fr;
         gap: 12px;
     }
+    .group-side-panel {
+        /* Flip to row so "groups list" and "members" sit side by side */
+        flex-direction: row;
+        gap: 12px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .group-side-panel .panel-section {
+        flex: 0 0 200px;
+        min-width: 0;
+        padding: 12px !important;
+    }
+    .groups-list, .members-list {
+        max-height: 200px;
+        margin-top: 10px;
+    }
+
+    /* ── Group summary cards: overflow individually ── */
+    .group-summary-cards-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+        padding-bottom: 4px;
+    }
+    .group-summary-cards-container .summary-card {
+        flex: 0 0 200px;
+        min-width: 0;
+    }
+
+    /* ── Group transactions ledger ── */
+    .group-transactions-list.ledger-container {
+        overflow-x: visible;
+        padding: 12px;
+    }
+
+    /* ── Analytics ── */
+    .analytics-layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .analytics-card { min-height: 280px; }
+
+    /* ── Header ── */
+    .page-title { font-size: 17px; }
+    .header-right { gap: 8px; }
+
+    /* ── Buttons ── */
+    .btn { font-size: 13px; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; }
+    .btn-xs { padding: 4px 8px;  font-size: 11px; }
+
+    /* ── Group details header ── */
+    .group-details-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .header-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .group-details-header h2 { font-size: 18px; }
+
+    .backup-actions { flex-direction: column; }
+}
+
+/* ─── 576px ─── Small phone */
+@media (max-width: 576px) {
+    .view-panel { padding: 10px; }
+    .top-header { padding: 0 10px; height: 50px; }
+
+    .page-title { font-size: 15px; }
+
+    .header-right { gap: 6px; }
+    #superuserBackupSection {
+        gap: 4px !important;
+        margin-right: 4px !important;
+    }
+    .theme-toggle-btn, .mode-badge {
+        width: 32px;
+        height: 32px;
+    }
+
+    .dashboard-grid {
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .summary-card { padding: 12px; min-height: 90px; }
+    .card-amount { font-size: 19px; }
+
+    /* Side-panel: narrower cards */
+    .group-side-panel .panel-section {
+        flex: 0 0 160px;
+    }
+
+    /* Group summary cards: even smaller */
+    .group-summary-cards-container .summary-card {
+        flex: 0 0 160px;
+    }
+
+    .section-header h2, .section-header h3 { font-size: 15px; }
+
+    /* Analytics modal charts single column */
+    #groupAnalyticsModal .analytics-layout {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .analytics-card { min-height: 240px; }
+}
+
+/* ─── 480px ─── Very small phone */
+@media (max-width: 480px) {
+    .view-panel { padding: 8px; }
+    .top-header { height: 46px; }
+
+    .page-title { font-size: 13px; }
+    .card-amount { font-size: 16px; }
+
+    .summary-card { padding: 10px; min-height: 80px; }
+
+    .ledger-table { min-width: 480px; font-size: 12px; }
+    .ledger-table th { padding: 8px; font-size: 10px; }
+    .ledger-table td { padding: 8px; }
+
+    .modal-container {
+        width: 96%;
+        max-height: 94vh;
+    }
+    .modal-header {
+        padding: 12px 14px;
+    }
+    .modal-form {
+        padding: 0 14px 14px;
+    }
+    .modal-footer {
+        padding: 12px 14px;
+    }
+    .form-row-2 {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .group-side-panel .panel-section {
+        flex: 0 0 140px;
+        padding: 10px !important;
+    }
+    .group-summary-cards-container .summary-card {
+        flex: 0 0 140px;
+    }
+
+    .btn { padding: 6px 10px; font-size: 12px; }
+    .btn-sm { padding: 5px 8px; font-size: 11px; }
 }
 
 /* ==========================================================================

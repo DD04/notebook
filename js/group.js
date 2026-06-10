@@ -299,10 +299,11 @@ function renderGroupSummaryCards() {
 
     if (groupNetBalanceEl) {
         groupNetBalanceEl.textContent = formatCurrency(netBalance);
-        if (netBalance >= 0) {
-            groupNetBalanceEl.className = 'card-amount';
-        } else {
-            groupNetBalanceEl.className = 'card-amount text-error';
+        groupNetBalanceEl.className = 'card-amount';
+        if (netBalance > 0) {
+            groupNetBalanceEl.classList.add('text-success');
+        } else if (netBalance < 0) {
+            groupNetBalanceEl.classList.add('text-error');
         }
     }
     if (groupTotalIncomeEl) groupTotalIncomeEl.textContent = formatCurrency(totalIncome);
