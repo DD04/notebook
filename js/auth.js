@@ -1,88 +1,99 @@
-// js/auth.js - Authentication UI and Session Controller
+// js/auth.js - Gateway Authentication UI Controller
 import * as storage from './storage.js';
 
 let authSuccessCallback = null;
 
-// DOM Elements
-const authModal = document.getElementById('authModal');
-const authModalTitle = document.getElementById('authModalTitle');
-const authForm = document.getElementById('authForm');
-const authNicknameGroup = document.getElementById('authNicknameGroup');
-const authNickname = document.getElementById('authNickname');
-const authEmail = document.getElementById('authEmail');
-const authPassword = document.getElementById('authPassword');
-const authErrorMessage = document.getElementById('authErrorMessage');
-const authSubmitBtn = document.getElementById('authSubmitBtn');
-const authToggleQuestion = document.getElementById('authToggleQuestion');
-const authToggleBtn = document.getElementById('authToggleBtn');
-const authModalClose = document.getElementById('authModalClose');
+// DOM Elements from Gateway Authentication Panel
+const gatewayOverlay = document.getElementById('gatewayOverlay');
+const gatewayTitle = document.getElementById('gatewayTitle');
+const gatewaySubtitle = document.getElementById('gatewaySubtitle');
 
-let isSignUpMode = false; // Toggle between Login and Registration
+const gatewayAuthForm = document.getElementById('gatewayAuthForm');
+const gatewayDbForm = document.getElementById('gatewayDbForm');
+
+const gwNicknameGroup = document.getElementById('gwNicknameGroup');
+const gwNickname = document.getElementById('gwNickname');
+const gwEmail = document.getElementById('gwEmail');
+const gwPassword = document.getElementById('gwPassword');
+const gatewayAuthError = document.getElementById('gatewayAuthError');
+const gatewayAuthSubmitBtn = document.getElementById('gatewayAuthSubmitBtn');
+
+const gwAuthToggleQuestion = document.getElementById('gwAuthToggleQuestion');
+const gwAuthToggleBtn = document.getElementById('gwAuthToggleBtn');
+
+let isSignUpMode = false;
 
 export function initAuth(onAuthSuccess) {
     authSuccessCallback = onAuthSuccess;
     
-    // Register event listeners
-    authToggleBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleMode();
-    });
+    if (gwAuthToggleBtn) {
+        gwAuthToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleMode();
+        });
+    }
     
-    authForm.addEventListener('submit', handleAuthSubmit);
-    
-    authModalClose.addEventListener('click', hideAuthModal);
-    authModal.addEventListener('click', (e) => {
-        if (e.target === authModal) hideAuthModal();
-    });
+    if (gatewayAuthForm) {
+        gatewayAuthForm.addEventListener('submit', handleAuthSubmit);
+    }
 }
 
-export function showAuthModal() {
+export function showAuthPanel() {
     isSignUpMode = false;
-    updateModalUI();
-    authErrorMessage.classList.add('d-none');
-    authForm.reset();
-    authModal.classList.add('active');
+    updateAuthPanelUI();
+    
+    if (gatewayDbForm) gatewayDbForm.classList.add('d-none');
+    if (gatewayAuthForm) gatewayAuthForm.classList.remove('d-none');
+    if (gatewayOverlay) gatewayOverlay.classList.add('active');
 }
 
-export function hideAuthModal() {
-    authModal.classList.remove('active');
+export function hideAuthPanel() {
+    if (gatewayOverlay) gatewayOverlay.classList.remove('active');
 }
 
 function toggleMode() {
     isSignUpMode = !isSignUpMode;
-    updateModalUI();
+    updateAuthPanelUI();
 }
 
-function updateModalUI() {
+function updateAuthPanelUI() {
+    if (!gatewayTitle) return;
+    
     if (isSignUpMode) {
-        authModalTitle.textContent = 'Create Account';
-        authNicknameGroup.classList.remove('d-none');
-        authNickname.required = true;
-        authSubmitBtn.textContent = 'Sign Up';
-        authToggleQuestion.textContent = 'Already have an account?';
-        authToggleBtn.textContent = 'Sign In';
+        gatewayTitle.textContent = 'Create Account';
+        gatewaySubtitle.textContent = 'Sign up for a cloud account to sync your ledger.';
+        if (gwNicknameGroup) gwNicknameGroup.classList.remove('d-none');
+        if (gwNickname) gwNickname.required = true;
+        if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = 'Sign Up';
+        if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = 'Already have an account?';
+        if (gwAuthToggleBtn) gwAuthToggleBtn.textContent = 'Sign In';
     } else {
-        authModalTitle.textContent = 'Sign In';
-        authNicknameGroup.classList.add('d-none');
-        authNickname.required = false;
-        authSubmitBtn.textContent = 'Sign In';
-        authToggleQuestion.textContent = "Don't have an account?";
-        authToggleBtn.textContent = 'Sign Up';
+        gatewayTitle.textContent = 'Sign In';
+        gatewaySubtitle.textContent = 'Please sign in to sync your ledger.';
+        if (gwNicknameGroup) gwNicknameGroup.classList.add('d-none');
+        if (gwNickname) {
+            gwNickname.required = false;
+            gwNickname.value = '';
+        }
+        if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = 'Sign In';
+        if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = "Don't have an account?";
+        if (gwAuthToggleBtn) gwAuthToggleBtn.textContent = 'Sign Up';
     }
-    authErrorMessage.classList.add('d-none');
+    if (gatewayAuthError) gatewayAuthError.classList.add('d-none');
 }
 
 async function handleAuthSubmit(e) {
     e.preventDefault();
-    authErrorMessage.classList.add('d-none');
+    if (gatewayAuthError) gatewayAuthError.classList.add('d-none');
     
-    const email = authEmail.value.trim();
-    const password = authPassword.value;
-    const nickname = authNickname.value.trim();
+    const email = gwEmail.value.trim();
+    const password = gwPassword.value;
+    const nickname = gwNickname ? gwNickname.value.trim() : '';
     
-    authSubmitBtn.disabled = true;
-    const originalBtnText = authSubmitBtn.textContent;
-    authSubmitBtn.textContent = isSignUpMode ? 'Signing Up...' : 'Signing In...';
+    if (gatewayAuthSubmitBtn) {
+        gatewayAuthSubmitBtn.disabled = true;
+        gatewayAuthSubmitBtn.textContent = isSignUpMode ? 'Signing Up...' : 'Signing In...';
+    }
     
     try {
         let user;
@@ -92,16 +103,20 @@ async function handleAuthSubmit(e) {
             user = await storage.signIn(email, password);
         }
         
-        hideAuthModal();
+        hideAuthPanel();
         if (authSuccessCallback) {
             authSuccessCallback(user);
         }
     } catch (err) {
         console.error("Auth error:", err);
-        authErrorMessage.textContent = err.message || "Authentication failed.";
-        authErrorMessage.classList.remove('d-none');
+        if (gatewayAuthError) {
+            gatewayAuthError.textContent = err.message || "Authentication failed.";
+            gatewayAuthError.classList.remove('d-none');
+        }
     } finally {
-        authSubmitBtn.disabled = false;
-        authSubmitBtn.textContent = originalBtnText;
+        if (gatewayAuthSubmitBtn) {
+            gatewayAuthSubmitBtn.disabled = false;
+            gatewayAuthSubmitBtn.textContent = isSignUpMode ? 'Sign Up' : 'Sign In';
+        }
     }
 }

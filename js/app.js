@@ -1,4 +1,4 @@
-// js/app.js - Main Application Orchestrator and SPA Router
+// js/app.js - Main Application Orchestrator and SPA Router (Pure Supabase Mode)
 import * as storage from './storage.js';
 import * as auth from './auth.js';
 import * as dashboard from './dashboard.js';
@@ -35,28 +35,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Initialize Core Storage and Configuration
     await storage.initStorage();
-    updateModeBadge();
-
-    // 3. Initialize Auth and Session
+    
+    // 3. Initialize Auth Panel
     auth.initAuth(handleAuthSuccess);
     sidebarAuthBtn.addEventListener('click', handleAuthBtnClick);
-    await refreshUserSession();
 
-    // 4. Initialize Child Modules
+    // 4. Setup Gateway Form Listeners
+    initGateway();
+
+    // 5. Initialize Child Modules
     dashboard.initDashboard(onLedgerDataChange);
     group.initGroups();
     budgeting.initBudgeting();
     settings.initSettings();
 
-    // 5. Setup SPA Navigation
+    // 6. Setup SPA Navigation
     initRouter();
 
-    // 6. Setup Mobile Responsive Navigation toggles
+    // 7. Setup Mobile Responsive Navigation toggles
     sidebarOpenBtn.addEventListener('click', () => sidebar.classList.add('active'));
     sidebarCloseBtn.addEventListener('click', () => sidebar.classList.remove('active'));
 
-    // 7. Initial Load Views
-    await refreshAppState();
+    // 8. Gateway Status Gatekeeper
+    const ready = await checkGatewayStatus();
+    if (ready) {
+        await refreshAppState();
+    }
     
     // Replace Lucide Icons initially
     lucide.replace();
@@ -67,8 +71,12 @@ document.addEventListener('DOMContentLoaded', async () => {
    ========================================================================== */
 function initRouter() {
     navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
+        item.addEventListener('click', async (e) => {
             e.preventDefault();
+            // Block navigation if not fully configured/logged in
+            const ready = await checkGatewayStatus();
+            if (!ready) return;
+
             const viewName = item.getAttribute('data-view');
             switchView(viewName);
             
@@ -112,6 +120,8 @@ function switchView(viewName) {
 }
 
 function triggerViewRefresh(viewName) {
+    if (!storage.isCloudMode() || !currentUser) return;
+
     switch(viewName) {
         case 'dashboard':
             dashboard.refreshDashboard();
@@ -125,6 +135,9 @@ function triggerViewRefresh(viewName) {
         case 'analytics':
             analytics.refreshAnalytics();
             break;
+        case 'settings':
+            settings.refreshSettingsView();
+            break;
     }
 }
 
@@ -134,6 +147,10 @@ function triggerViewRefresh(viewName) {
 export async function refreshAppState() {
     updateModeBadge();
     
+    // Check connection/login status
+    const ready = await checkGatewayStatus();
+    if (!ready) return;
+
     // Get active view and refresh it
     const activeNav = document.querySelector('.nav-item.active');
     const activeView = activeNav ? activeNav.getAttribute('data-view') : 'dashboard';
@@ -143,7 +160,6 @@ export async function refreshAppState() {
 
 // Event triggered when dashboard transaction is updated/deleted/added
 function onLedgerDataChange() {
-    // If we make changes in dashboard, we need to sync charts and budgets too
     budgeting.refreshBudgeting();
     analytics.refreshAnalytics();
 }
@@ -167,8 +183,97 @@ function initTheme() {
 }
 
 function updateThemeIcon(theme) {
-    // Replaced dynamically by lucide triggers
     lucide.replace();
+}
+
+/* ==========================================================================
+   GATEWAY GATEKEEPER & CONTROLLER
+   ========================================================================== */
+export async function checkGatewayStatus() {
+    const isDbConnected = storage.isCloudMode();
+    
+    const gatewayOverlay = document.getElementById('gatewayOverlay');
+    const gatewayTitle = document.getElementById('gatewayTitle');
+    const gatewaySubtitle = document.getElementById('gatewaySubtitle');
+    const gatewayDbForm = document.getElementById('gatewayDbForm');
+    const gatewayAuthForm = document.getElementById('gatewayAuthForm');
+    
+    // 1. Database connection is required first
+    if (!isDbConnected) {
+        if (gatewayOverlay) gatewayOverlay.classList.add('active');
+        if (gatewayTitle) gatewayTitle.textContent = "Database Connection Required";
+        if (gatewaySubtitle) gatewaySubtitle.textContent = "Connect to your Supabase instance to begin.";
+        if (gatewayDbForm) gatewayDbForm.classList.remove('d-none');
+        if (gatewayAuthForm) gatewayAuthForm.classList.add('d-none');
+        updateModeBadge();
+        return false;
+    }
+    
+    // 2. User authentication is required
+    currentUser = await storage.getCurrentUser();
+    if (!currentUser) {
+        if (gatewayOverlay) gatewayOverlay.classList.add('active');
+        if (gatewayDbForm) gatewayDbForm.classList.add('d-none');
+        if (gatewayAuthForm) gatewayAuthForm.classList.remove('d-none');
+        auth.showAuthPanel();
+        updateModeBadge();
+        return false;
+    }
+    
+    // 3. Both connected and authenticated
+    if (gatewayOverlay) gatewayOverlay.classList.remove('active');
+    await refreshUserSession();
+    updateModeBadge();
+    return true;
+}
+
+function initGateway() {
+    const gatewayDbForm = document.getElementById('gatewayDbForm');
+    const gwSbUrl = document.getElementById('gwSbUrl');
+    const gwSbKey = document.getElementById('gwSbKey');
+    const gatewayDbError = document.getElementById('gatewayDbError');
+    const gatewayDbSubmitBtn = document.getElementById('gatewayDbSubmitBtn');
+    
+    if (gatewayDbForm) {
+        gatewayDbForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (gatewayDbError) gatewayDbError.classList.add('d-none');
+            
+            const url = gwSbUrl.value.trim();
+            const key = gwSbKey.value.trim();
+            
+            if (gatewayDbSubmitBtn) {
+                gatewayDbSubmitBtn.disabled = true;
+                gatewayDbSubmitBtn.textContent = "Connecting...";
+            }
+            
+            try {
+                const success = await storage.saveConfig({ sbUrl: url, sbKey: key });
+                if (success) {
+                    showToast("Supabase Database Connected!", "success");
+                    // Sync views with connected DB
+                    settings.refreshSettingsView();
+                    const ready = await checkGatewayStatus();
+                    if (ready) {
+                        await refreshAppState();
+                    }
+                } else {
+                    throw new Error("Could not verify connection.");
+                }
+            } catch (err) {
+                console.error(err);
+                if (gatewayDbError) {
+                    gatewayDbError.textContent = err.message || "Connection failed.";
+                    gatewayDbError.classList.remove('d-none');
+                }
+            } finally {
+                if (gatewayDbSubmitBtn) {
+                    gatewayDbSubmitBtn.disabled = false;
+                    gatewayDbSubmitBtn.textContent = "Connect Database";
+                }
+            }
+        });
+    }
 }
 
 /* ==========================================================================
@@ -179,15 +284,18 @@ async function refreshUserSession() {
     
     if (currentUser) {
         profileNickname.textContent = currentUser.nickname || 'Active User';
-        profileStatus.textContent = storage.isCloudMode() ? 'Cloud Sync Active' : 'Local Account';
+        profileStatus.textContent = 'Cloud Sync Connected';
         
-        // Logged in icon status
         sidebarAuthBtn.innerHTML = '<i data-lucide="log-out"></i>';
         sidebarAuthBtn.setAttribute('title', 'Log Out');
-        userAvatar.innerHTML = `<span style="font-weight:700; font-size:14px; font-family:'Outfit';">${currentUser.nickname[0].toUpperCase()}</span>`;
+        if (currentUser.nickname && currentUser.nickname.length > 0) {
+            userAvatar.innerHTML = `<span style="font-weight:700; font-size:14px; font-family:'Outfit';">${currentUser.nickname[0].toUpperCase()}</span>`;
+        } else {
+            userAvatar.innerHTML = '<i data-lucide="user"></i>';
+        }
     } else {
         profileNickname.textContent = 'Guest User';
-        profileStatus.textContent = 'Local Mode';
+        profileStatus.textContent = 'Disconnected';
         
         sidebarAuthBtn.innerHTML = '<i data-lucide="log-in"></i>';
         sidebarAuthBtn.setAttribute('title', 'Log In / Sign Up');
@@ -198,25 +306,24 @@ async function refreshUserSession() {
 
 async function handleAuthBtnClick() {
     if (currentUser) {
-        // Sign Out action
         if (confirm("Log out of your active session?")) {
             try {
                 await storage.signOut();
                 showToast("Logged out successfully.", "success");
+                currentUser = null;
                 await refreshUserSession();
-                await refreshAppState();
+                await checkGatewayStatus();
             } catch (err) {
                 showToast("Sign out failed: " + err.message, "error");
             }
         }
     } else {
-        // Show Auth Modal
-        auth.showAuthModal();
+        await checkGatewayStatus();
     }
 }
 
 function handleAuthSuccess(user) {
-    showToast(`Welcome back, ${user.nickname || 'User'}!`, "success");
+    showToast(`Welcome, ${user.nickname || 'User'}!`, "success");
     refreshUserSession().then(() => {
         refreshAppState();
     });
@@ -228,13 +335,13 @@ function updateModeBadge() {
     
     if (isCloud) {
         modeBadge.classList.add('bg-glass');
-        modeBadgeText.textContent = 'Supabase Sync';
+        modeBadgeText.textContent = 'Cloud Sync';
         modeBadge.querySelector('.badge-dot').style.background = 'var(--success)';
         modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--success)';
     } else {
-        modeBadgeText.textContent = 'Local Storage';
-        modeBadge.querySelector('.badge-dot').style.background = 'var(--primary)';
-        modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--primary)';
+        modeBadgeText.textContent = 'Database Required';
+        modeBadge.querySelector('.badge-dot').style.background = 'var(--error)';
+        modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--error)';
     }
 }
 
@@ -258,7 +365,6 @@ export function showToast(message, type = 'info') {
     toastContainer.appendChild(toast);
     lucide.replace();
     
-    // Auto remove from DOM after 3 seconds
     setTimeout(() => {
         toast.remove();
     }, 3000);

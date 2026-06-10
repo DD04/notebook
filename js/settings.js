@@ -1,78 +1,78 @@
-// js/settings.js - Settings & Backup Controller Module
+// js/settings.js - Settings & Backup Controller Module (Pure Supabase Mode)
 import * as storage from './storage.js';
-import { showToast, refreshAppState } from './app.js';
+import { showToast, refreshAppState, checkGatewayStatus } from './app.js';
 
 // DOM elements
-const storageModeRadios = document.querySelectorAll('input[name="storageMode"]');
-const supabaseConfigForm = document.getElementById('supabaseConfigForm');
+const dbConnectedStatus = document.getElementById('dbConnectedStatus');
+const dbDisconnectedStatus = document.getElementById('dbDisconnectedStatus');
 const sbUrlInput = document.getElementById('sbUrl');
 const sbKeyInput = document.getElementById('sbKey');
 const saveSupabaseConfigBtn = document.getElementById('saveSupabaseConfigBtn');
+const disconnectSupabaseBtn = document.getElementById('disconnectSupabaseBtn');
 
 const exportBackupBtn = document.getElementById('exportBackupBtn');
 const importBackupBtn = document.getElementById('importBackupBtn');
 const importFileSelector = document.getElementById('importFileSelector');
-const clearLocalDataBtn = document.getElementById('clearLocalDataBtn');
 
 export function initSettings() {
     // 1. Initial State Load
-    const config = storage.getConfig();
-    setRadioValue('storageMode', config.mode);
-    sbUrlInput.value = config.sbUrl || '';
-    sbKeyInput.value = config.sbKey || '';
-    
-    toggleSupabaseFormDisplay(config.mode === 'supabase');
+    refreshSettingsView();
 
-    // 2. Storage Mode Radio Switch
-    storageModeRadios.forEach(radio => {
-        radio.addEventListener('change', async (e) => {
-            const mode = e.target.value;
-            toggleSupabaseFormDisplay(mode === 'supabase');
-            
-            if (mode === 'local') {
-                try {
-                    await storage.saveConfig({ mode: 'local' });
-                    showToast("Switched to Local Mode (Offline)", "success");
-                    await refreshAppState();
-                } catch (err) {
-                    showToast("Failed to switch mode: " + err.message, "error");
-                }
-            } else if (mode === 'supabase') {
-                // If we don't have config yet, show form and toast
-                const current = storage.getConfig();
-                if (!current.sbUrl || !current.sbKey) {
-                    showToast("Please enter your Supabase connection parameters.", "warning");
-                } else {
-                    // Try to connect using existing config
-                    saveSupabaseConfig();
-                }
-            }
-        });
-    });
+    // 2. Supabase Credentials Save
+    if (saveSupabaseConfigBtn) {
+        saveSupabaseConfigBtn.addEventListener('click', saveSupabaseConfig);
+    }
 
-    // 3. Supabase Credentials Save
-    saveSupabaseConfigBtn.addEventListener('click', saveSupabaseConfig);
+    // 3. Disconnect Supabase
+    if (disconnectSupabaseBtn) {
+        disconnectSupabaseBtn.addEventListener('click', handleDisconnect);
+    }
 
     // 4. Export JSON backup
-    exportBackupBtn.addEventListener('click', handleExportBackup);
+    if (exportBackupBtn) {
+        exportBackupBtn.addEventListener('click', handleExportBackup);
+    }
 
     // 5. Import JSON backup
-    importBackupBtn.addEventListener('click', () => {
-        importFileSelector.click();
-    });
+    if (importBackupBtn) {
+        importBackupBtn.addEventListener('click', () => {
+            importFileSelector.click();
+        });
+    }
     
-    importFileSelector.addEventListener('change', handleImportBackup);
-
-    // 6. Clear Local Storage
-    clearLocalDataBtn.addEventListener('click', handleClearLocalData);
+    if (importFileSelector) {
+        importFileSelector.addEventListener('change', handleImportBackup);
+    }
 }
 
-function toggleSupabaseFormDisplay(show) {
-    if (show) {
-        supabaseConfigForm.classList.remove('d-none');
+export function refreshSettingsView() {
+    const config = storage.getConfig();
+    const isConnected = storage.isCloudMode();
+
+    if (sbUrlInput) sbUrlInput.value = config.sbUrl || '';
+    if (sbKeyInput) sbKeyInput.value = config.sbKey || '';
+
+    if (isConnected) {
+        if (dbConnectedStatus) dbConnectedStatus.classList.remove('d-none');
+        if (dbDisconnectedStatus) dbDisconnectedStatus.classList.add('d-none');
+        
+        if (sbUrlInput) sbUrlInput.disabled = true;
+        if (sbKeyInput) sbKeyInput.disabled = true;
+        
+        if (saveSupabaseConfigBtn) saveSupabaseConfigBtn.classList.add('d-none');
+        if (disconnectSupabaseBtn) disconnectSupabaseBtn.classList.remove('d-none');
     } else {
-        supabaseConfigForm.classList.add('d-none');
+        if (dbConnectedStatus) dbConnectedStatus.classList.add('d-none');
+        if (dbDisconnectedStatus) dbDisconnectedStatus.classList.remove('d-none');
+        
+        if (sbUrlInput) sbUrlInput.disabled = false;
+        if (sbKeyInput) sbKeyInput.disabled = false;
+        
+        if (saveSupabaseConfigBtn) saveSupabaseConfigBtn.classList.remove('d-none');
+        if (disconnectSupabaseBtn) disconnectSupabaseBtn.classList.add('d-none');
     }
+    // Refresh icons
+    if (window.lucide) window.lucide.replace();
 }
 
 async function saveSupabaseConfig() {
@@ -84,41 +84,70 @@ async function saveSupabaseConfig() {
         return;
     }
     
-    saveSupabaseConfigBtn.disabled = true;
-    saveSupabaseConfigBtn.textContent = 'Connecting...';
+    if (saveSupabaseConfigBtn) {
+        saveSupabaseConfigBtn.disabled = true;
+        saveSupabaseConfigBtn.textContent = 'Connecting...';
+    }
     
     try {
         await storage.saveConfig({
-            mode: 'supabase',
             sbUrl: url,
             sbKey: key
         });
         showToast("Supabase connected and verified!", "success");
+        refreshSettingsView();
         await refreshAppState();
     } catch (err) {
         console.error("Supabase config save error:", err);
         showToast(err.message, "error");
         
-        // Revert radio selection to local
-        setRadioValue('storageMode', 'local');
-        toggleSupabaseFormDisplay(false);
-        await storage.saveConfig({ mode: 'local' });
+        // Reset DB settings
+        storage.clearLocalStorageState();
+        refreshSettingsView();
+        await checkGatewayStatus();
     } finally {
-        saveSupabaseConfigBtn.disabled = false;
-        saveSupabaseConfigBtn.textContent = 'Connect Supabase';
+        if (saveSupabaseConfigBtn) {
+            saveSupabaseConfigBtn.disabled = false;
+            saveSupabaseConfigBtn.textContent = 'Connect Database';
+        }
     }
 }
 
-function handleExportBackup() {
+async function handleDisconnect() {
+    if (!confirm("Are you sure you want to disconnect from this database? This will log you out and return to the connection page.")) {
+        return;
+    }
+    
     try {
-        const jsonStr = storage.exportStateAsJSON();
+        await storage.signOut(); // Log out from Supabase Auth
+    } catch (e) {
+        console.warn("Error signing out during disconnect", e);
+    }
+    
+    storage.clearLocalStorageState(); // Clear config from localStorage
+    showToast("Supabase database disconnected.", "success");
+    
+    // Refresh page state and trigger gateway blocker
+    refreshSettingsView();
+    await checkGatewayStatus();
+}
+
+async function handleExportBackup() {
+    if (exportBackupBtn) {
+        exportBackupBtn.disabled = true;
+        exportBackupBtn.innerHTML = '<i data-lucide="loader"></i> Exporting...';
+        if (window.lucide) window.lucide.replace();
+    }
+
+    try {
+        const jsonStr = await storage.exportStateAsJSON();
         const blob = new Blob([jsonStr], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
         const a = document.createElement('a');
         const timestamp = new Date().toISOString().substring(0, 10);
         a.href = url;
-        a.download = `notebook_backup_${timestamp}.json`;
+        a.download = `notebook_cloud_backup_${timestamp}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -127,6 +156,12 @@ function handleExportBackup() {
         showToast("JSON backup downloaded successfully!", "success");
     } catch (err) {
         showToast("Export failed: " + err.message, "error");
+    } finally {
+        if (exportBackupBtn) {
+            exportBackupBtn.disabled = false;
+            exportBackupBtn.innerHTML = '<i data-lucide="download-cloud"></i> Export JSON';
+            if (window.lucide) window.lucide.replace();
+        }
     }
 }
 
@@ -134,46 +169,31 @@ function handleImportBackup(e) {
     const file = e.target.files[0];
     if (!file) return;
     
+    if (importBackupBtn) {
+        importBackupBtn.disabled = true;
+        importBackupBtn.innerHTML = '<i data-lucide="loader"></i> Importing...';
+        if (window.lucide) window.lucide.replace();
+    }
+
     const reader = new FileReader();
     reader.onload = async (event) => {
         try {
-            const success = storage.importStateFromJSON(event.target.result);
+            const success = await storage.importStateFromJSON(event.target.result);
             if (success) {
-                showToast("Backup restored successfully!", "success");
+                showToast("Backup restored to Supabase successfully!", "success");
                 await refreshAppState();
             }
         } catch (err) {
             showToast("Import failed: " + err.message, "error");
+        } finally {
+            // Reset file selection
+            importFileSelector.value = '';
+            if (importBackupBtn) {
+                importBackupBtn.disabled = false;
+                importBackupBtn.innerHTML = '<i data-lucide="upload-cloud"></i> Import JSON';
+                if (window.lucide) window.lucide.replace();
+            }
         }
-        // Reset file selection
-        importFileSelector.value = '';
     };
     reader.readAsText(file);
-}
-
-function handleClearLocalData() {
-    if (!confirm("Are you absolutely sure you want to delete all local transactions, budgets, groups, and mock sessions?")) {
-        return;
-    }
-    if (!confirm("This is your second warning. This action CANNOT BE UNDONE. Confirm delete?")) {
-        return;
-    }
-    
-    try {
-        storage.clearLocalStorageState();
-        showToast("Local storage state cleared.", "success");
-        window.location.reload();
-    } catch (err) {
-        showToast("Clear failed: " + err.message, "error");
-    }
-}
-
-// Helpers
-function setRadioValue(name, val) {
-    const radios = document.getElementsByName(name);
-    radios.forEach(r => {
-        if (r.value === val) {
-            r.checked = true;
-        }
-    });
 }

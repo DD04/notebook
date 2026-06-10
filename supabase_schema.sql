@@ -122,17 +122,24 @@ CREATE TABLE IF NOT EXISTS public.group_members (
 ALTER TABLE public.group_members ENABLE ROW LEVEL SECURITY;
 
 
--- Policies for Groups and Group Members
--- Allow read/write to groups if user is a member of that group
+-- 5.5. Security Definer helper function to avoid RLS recursion on group membership queries
+CREATE OR REPLACE FUNCTION public.is_group_member(p_group_id UUID, p_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.group_members
+        WHERE group_members.group_id = p_group_id
+        AND group_members.user_id = p_user_id
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Policies for Groups and Group Members using the helper function
 
 CREATE POLICY "Users can view groups they are in"
 ON public.groups FOR SELECT
 USING (
-    EXISTS (
-        SELECT 1 FROM public.group_members 
-        WHERE group_members.group_id = groups.id 
-        AND group_members.user_id = auth.uid()
-    )
+    public.is_group_member(id, auth.uid())
 );
 
 CREATE POLICY "Any authenticated user can create a group"
@@ -147,11 +154,7 @@ USING (created_by = auth.uid());
 CREATE POLICY "Users can view members of their groups"
 ON public.group_members FOR SELECT
 USING (
-    EXISTS (
-        SELECT 1 FROM public.group_members AS m
-        WHERE m.group_id = group_members.group_id
-        AND m.user_id = auth.uid()
-    )
+    public.is_group_member(group_id, auth.uid())
 );
 
 CREATE POLICY "Group members can add other members"
@@ -163,31 +166,19 @@ WITH CHECK (
         WHERE m.group_id = group_members.group_id
     )
     OR
-    EXISTS (
-        SELECT 1 FROM public.group_members AS m
-        WHERE m.group_id = group_members.group_id
-        AND m.user_id = auth.uid()
-    )
+    public.is_group_member(group_id, auth.uid())
 );
 
 CREATE POLICY "Users can update group member nicknames in their groups"
 ON public.group_members FOR UPDATE
 USING (
-    EXISTS (
-        SELECT 1 FROM public.group_members AS m
-        WHERE m.group_id = group_members.group_id
-        AND m.user_id = auth.uid()
-    )
+    public.is_group_member(group_id, auth.uid())
 );
 
 CREATE POLICY "Users can delete group members in their groups"
 ON public.group_members FOR DELETE
 USING (
-    EXISTS (
-        SELECT 1 FROM public.group_members AS m
-        WHERE m.group_id = group_members.group_id
-        AND m.user_id = auth.uid()
-    )
+    public.is_group_member(group_id, auth.uid())
 );
 
 
@@ -210,29 +201,17 @@ ALTER TABLE public.group_transactions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view transactions in their groups"
 ON public.group_transactions FOR SELECT
 USING (
-    EXISTS (
-        SELECT 1 FROM public.group_members
-        WHERE group_members.group_id = group_transactions.group_id
-        AND group_members.user_id = auth.uid()
-    )
+    public.is_group_member(group_id, auth.uid())
 );
 
 CREATE POLICY "Users can insert transactions in their groups"
 ON public.group_transactions FOR INSERT
 WITH CHECK (
-    EXISTS (
-        SELECT 1 FROM public.group_members
-        WHERE group_members.group_id = group_transactions.group_id
-        AND group_members.user_id = auth.uid()
-    )
+    public.is_group_member(group_id, auth.uid())
 );
 
 CREATE POLICY "Users can update/delete transactions in their groups"
 ON public.group_transactions FOR ALL
 USING (
-    EXISTS (
-        SELECT 1 FROM public.group_members
-        WHERE group_members.group_id = group_transactions.group_id
-        AND group_members.user_id = auth.uid()
-    )
+    public.is_group_member(group_id, auth.uid())
 );

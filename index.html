@@ -56,8 +56,8 @@
                         <i data-lucide="user"></i>
                     </div>
                     <div class="user-info">
-                        <span class="user-name" id="profileNickname">Offline User</span>
-                        <span class="user-status" id="profileStatus">Local Mode</span>
+                        <span class="user-name" id="profileNickname">Guest User</span>
+                        <span class="user-status" id="profileStatus">Disconnected</span>
                     </div>
                     <button class="auth-btn" id="sidebarAuthBtn" title="Log In / Sign Up">
                         <i data-lucide="log-in"></i>
@@ -336,33 +336,23 @@
                 <!-- VIEW 5: Settings View -->
                 <section id="view-settings" class="view-section">
                     <div class="settings-grid">
-                        <!-- Box 1: Storage Mode -->
+                        <!-- Box 1: Supabase Configuration -->
                         <div class="settings-card card-box">
                             <div class="settings-card-header">
                                 <i data-lucide="database"></i>
-                                <h3>Data Sync Mode</h3>
+                                <h3>Supabase Configuration</h3>
                             </div>
                             <div class="settings-card-body">
-                                <div class="radio-group">
-                                    <label class="radio-label">
-                                        <input type="radio" name="storageMode" value="local" checked>
-                                        <span class="radio-custom"></span>
-                                        <span class="radio-text">
-                                            <strong>Local Storage Mode (Offline)</strong>
-                                            <small>Keep all data in browser. No account needed.</small>
-                                        </span>
-                                    </label>
-                                    <label class="radio-label">
-                                        <input type="radio" name="storageMode" value="supabase">
-                                        <span class="radio-custom"></span>
-                                        <span class="radio-text">
-                                            <strong>Supabase Cloud Sync (Online)</strong>
-                                            <small>Sync data across devices in real-time. Shared database.</small>
-                                        </span>
-                                    </label>
+                                <div id="dbConnectedStatus" class="db-status-banner connected d-none">
+                                    <i data-lucide="check-circle-2"></i>
+                                    <span>Database Connected</span>
+                                </div>
+                                <div id="dbDisconnectedStatus" class="db-status-banner disconnected">
+                                    <i data-lucide="alert-circle"></i>
+                                    <span>Database Disconnected</span>
                                 </div>
 
-                                <div class="supabase-config-form d-none" id="supabaseConfigForm">
+                                <div class="supabase-config-form" id="supabaseConfigForm">
                                     <div class="form-group">
                                         <label for="sbUrl">Supabase API URL</label>
                                         <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
@@ -371,7 +361,10 @@
                                         <label for="sbKey">Supabase Anon Key</label>
                                         <input type="password" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
                                     </div>
-                                    <button class="btn btn-secondary btn-sm" id="saveSupabaseConfigBtn">Connect Supabase</button>
+                                    <div class="config-actions">
+                                        <button class="btn btn-primary btn-sm" id="saveSupabaseConfigBtn">Connect Database</button>
+                                        <button class="btn btn-outline-error btn-sm d-none" id="disconnectSupabaseBtn">Disconnect</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -383,15 +376,11 @@
                                 <h3>Backup & Operations</h3>
                             </div>
                             <div class="settings-card-body">
-                                <p class="text-muted">Export your local storage transactions and configuration to a JSON file, or restore from a previous backup.</p>
+                                <p class="text-muted">Export your Supabase transactions, budgets, and groups to a JSON file, or restore from a previous JSON backup into the database.</p>
                                 <div class="backup-actions">
                                     <button class="btn btn-secondary" id="exportBackupBtn"><i data-lucide="download-cloud"></i> Export JSON</button>
                                     <button class="btn btn-secondary" id="importBackupBtn"><i data-lucide="upload-cloud"></i> Import JSON</button>
                                     <input type="file" id="importFileSelector" accept=".json" class="d-none">
-                                </div>
-                                <div class="danger-zone">
-                                    <h4>Danger Zone</h4>
-                                    <button class="btn btn-outline-error btn-sm" id="clearLocalDataBtn"><i data-lucide="trash-2"></i> Clear Local Storage</button>
                                 </div>
                             </div>
                         </div>
@@ -562,41 +551,56 @@
         </div>
     </div>
 
-    <!-- MODAL 5: Authenticate (Login / Sign Up) -->
-    <div class="modal-overlay" id="authModal">
-        <div class="modal-container modal-sm">
-            <div class="modal-header">
-                <h3 id="authModalTitle">Sign In</h3>
-                <button class="modal-close-btn" id="authModalClose"><i data-lucide="x"></i></button>
+    <!-- Mandatory Gateway Overlay (Database Setup / Authentication) -->
+    <div class="gateway-overlay" id="gatewayOverlay">
+        <div class="gateway-card card-box bg-glass">
+            <div class="gateway-header">
+                <div class="logo" style="justify-content: center;">
+                    <span class="logo-icon"><i data-lucide="book-open"></i></span>
+                    <span class="logo-text">Notebook</span>
+                </div>
+                <h2 id="gatewayTitle">Database Connection Required</h2>
+                <p class="text-muted" id="gatewaySubtitle">Connect to your Supabase instance to begin.</p>
             </div>
-            
-            <!-- Auth Form -->
-            <form id="authForm" class="modal-form">
-                <div class="form-group" id="authNicknameGroup">
-                    <label for="authNickname">Nickname</label>
-                    <input type="text" id="authNickname" placeholder="Display Name">
+
+            <!-- Panel A: Database Connection Setup -->
+            <form id="gatewayDbForm" class="gateway-panel modal-form">
+                <div class="form-group">
+                    <label for="gwSbUrl">Supabase API URL</label>
+                    <input type="text" id="gwSbUrl" placeholder="https://xxxx.supabase.co" required>
+                </div>
+                <div class="form-group">
+                    <label for="gwSbKey">Supabase Anon Key</label>
+                    <input type="password" id="gwSbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
+                </div>
+                <div class="gateway-message text-error d-none" id="gatewayDbError"></div>
+                <button type="submit" class="btn btn-primary w-100" id="gatewayDbSubmitBtn">Connect Database</button>
+            </form>
+
+            <!-- Panel B: User Authentication (Sign In / Sign Up) -->
+            <form id="gatewayAuthForm" class="gateway-panel modal-form d-none">
+                <div class="form-group d-none" id="gwNicknameGroup">
+                    <label for="gwNickname">Nickname</label>
+                    <input type="text" id="gwNickname" placeholder="Display Name">
                 </div>
                 
                 <div class="form-group">
-                    <label for="authEmail">Email Address</label>
-                    <input type="email" id="authEmail" placeholder="you@example.com" required>
+                    <label for="gwEmail">Email Address</label>
+                    <input type="email" id="gwEmail" placeholder="you@example.com" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="authPassword">Password</label>
-                    <input type="password" id="authPassword" placeholder="••••••••" required>
+                    <label for="gwPassword">Password</label>
+                    <input type="password" id="gwPassword" placeholder="••••••••" required>
                 </div>
 
-                <div class="auth-message-box error text-error d-none" id="authErrorMessage">
-                    Incorrect email or password.
-                </div>
-
-                <div class="modal-footer flex-column">
-                    <button type="submit" class="btn btn-primary w-100" id="authSubmitBtn">Sign In</button>
-                    <p class="auth-toggle-text text-muted text-center mt-3">
-                        <span id="authToggleQuestion">Don't have an account?</span>
-                        <a href="#" id="authToggleBtn">Sign Up</a>
-                    </p>
+                <div class="gateway-message text-error d-none" id="gatewayAuthError"></div>
+                
+                <button type="submit" class="btn btn-primary w-100" id="gatewayAuthSubmitBtn">Sign In</button>
+                
+                <div class="gateway-switch-text text-muted text-center mt-3">
+                    <span id="gwAuthToggleQuestion">Don't have an account?</span>
+                    <a href="#" id="gwAuthToggleBtn">Sign Up</a>
                 </div>
             </form>
         </div>

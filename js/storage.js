@@ -1,8 +1,9 @@
-// js/storage.js - Unified Data Storage Access Layer
+// js/storage.js - Unified Data Storage Access Layer (Pure Supabase Mode)
+import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 
 let supabase = null;
 let currentConfig = {
-    mode: 'local',
+    mode: 'unconfigured', // 'unconfigured' or 'supabase'
     sbUrl: '',
     sbKey: ''
 };
@@ -12,12 +13,23 @@ export const DEFAULT_CATEGORIES = ['Food', 'Transport', 'Entertainment', 'Shoppi
 
 // Initialize Storage Config
 export async function initStorage() {
-    const savedConfig = localStorage.getItem('notebook_config');
-    if (savedConfig) {
-        try {
-            currentConfig = JSON.parse(savedConfig);
-        } catch (e) {
-            console.error("Failed to parse storage config", e);
+    // 1. Try to read from config.js first
+    if (SUPABASE_URL && SUPABASE_KEY) {
+        currentConfig.sbUrl = SUPABASE_URL;
+        currentConfig.sbKey = SUPABASE_KEY;
+        currentConfig.mode = 'supabase';
+    } else {
+        // 2. Fall back to localStorage configuration
+        const savedConfig = localStorage.getItem('notebook_config');
+        if (savedConfig) {
+            try {
+                const parsed = JSON.parse(savedConfig);
+                currentConfig.sbUrl = parsed.sbUrl || '';
+                currentConfig.sbKey = parsed.sbKey || '';
+                currentConfig.mode = parsed.sbUrl && parsed.sbKey ? 'supabase' : 'unconfigured';
+            } catch (e) {
+                console.error("Failed to parse storage config", e);
+            }
         }
     }
     
@@ -25,8 +37,9 @@ export async function initStorage() {
         try {
             await connectSupabase(currentConfig.sbUrl, currentConfig.sbKey);
         } catch (err) {
-            console.error("Supabase connection failed on init, falling back to Local Mode", err);
-            currentConfig.mode = 'local';
+            console.error("Supabase connection failed on init", err);
+            currentConfig.mode = 'unconfigured';
+            supabase = null;
         }
     }
     return currentConfig;
@@ -37,14 +50,22 @@ export function getConfig() {
 }
 
 export async function saveConfig(newConfig) {
+    // Save to current config
     currentConfig = { ...currentConfig, ...newConfig };
-    localStorage.setItem('notebook_config', JSON.stringify(currentConfig));
     
-    if (currentConfig.mode === 'supabase' && currentConfig.sbUrl && currentConfig.sbKey) {
+    // Save to localStorage so it persists in client
+    localStorage.setItem('notebook_config', JSON.stringify({
+        sbUrl: currentConfig.sbUrl,
+        sbKey: currentConfig.sbKey
+    }));
+    
+    if (currentConfig.sbUrl && currentConfig.sbKey) {
+        currentConfig.mode = 'supabase';
         return await connectSupabase(currentConfig.sbUrl, currentConfig.sbKey);
     } else {
+        currentConfig.mode = 'unconfigured';
         supabase = null;
-        return true;
+        return false;
     }
 }
 
@@ -62,6 +83,7 @@ async function connectSupabase(url, key) {
         return true;
     } catch (e) {
         supabase = null;
+        currentConfig.mode = 'unconfigured';
         throw new Error("Invalid Supabase connection parameters: " + e.message);
     }
 }
@@ -70,91 +92,55 @@ export function isCloudMode() {
     return currentConfig.mode === 'supabase' && supabase !== null;
 }
 
-// Helper: Get active Supabase Auth User ID
-function getAuthUid() {
-    if (!isCloudMode()) return null;
-    const session = supabase.auth.getSession();
-    return session?.data?.session?.user?.id || null;
-}
-
 /* ==========================================================================
    AUTHENTICATION API
    ========================================================================== */
 export async function signUp(email, password, nickname) {
-    if (isCloudMode()) {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { nickname }
-            }
-        });
-        if (error) throw error;
-        return data.user;
-    } else {
-        // Local Mode Mock Auth
-        const users = JSON.parse(localStorage.getItem('notebook_local_users') || '[]');
-        if (users.some(u => u.email === email)) {
-            throw new Error("User already exists locally!");
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: { nickname }
         }
-        const newUser = { id: 'local-' + Date.now(), email, nickname };
-        users.push(newUser);
-        localStorage.setItem('notebook_local_users', JSON.stringify(users));
-        localStorage.setItem('notebook_local_session', JSON.stringify(newUser));
-        return newUser;
-    }
+    });
+    if (error) throw error;
+    return data.user;
 }
 
 export async function signIn(email, password) {
-    if (isCloudMode()) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        });
-        if (error) throw error;
-        return data.user;
-    } else {
-        // Local Mode Mock Auth
-        const users = JSON.parse(localStorage.getItem('notebook_local_users') || '[]');
-        const user = users.find(u => u.email === email);
-        if (!user) {
-            throw new Error("Invalid email or password.");
-        }
-        localStorage.setItem('notebook_local_session', JSON.stringify(user));
-        return user;
-    }
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+    });
+    if (error) throw error;
+    return data.user;
 }
 
 export async function signOut() {
-    if (isCloudMode()) {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-    } else {
-        localStorage.removeItem('notebook_local_session');
-    }
+    if (!isCloudMode()) return;
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
 }
 
 export async function getCurrentUser() {
-    if (isCloudMode()) {
-        const { data } = await supabase.auth.getUser();
-        if (!data?.user) return null;
+    if (!isCloudMode()) return null;
+    const { data } = await supabase.auth.getUser();
+    if (!data?.user) return null;
+    
+    // Fetch custom profile details (nickname)
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .eq('id', data.user.id)
+        .single();
         
-        // Fetch custom profile details (nickname)
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('nickname')
-            .eq('id', data.user.id)
-            .single();
-            
-        return {
-            id: data.user.id,
-            email: data.user.email,
-            nickname: profile?.nickname || splitEmail(data.user.email)
-        };
-    } else {
-        const session = localStorage.getItem('notebook_local_session');
-        return session ? JSON.parse(session) : null;
-    }
+    return {
+        id: data.user.id,
+        email: data.user.email,
+        nickname: profile?.nickname || splitEmail(data.user.email)
+    };
 }
 
 function splitEmail(email) {
@@ -165,377 +151,339 @@ function splitEmail(email) {
    PERSONAL TRANSACTIONS API
    ========================================================================== */
 export async function getTransactions() {
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .order('date', { ascending: false })
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data;
-    } else {
-        const txs = localStorage.getItem('notebook_transactions');
-        return txs ? JSON.parse(txs) : [];
-    }
+    if (!isCloudMode()) return [];
+    const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
 }
 
 export async function addTransaction(tx) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
     const user = await getCurrentUser();
     if (!user) throw new Error("Authentication required.");
     
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('transactions')
-            .insert([{
-                user_id: user.id,
-                type: tx.type,
-                amount: parseFloat(tx.amount),
-                category: tx.category,
-                date: tx.date,
-                description: tx.description || '',
-                tags: tx.tags || []
-            }])
-            .select();
-        if (error) throw error;
-        return data[0];
-    } else {
-        const txs = await getTransactions();
-        const newTx = {
-            id: 'tx-' + Date.now() + Math.random().toString(36).substr(2, 4),
+    const { data, error } = await supabase
+        .from('transactions')
+        .insert([{
             user_id: user.id,
             type: tx.type,
             amount: parseFloat(tx.amount),
             category: tx.category,
             date: tx.date,
             description: tx.description || '',
-            tags: tx.tags || [],
-            created_at: new Date().toISOString()
-        };
-        txs.unshift(newTx);
-        localStorage.setItem('notebook_transactions', JSON.stringify(txs));
-        return newTx;
-    }
+            tags: tx.tags || []
+        }])
+        .select();
+    if (error) throw error;
+    return data[0];
 }
 
 export async function updateTransaction(id, updatedTx) {
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('transactions')
-            .update({
-                type: updatedTx.type,
-                amount: parseFloat(updatedTx.amount),
-                category: updatedTx.category,
-                date: updatedTx.date,
-                description: updatedTx.description || '',
-                tags: updatedTx.tags || []
-            })
-            .eq('id', id)
-            .select();
-        if (error) throw error;
-        return data[0];
-    } else {
-        const txs = await getTransactions();
-        const index = txs.findIndex(t => t.id === id);
-        if (index === -1) throw new Error("Transaction not found.");
-        
-        txs[index] = {
-            ...txs[index],
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const { data, error } = await supabase
+        .from('transactions')
+        .update({
             type: updatedTx.type,
             amount: parseFloat(updatedTx.amount),
             category: updatedTx.category,
             date: updatedTx.date,
             description: updatedTx.description || '',
             tags: updatedTx.tags || []
-        };
-        localStorage.setItem('notebook_transactions', JSON.stringify(txs));
-        return txs[index];
-    }
+        })
+        .eq('id', id)
+        .select();
+    if (error) throw error;
+    return data[0];
 }
 
 export async function deleteTransaction(id) {
-    if (isCloudMode()) {
-        const { error } = await supabase
-            .from('transactions')
-            .delete()
-            .eq('id', id);
-        if (error) throw error;
-        return true;
-    } else {
-        let txs = await getTransactions();
-        txs = txs.filter(t => t.id !== id);
-        localStorage.setItem('notebook_transactions', JSON.stringify(txs));
-        return true;
-    }
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id);
+    if (error) throw error;
+    return true;
 }
 
 /* ==========================================================================
    BUDGETS API
    ========================================================================== */
 export async function getBudgets(month) { // month: YYYY-MM
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('budgets')
-            .select('*')
-            .eq('month', month);
-        if (error) throw error;
-        return data;
-    } else {
-        const allBudgets = JSON.parse(localStorage.getItem('notebook_budgets') || '[]');
-        return allBudgets.filter(b => b.month === month);
-    }
+    if (!isCloudMode()) return [];
+    const { data, error } = await supabase
+        .from('budgets')
+        .select('*')
+        .eq('month', month);
+    if (error) throw error;
+    return data;
 }
 
 export async function setBudget(category, amount, month) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
     const user = await getCurrentUser();
     if (!user) throw new Error("Authentication required.");
     
-    if (isCloudMode()) {
-        // Upsert budget limit in Supabase
-        const { data, error } = await supabase
-            .from('budgets')
-            .upsert({
-                user_id: user.id,
-                category,
-                amount: parseFloat(amount),
-                month
-            }, { onConflict: 'user_id,category,month' })
-            .select();
-        if (error) throw error;
-        return data[0];
-    } else {
-        const allBudgets = JSON.parse(localStorage.getItem('notebook_budgets') || '[]');
-        const index = allBudgets.findIndex(b => b.category === category && b.month === month);
-        
-        const newBudget = {
-            id: 'b-' + Date.now(),
+    const { data, error } = await supabase
+        .from('budgets')
+        .upsert({
             user_id: user.id,
             category,
             amount: parseFloat(amount),
             month
-        };
-        
-        if (index > -1) {
-            allBudgets[index] = newBudget;
-        } else {
-            allBudgets.push(newBudget);
-        }
-        localStorage.setItem('notebook_budgets', JSON.stringify(allBudgets));
-        return newBudget;
-    }
+        }, { onConflict: 'user_id,category,month' })
+        .select();
+    if (error) throw error;
+    return data[0];
 }
 
 /* ==========================================================================
    GROUP LEDGER API
    ========================================================================== */
 export async function getGroups() {
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('groups')
-            .select('*')
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data;
-    } else {
-        const groups = localStorage.getItem('notebook_groups');
-        return groups ? JSON.parse(groups) : [];
-    }
+    if (!isCloudMode()) return [];
+    const { data, error } = await supabase
+        .from('groups')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
 }
 
 export async function createGroup(name) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
     const user = await getCurrentUser();
     if (!user) throw new Error("Authentication required.");
     
-    if (isCloudMode()) {
-        // 1. Insert Group
-        const { data: group, error: gError } = await supabase
-            .from('groups')
-            .insert([{ name, created_by: user.id }])
-            .select()
-            .single();
-        if (gError) throw gError;
-        
-        // 2. Automatically add creator as member
-        const { error: mError } = await supabase
-            .from('group_members')
-            .insert([{
-                group_id: group.id,
-                user_id: user.id,
-                nickname: user.nickname || splitEmail(user.email)
-            }]);
-        if (mError) throw mError;
-        
-        return group;
-    } else {
-        const groups = await getGroups();
-        const newGroup = {
-            id: 'group-' + Date.now(),
-            name,
-            created_by: user.id,
-            created_at: new Date().toISOString(),
-            members: [{ id: 'gm-creator', nickname: user.nickname || 'You' }],
-            transactions: []
-        };
-        groups.unshift(newGroup);
-        localStorage.setItem('notebook_groups', JSON.stringify(groups));
-        return newGroup;
-    }
+    // 1. Insert Group
+    const { data: group, error: gError } = await supabase
+        .from('groups')
+        .insert([{ name, created_by: user.id }])
+        .select()
+        .single();
+    if (gError) throw gError;
+    
+    // 2. Automatically add creator as member
+    const { error: mError } = await supabase
+        .from('group_members')
+        .insert([{
+            group_id: group.id,
+            user_id: user.id,
+            nickname: user.nickname || splitEmail(user.email)
+        }]);
+    if (mError) throw mError;
+    
+    return group;
 }
 
 export async function getGroupMembers(groupId) {
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('group_members')
-            .select('*')
-            .eq('group_id', groupId)
-            .order('joined_at', { ascending: true });
-        if (error) throw error;
-        return data;
-    } else {
-        const groups = await getGroups();
-        const group = groups.find(g => g.id === groupId);
-        return group ? group.members : [];
-    }
+    if (!isCloudMode()) return [];
+    const { data, error } = await supabase
+        .from('group_members')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('joined_at', { ascending: true });
+    if (error) throw error;
+    return data;
 }
 
 export async function addGroupMember(groupId, nickname) {
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('group_members')
-            .insert([{ group_id: groupId, nickname }])
-            .select();
-        if (error) throw error;
-        return data[0];
-    } else {
-        const groups = await getGroups();
-        const index = groups.findIndex(g => g.id === groupId);
-        if (index === -1) throw new Error("Group not found.");
-        
-        if (groups[index].members.some(m => m.nickname.toLowerCase() === nickname.toLowerCase())) {
-            throw new Error("Member nickname already exists in group.");
-        }
-        
-        const newMember = {
-            id: 'gm-' + Date.now(),
-            nickname
-        };
-        groups[index].members.push(newMember);
-        localStorage.setItem('notebook_groups', JSON.stringify(groups));
-        return newMember;
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    
+    // Check if nickname already exists in group
+    const members = await getGroupMembers(groupId);
+    if (members.some(m => m.nickname.toLowerCase() === nickname.toLowerCase())) {
+        throw new Error("Member nickname already exists in group.");
     }
+    
+    const { data, error } = await supabase
+        .from('group_members')
+        .insert([{ group_id: groupId, nickname }])
+        .select();
+    if (error) throw error;
+    return data[0];
 }
 
 export async function getGroupTransactions(groupId) {
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('group_transactions')
-            .select('*')
-            .eq('group_id', groupId)
-            .order('date', { ascending: false })
-            .order('created_at', { ascending: false });
-        if (error) throw error;
-        return data;
-    } else {
-        const groups = await getGroups();
-        const group = groups.find(g => g.id === groupId);
-        return group ? group.transactions || [] : [];
-    }
+    if (!isCloudMode()) return [];
+    const { data, error } = await supabase
+        .from('group_transactions')
+        .select('*')
+        .eq('group_id', groupId)
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
 }
 
 export async function addGroupTransaction(groupId, tx) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
     // tx = { paid_by: string, amount: num, category: string, date: YYYY-MM-DD, description: string, splits: [ { nickname, amount } ] }
-    if (isCloudMode()) {
-        const { data, error } = await supabase
-            .from('group_transactions')
-            .insert([{
-                group_id: groupId,
-                paid_by: tx.paid_by,
-                amount: parseFloat(tx.amount),
-                category: tx.category,
-                date: tx.date,
-                description: tx.description,
-                splits: tx.splits // array of { nickname, amount }
-            }])
-            .select();
-        if (error) throw error;
-        return data[0];
-    } else {
-        const groups = await getGroups();
-        const index = groups.findIndex(g => g.id === groupId);
-        if (index === -1) throw new Error("Group not found.");
-        
-        const newTx = {
-            id: 'gtx-' + Date.now(),
+    const { data, error } = await supabase
+        .from('group_transactions')
+        .insert([{
             group_id: groupId,
             paid_by: tx.paid_by,
             amount: parseFloat(tx.amount),
             category: tx.category,
             date: tx.date,
             description: tx.description,
-            splits: tx.splits,
-            created_at: new Date().toISOString()
-        };
-        
-        if (!groups[index].transactions) groups[index].transactions = [];
-        groups[index].transactions.unshift(newTx);
-        localStorage.setItem('notebook_groups', JSON.stringify(groups));
-        return newTx;
-    }
+            splits: tx.splits // array of { nickname, amount }
+        }])
+        .select();
+    if (error) throw error;
+    return data[0];
 }
 
 export async function deleteGroupTransaction(groupId, txId) {
-    if (isCloudMode()) {
-        const { error } = await supabase
-            .from('group_transactions')
-            .delete()
-            .eq('id', txId);
-        if (error) throw error;
-        return true;
-    } else {
-        const groups = await getGroups();
-        const gIndex = groups.findIndex(g => g.id === groupId);
-        if (gIndex === -1) throw new Error("Group not found.");
-        
-        groups[gIndex].transactions = (groups[gIndex].transactions || []).filter(t => t.id !== txId);
-        localStorage.setItem('notebook_groups', JSON.stringify(groups));
-        return true;
-    }
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const { error } = await supabase
+        .from('group_transactions')
+        .delete()
+        .eq('id', txId);
+    if (error) throw error;
+    return true;
 }
 
 /* ==========================================================================
-   BACKUP & RESET FUNCTIONS
+   BACKUP & RESET FUNCTIONS (Pure Supabase Cloud Sync)
    ========================================================================== */
-export function exportStateAsJSON() {
+export async function exportStateAsJSON() {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    
+    const txs = await getTransactions();
+    
+    // Fetch all budgets
+    const { data: budgets, error: bErr } = await supabase
+        .from('budgets')
+        .select('*');
+    if (bErr) throw bErr;
+    
+    // Fetch all groups with their members and transactions
+    const groupsList = await getGroups();
+    const fullGroups = [];
+    
+    for (const g of groupsList) {
+        const members = await getGroupMembers(g.id);
+        const transactions = await getGroupTransactions(g.id);
+        fullGroups.push({
+            ...g,
+            members,
+            transactions
+        });
+    }
+    
     const data = {
-        transactions: JSON.parse(localStorage.getItem('notebook_transactions') || '[]'),
-        budgets: JSON.parse(localStorage.getItem('notebook_budgets') || '[]'),
-        groups: JSON.parse(localStorage.getItem('notebook_groups') || '[]'),
+        transactions: txs,
+        budgets: budgets,
+        groups: fullGroups,
         categories: DEFAULT_CATEGORIES
     };
     return JSON.stringify(data, null, 2);
 }
 
-export function importStateFromJSON(jsonString) {
+export async function importStateFromJSON(jsonString) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const user = await getCurrentUser();
+    if (!user) throw new Error("Authentication required.");
+    
     try {
         const data = JSON.parse(jsonString);
+        
+        // 1. Import Personal Transactions
         if (data.transactions && Array.isArray(data.transactions)) {
-            localStorage.setItem('notebook_transactions', JSON.stringify(data.transactions));
+            const dbTxs = data.transactions.map(t => ({
+                user_id: user.id,
+                type: t.type,
+                amount: parseFloat(t.amount),
+                category: t.category,
+                date: t.date || new Date().toISOString().split('T')[0],
+                description: t.description || '',
+                tags: t.tags || []
+            }));
+            
+            if (dbTxs.length > 0) {
+                const { error } = await supabase.from('transactions').insert(dbTxs);
+                if (error) throw error;
+            }
         }
+        
+        // 2. Import Budgets
         if (data.budgets && Array.isArray(data.budgets)) {
-            localStorage.setItem('notebook_budgets', JSON.stringify(data.budgets));
+            for (const b of data.budgets) {
+                const { error } = await supabase.from('budgets').upsert({
+                    user_id: user.id,
+                    category: b.category,
+                    amount: parseFloat(b.amount),
+                    month: b.month
+                }, { onConflict: 'user_id,category,month' });
+                if (error) throw error;
+            }
         }
+        
+        // 3. Import Groups
         if (data.groups && Array.isArray(data.groups)) {
-            localStorage.setItem('notebook_groups', JSON.stringify(data.groups));
+            for (const g of data.groups) {
+                // Insert group
+                const { data: newGroup, error: gError } = await supabase
+                    .from('groups')
+                    .insert([{ name: g.name, created_by: user.id }])
+                    .select()
+                    .single();
+                if (gError) throw gError;
+                
+                // Add members (find unique nicknames)
+                const nicknames = Array.from(new Set(g.members.map(m => m.nickname)));
+                const memberInsert = nicknames.map(nick => {
+                    const isSelf = nick.toLowerCase() === user.nickname.toLowerCase();
+                    return {
+                        group_id: newGroup.id,
+                        user_id: isSelf ? user.id : null,
+                        nickname: nick
+                    };
+                });
+                
+                if (memberInsert.length > 0) {
+                    const { error: mError } = await supabase
+                        .from('group_members')
+                        .insert(memberInsert);
+                    if (mError) throw mError;
+                }
+                
+                // Add group transactions
+                if (g.transactions && Array.isArray(g.transactions)) {
+                    const groupTxs = g.transactions.map(gt => {
+                        const splits = gt.splits || [];
+                        return {
+                            group_id: newGroup.id,
+                            paid_by: gt.paid_by,
+                            amount: parseFloat(gt.amount),
+                            category: gt.category || 'Other',
+                            date: gt.date || new Date().toISOString().split('T')[0],
+                            description: gt.description || '',
+                            splits: splits
+                        };
+                    });
+                    
+                    if (groupTxs.length > 0) {
+                        const { error: gtError } = await supabase
+                            .from('group_transactions')
+                            .insert(groupTxs);
+                        if (gtError) throw gtError;
+                    }
+                }
+            }
         }
         return true;
     } catch (e) {
-        throw new Error("Invalid backup JSON structure: " + e.message);
+        throw new Error("Invalid backup JSON structure or import failed: " + e.message);
     }
 }
 
 export function clearLocalStorageState() {
-    localStorage.removeItem('notebook_transactions');
-    localStorage.removeItem('notebook_budgets');
-    localStorage.removeItem('notebook_groups');
-    localStorage.removeItem('notebook_local_users');
-    localStorage.removeItem('notebook_local_session');
+    localStorage.removeItem('notebook_config');
 }
