@@ -83,7 +83,10 @@ export function initDashboard(onDashboardChange) {
     
     // Filtering listeners
     filterSearch.addEventListener('input', applyFiltersAndRender);
-    filterType.addEventListener('change', applyFiltersAndRender);
+    filterType.addEventListener('change', () => {
+        updateFilterCategoryOptions();
+        applyFiltersAndRender();
+    });
     filterCategory.addEventListener('change', applyFiltersAndRender);
     filterMonth.addEventListener('change', applyFiltersAndRender);
     
@@ -188,26 +191,52 @@ function calculateSummaryCards(txList = localTransactions) {
     }
 }
 
-function populateFilterSelectors() {
+function updateFilterCategoryOptions() {
+    const typeVal = filterType.value;
+    const expenseCats = ['Food', 'Transport', 'Entertainment', 'Shopping', 'Housing', 'Other'];
+    const incomeCats = ['Salary', 'Investments', 'Other'];
+    
     const categories = new Set(storage.DEFAULT_CATEGORIES);
+    localTransactions.forEach(t => {
+        if (t.category) categories.add(t.category);
+    });
+    
+    let catsToFill = [];
+    if (typeVal === 'all') {
+        catsToFill = Array.from(categories);
+    } else if (typeVal === 'income') {
+        catsToFill = Array.from(categories).filter(cat => incomeCats.includes(cat) || cat === 'Other');
+    } else { // expense
+        catsToFill = Array.from(categories).filter(cat => expenseCats.includes(cat) || cat === 'Other');
+    }
+    
+    catsToFill = Array.from(new Set(catsToFill)).sort();
+    
+    const prevCat = filterCategory.value;
+    filterCategory.innerHTML = `<option value="all">${getText('db_all_cats')}</option>`;
+    catsToFill.forEach(cat => {
+        filterCategory.innerHTML += `<option value="${cat}">${getText('cat_' + cat) || cat}</option>`;
+    });
+    
+    if (catsToFill.includes(prevCat)) {
+        filterCategory.value = prevCat;
+    } else {
+        filterCategory.value = 'all';
+    }
+}
+
+function populateFilterSelectors() {
     const months = new Set();
     
     localTransactions.forEach(t => {
-        if (t.category) categories.add(t.category);
         if (t.date) {
             months.add(t.date.substring(0, 7)); // YYYY-MM
         }
     });
     
-    // Save previous selections
-    const prevCat = filterCategory.value;
     const prevMonth = filterMonth.value;
     
-    // Fill categories dropdown in filters
-    filterCategory.innerHTML = `<option value="all">${getText('db_all_cats')}</option>`;
-    Array.from(categories).sort().forEach(cat => {
-        filterCategory.innerHTML += `<option value="${cat}">${getText('cat_' + cat) || cat}</option>`;
-    });
+    updateFilterCategoryOptions();
     
     // Fill months dropdown
     const locale = getLocale() === 'zh' ? 'zh-TW' : 'en-US';
@@ -218,10 +247,6 @@ function populateFilterSelectors() {
         filterMonth.innerHTML += `<option value="${mon}">${formatted}</option>`;
     });
     
-    // Re-select previous filter options if still valid
-    if (Array.from(categories).includes(prevCat)) {
-        filterCategory.value = prevCat;
-    }
     if (Array.from(months).includes(prevMonth)) {
         filterMonth.value = prevMonth;
     }

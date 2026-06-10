@@ -116,7 +116,10 @@ export function initGroups() {
     const groupFilterMonth = document.getElementById('groupFilterMonth');
     
     groupFilterSearch.addEventListener('input', applyGroupFiltersAndRender);
-    groupFilterType.addEventListener('change', applyGroupFiltersAndRender);
+    groupFilterType.addEventListener('change', () => {
+        updateGroupFilterCategoryOptions();
+        applyGroupFiltersAndRender();
+    });
     groupFilterCategory.addEventListener('change', applyGroupFiltersAndRender);
     groupFilterMonth.addEventListener('change', applyGroupFiltersAndRender);
 
@@ -602,29 +605,62 @@ async function handleGroupTxDelete(txId) {
 /* ==========================================================================
    FILTERING & ANALYTICS HELPER FUNCTIONS
    ========================================================================== */
-function populateGroupFilters() {
+function updateGroupFilterCategoryOptions() {
+    const groupFilterType = document.getElementById('groupFilterType');
     const groupFilterCategory = document.getElementById('groupFilterCategory');
-    const groupFilterMonth = document.getElementById('groupFilterMonth');
+    if (!groupFilterCategory || !groupFilterType) return;
+    
+    const typeVal = groupFilterType.value;
+    const expenseCats = ['Food', 'Transport', 'Entertainment', 'Shopping', 'Housing', 'Other'];
+    const incomeCats = ['Salary', 'Investments', 'Other'];
     
     const categories = new Set();
+    activeTransactions.forEach(t => {
+        if (t.category) categories.add(t.category);
+    });
+    
+    if (categories.size === 0) {
+        ['Food', 'Transport', 'Entertainment', 'Shopping', 'Housing', 'Salary', 'Investments', 'Other'].forEach(c => categories.add(c));
+    }
+    
+    let catsToFill = [];
+    if (typeVal === 'all') {
+        catsToFill = Array.from(categories);
+    } else if (typeVal === 'income') {
+        catsToFill = Array.from(categories).filter(cat => incomeCats.includes(cat) || cat === 'Other');
+    } else { // expense
+        catsToFill = Array.from(categories).filter(cat => expenseCats.includes(cat) || cat === 'Other');
+    }
+    
+    catsToFill = Array.from(new Set(catsToFill)).sort();
+    
+    const prevCat = groupFilterCategory.value;
+    groupFilterCategory.innerHTML = `<option value="all">${getText('db_all_cats')}</option>`;
+    catsToFill.forEach(cat => {
+        groupFilterCategory.innerHTML += `<option value="${cat}">${getText('cat_' + cat) || cat}</option>`;
+    });
+    
+    if (catsToFill.includes(prevCat)) {
+        groupFilterCategory.value = prevCat;
+    } else {
+        groupFilterCategory.value = 'all';
+    }
+}
+
+function populateGroupFilters() {
+    const groupFilterMonth = document.getElementById('groupFilterMonth');
     const months = new Set();
     
     activeTransactions.forEach(t => {
-        if (t.category) categories.add(t.category);
         if (t.date) {
             const monthKey = t.date.substring(0, 7); // YYYY-MM
             months.add(monthKey);
         }
     });
     
-    const prevCat = groupFilterCategory.value;
     const prevMonth = groupFilterMonth.value;
     
-    // Fill categories
-    groupFilterCategory.innerHTML = `<option value="all">${getText('db_all_cats')}</option>`;
-    Array.from(categories).sort().forEach(cat => {
-        groupFilterCategory.innerHTML += `<option value="${cat}">${getText('cat_' + cat) || cat}</option>`;
-    });
+    updateGroupFilterCategoryOptions();
     
     // Fill months
     const locale = getLocale() === 'zh' ? 'zh-TW' : 'en-US';
@@ -635,10 +671,6 @@ function populateGroupFilters() {
         groupFilterMonth.innerHTML += `<option value="${mon}">${formatted}</option>`;
     });
     
-    // Re-select if still valid
-    if (Array.from(categories).includes(prevCat)) {
-        groupFilterCategory.value = prevCat;
-    }
     if (Array.from(months).includes(prevMonth)) {
         groupFilterMonth.value = prevMonth;
     }
