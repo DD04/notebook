@@ -76,6 +76,14 @@ async function initApp() {
     // 2. Initialize Core Storage and Configuration
     await storage.initStorage();
     
+    // Listen for auth state changes (especially PASSWORD_RECOVERY)
+    storage.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+            console.log('PASSWORD_RECOVERY event triggered');
+            auth.showResetPanel();
+        }
+    });
+    
     // 3. Initialize Auth Panel
     auth.initAuth(handleAuthSuccess);
     sidebarAuthBtn.addEventListener('click', handleAuthBtnClick);

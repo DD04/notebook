@@ -619,6 +619,11 @@
                     <label for="gwNickname" data-i18n="gw_label_nickname">Nickname</label>
                     <input type="text" id="gwNickname" placeholder="Display Name">
                 </div>
+
+                <div class="form-group d-none" id="gwEmailGroup">
+                    <label for="gwEmail" data-i18n="gw_label_email">Recovery Email (真實備用信箱)</label>
+                    <input type="email" id="gwEmail" placeholder="e.g. user@example.com">
+                </div>
                 
                 <div class="form-group">
                     <label for="gwUsername" data-i18n="gw_label_username">Username (帳號)</label>
@@ -626,7 +631,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="gwPassword" data-i18n="gw_label_password">Password</label>
+                    <div class="label-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label for="gwPassword" data-i18n="gw_label_password" style="margin-bottom: 0;">Password</label>
+                        <a href="#" id="gwForgotPasswordBtn" class="gateway-link" style="font-size: 12px; color: var(--color-primary);" data-i18n="gw_forgot_password">忘記密碼？</a>
+                    </div>
                     <input type="password" id="gwPassword" placeholder="••••••••" required>
                 </div>
 
@@ -638,6 +646,41 @@
                     <span id="gwAuthToggleQuestion" data-i18n="gw_switch_to_signup">Don't have an account?</span>
                     <a href="#" id="gwAuthToggleBtn" data-i18n="gw_btn_signup">Sign Up</a>
                 </div>
+            </form>
+
+            <!-- Panel C: Forgot Password -->
+            <form id="gatewayForgotForm" class="gateway-panel modal-form d-none">
+                <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;" data-i18n="gw_forgot_desc">
+                    請輸入您的帳號或真實信箱，系統將會發送密碼重設信件至您的信箱。
+                </p>
+                <div class="form-group">
+                    <label for="gwForgotInput" data-i18n="gw_forgot_label">Username or Email (帳號或真實信箱)</label>
+                    <input type="text" id="gwForgotInput" placeholder="e.g. user123 or user@example.com" required>
+                </div>
+                <div class="gateway-message text-error d-none" id="gatewayForgotError"></div>
+                <div class="gateway-message text-success d-none" id="gatewayForgotSuccess"></div>
+                <button type="submit" class="btn btn-primary w-100" id="gatewayForgotSubmitBtn" data-i18n="gw_btn_send_reset">傳送重設信件</button>
+                <div class="gateway-switch-text text-muted text-center mt-3">
+                    <a href="#" id="gwForgotBackToLoginBtn" data-i18n="gw_back_to_login">返回登入</a>
+                </div>
+            </form>
+
+            <!-- Panel D: Reset Password -->
+            <form id="gatewayResetForm" class="gateway-panel modal-form d-none">
+                <p class="text-muted" style="font-size: 13px; margin-bottom: 16px;">
+                    請輸入您的新密碼。
+                </p>
+                <div class="form-group">
+                    <label for="gwNewPassword">New Password (新密碼)</label>
+                    <input type="password" id="gwNewPassword" placeholder="••••••••" minlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label for="gwConfirmNewPassword">Confirm Password (確認密碼)</label>
+                    <input type="password" id="gwConfirmNewPassword" placeholder="••••••••" minlength="6" required>
+                </div>
+                <div class="gateway-message text-error d-none" id="gatewayResetError"></div>
+                <div class="gateway-message text-success d-none" id="gatewayResetSuccess"></div>
+                <button type="submit" class="btn btn-primary w-100" id="gatewayResetSubmitBtn">更新密碼</button>
             </form>
         </div>
     </div>

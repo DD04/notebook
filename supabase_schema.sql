@@ -8,9 +8,16 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     email TEXT NOT NULL,
+    username TEXT UNIQUE,
     nickname TEXT,
+    superuser BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- For existing databases, ensure username and superuser columns exist
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_username_key UNIQUE (username);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS superuser BOOLEAN DEFAULT FALSE;
 
 -- Enable RLS for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -29,8 +36,13 @@ USING (auth.uid() = id);
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, nickname)
-    VALUES (new.id, new.email, COALESCE(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1)));
+    INSERT INTO public.profiles (id, email, username, nickname)
+    VALUES (
+        new.id, 
+        new.email, 
+        COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+        COALESCE(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1))
+    );
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

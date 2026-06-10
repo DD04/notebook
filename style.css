@@ -2008,6 +2008,12 @@ a {
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+.gateway-message.text-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
 .gateway-panel {
     display: flex;
     flex-direction: column;

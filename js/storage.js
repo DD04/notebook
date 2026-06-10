@@ -69,11 +69,18 @@ export async function saveConfig(newConfig) {
     }
 }
 
+let authChangeListeners = [];
+
 async function connectSupabase(url, key) {
     try {
         // Dynamic ESM import of Supabase JS Client
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
         supabase = createClient(url, key);
+        
+        // Register any pending auth state change listeners
+        authChangeListeners.forEach(callback => {
+            supabase.auth.onAuthStateChange(callback);
+        });
         
         // Quick verification ping to check credentials
         const { error } = await supabase.from('profiles').select('id').limit(1);
@@ -88,6 +95,15 @@ async function connectSupabase(url, key) {
     }
 }
 
+export function onAuthStateChange(callback) {
+    authChangeListeners.push(callback);
+    if (supabase) {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
+        return subscription;
+    }
+    return null;
+}
+
 export function isCloudMode() {
     return currentConfig.mode === 'supabase' && supabase !== null;
 }
@@ -95,24 +111,82 @@ export function isCloudMode() {
 /* ==========================================================================
    AUTHENTICATION API
    ========================================================================== */
-export async function signUp(email, password, nickname) {
+export async function signUp(email, password, nickname, username) {
     if (!isCloudMode()) throw new Error("Database connection required.");
+    
+    // Check if username is already taken
+    const existing = await findUserByUsername(username);
+    if (existing) {
+        throw new Error("該帳號名稱已被使用。");
+    }
+
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            data: { nickname }
+            data: { nickname, username }
         }
     });
     if (error) throw error;
     return data.user;
 }
 
-export async function signIn(email, password) {
+export async function signIn(emailOrUsername, password) {
     if (!isCloudMode()) throw new Error("Database connection required.");
+    
+    let email = emailOrUsername.trim();
+    if (!email.includes('@')) {
+        const profile = await findUserByUsername(email);
+        if (!profile) {
+            throw new Error("帳號或密碼錯誤。");
+        }
+        email = profile.email;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
+    });
+    if (error) throw error;
+    return data.user;
+}
+
+export async function findUserByUsername(username) {
+    if (!isCloudMode()) return null;
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nickname, email, username')
+        .eq('username', username.trim())
+        .maybeSingle(); // Use maybeSingle to avoid PGRST116 throwing error when not found
+    
+    if (error || !data) return null;
+    return data;
+}
+
+export async function sendPasswordResetEmail(emailOrUsername) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    
+    let email = emailOrUsername.trim();
+    if (!email.includes('@')) {
+        const profile = await findUserByUsername(email);
+        if (!profile) {
+            throw new Error("找不到該帳號。");
+        }
+        email = profile.email;
+    }
+
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectTo
+    });
+    if (error) throw error;
+    return true;
+}
+
+export async function updatePassword(newPassword) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+    const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
     });
     if (error) throw error;
     return data.user;
