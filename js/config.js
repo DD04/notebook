@@ -4,5 +4,5 @@
 // export const SUPABASE_URL = "https://xxxx.supabase.co";
 // export const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
 
-export const SUPABASE_URL = "";
-export const SUPABASE_KEY = "";
+export const SUPABASE_URL = "https://aykfjjxvljvhehnzeooi.supabase.co";
+export const SUPABASE_KEY = "sb_publishable_AdjKpApllJkApl0A9pBaDw_8N-Vlhxi";
