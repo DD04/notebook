@@ -29,23 +29,23 @@
             <nav class="nav-menu">
                 <a href="#dashboard" class="nav-item active" data-view="dashboard">
                     <i data-lucide="layout-dashboard"></i>
-                    <span>Dashboard</span>
+                    <span data-i18n="nav_dashboard">Dashboard</span>
                 </a>
                 <a href="#groups" class="nav-item" data-view="groups">
                     <i data-lucide="users"></i>
-                    <span>Group Ledger</span>
+                    <span data-i18n="nav_groups">Group Ledger</span>
                 </a>
                 <a href="#analytics" class="nav-item" data-view="analytics">
                     <i data-lucide="pie-chart"></i>
-                    <span>Analytics</span>
+                    <span data-i18n="nav_analytics">Analytics</span>
                 </a>
                 <a href="#budgeting" class="nav-item" data-view="budgeting">
                     <i data-lucide="wallet"></i>
-                    <span>Budgeting</span>
+                    <span data-i18n="nav_budgeting">Budgeting</span>
                 </a>
                 <a href="#settings" class="nav-item" data-view="settings">
                     <i data-lucide="settings"></i>
-                    <span>Settings</span>
+                    <span data-i18n="nav_settings">Settings</span>
                 </a>
             </nav>
 
@@ -56,8 +56,8 @@
                         <i data-lucide="user"></i>
                     </div>
                     <div class="user-info">
-                        <span class="user-name" id="profileNickname">Guest User</span>
-                        <span class="user-status" id="profileStatus">Disconnected</span>
+                        <span class="user-name" id="profileNickname" data-i18n="sidebar_offline_user">Guest User</span>
+                        <span class="user-status" id="profileStatus" data-i18n="sidebar_disconnected">Disconnected</span>
                     </div>
                     <button class="auth-btn" id="sidebarAuthBtn" title="Log In / Sign Up">
                         <i data-lucide="log-in"></i>
@@ -72,14 +72,17 @@
             <header class="top-header">
                 <div class="header-left">
                     <button class="sidebar-toggle-open" id="sidebarOpenBtn"><i data-lucide="menu"></i></button>
-                    <h1 class="page-title" id="pageTitle">Dashboard</h1>
+                    <h1 class="page-title" id="pageTitle" data-i18n="db_title">Dashboard</h1>
                 </div>
                 <div class="header-right">
                     <!-- Status Indicators -->
                     <div class="mode-badge" id="modeBadge">
                         <span class="badge-dot"></span>
-                        <span class="badge-text" id="modeBadgeText">Local Storage</span>
+                        <span class="badge-text" id="modeBadgeText" data-i18n="badge_db_required">Database Required</span>
                     </div>
+                    <button class="theme-toggle-btn" id="langToggleBtn" title="Switch Language">
+                        <i data-lucide="languages"></i>
+                    </button>
                     <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Theme">
                         <i data-lucide="moon" class="theme-icon-dark"></i>
                         <i data-lucide="sun" class="theme-icon-light"></i>
@@ -97,17 +100,17 @@
                         <div class="summary-card balance-card">
                             <div class="card-glass-glow"></div>
                             <div class="card-header">
-                                <span class="card-label">Net Balance</span>
+                                <span class="card-label" data-i18n="db_balance">Net Balance</span>
                                 <div class="card-icon"><i data-lucide="banknote"></i></div>
                             </div>
                             <div class="card-amount" id="dbNetBalance">$0.00</div>
-                            <div class="card-footer text-muted">Total financial summary</div>
+                            <div class="card-footer text-muted" data-i18n="db_balance_desc">Total financial summary</div>
                         </div>
 
                         <div class="summary-card income-card">
                             <div class="card-glass-glow"></div>
                             <div class="card-header">
-                                <span class="card-label">Total Income</span>
+                                <span class="card-label" data-i18n="db_income">Total Income</span>
                                 <div class="card-icon"><i data-lucide="trending-up"></i></div>
                             </div>
                             <div class="card-amount text-success" id="dbTotalIncome">$0.00</div>
@@ -117,7 +120,7 @@
                         <div class="summary-card expense-card">
                             <div class="card-glass-glow"></div>
                             <div class="card-header">
-                                <span class="card-label">Total Expenses</span>
+                                <span class="card-label" data-i18n="db_expense">Total Expenses</span>
                                 <div class="card-icon"><i data-lucide="trending-down"></i></div>
                             </div>
                             <div class="card-amount text-error" id="dbTotalExpenses">$0.00</div>
@@ -128,9 +131,9 @@
                     <!-- Ledger section -->
                     <div class="ledger-container">
                         <div class="section-header">
-                            <h2>Transaction Ledger</h2>
+                            <h2 data-i18n="db_ledger">Transaction Ledger</h2>
                             <button class="btn btn-primary" id="addTxBtn">
-                                <i data-lucide="plus"></i> <span>Add Transaction</span>
+                                <i data-lucide="plus"></i> <span data-i18n="db_add_tx">Add Transaction</span>
                             </button>
                         </div>
 
@@ -138,20 +141,20 @@
                         <div class="filters-panel">
                             <div class="search-box">
                                 <i data-lucide="search"></i>
-                                <input type="text" id="filterSearch" placeholder="Search description...">
+                                <input type="text" id="filterSearch" data-i18n-placeholder="db_search" placeholder="Search description...">
                             </div>
                             <div class="filter-inputs">
                                 <select id="filterType">
-                                    <option value="all">All Types</option>
-                                    <option value="income">Income</option>
-                                    <option value="expense">Expense</option>
+                                    <option value="all" data-i18n="db_all_types">All Types</option>
+                                    <option value="income" data-i18n="db_income_type">Income</option>
+                                    <option value="expense" data-i18n="db_expense_type">Expense</option>
                                 </select>
                                 <select id="filterCategory">
-                                    <option value="all">All Categories</option>
+                                    <option value="all" data-i18n="db_all_cats">All Categories</option>
                                     <!-- Dynamic categories -->
                                 </select>
                                 <select id="filterMonth">
-                                    <option value="all">All Months</option>
+                                    <option value="all" data-i18n="db_all_months">All Months</option>
                                     <!-- Dynamic months -->
                                 </select>
                             </div>
@@ -162,12 +165,12 @@
                             <table class="ledger-table" id="ledgerTable">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Description</th>
-                                        <th>Category</th>
-                                        <th>Tags</th>
-                                        <th class="text-right">Amount</th>
-                                        <th class="text-center">Actions</th>
+                                        <th data-i18n="th_date">Date</th>
+                                        <th data-i18n="th_desc">Description</th>
+                                        <th data-i18n="th_cat">Category</th>
+                                        <th data-i18n="th_tags">Tags</th>
+                                        <th class="text-right" data-i18n="th_amount">Amount</th>
+                                        <th class="text-center" data-i18n="th_actions">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ledgerTableBody">
@@ -176,7 +179,7 @@
                                         <td colspan="6">
                                             <div class="empty-state">
                                                 <i data-lucide="file-text"></i>
-                                                <p>No transactions found. Add one to get started!</p>
+                                                <p data-i18n="db_empty_state">No transactions found. Add one to get started!</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -200,7 +203,7 @@
                         <div class="group-side-panel">
                             <div class="panel-section card-box">
                                 <div class="section-header">
-                                    <h3>My Groups</h3>
+                                    <h3 data-i18n="group_list_title">My Groups</h3>
                                     <button class="btn btn-secondary btn-xs" id="createGroupBtn"><i data-lucide="plus"></i></button>
                                 </div>
                                 <div class="groups-list" id="groupsList">
@@ -210,7 +213,7 @@
 
                             <div class="panel-section card-box d-none" id="groupMembersSection">
                                 <div class="section-header">
-                                    <h3>Group Members</h3>
+                                    <h3 data-i18n="group_members_title">Group Members</h3>
                                     <button class="btn btn-secondary btn-xs" id="addMemberBtn"><i data-lucide="user-plus"></i></button>
                                 </div>
                                 <div class="members-list" id="groupMembersList">
@@ -223,8 +226,8 @@
                         <div class="group-main-panel">
                             <div id="noGroupSelected" class="empty-state-card card-box">
                                 <i data-lucide="users"></i>
-                                <h3>No Group Selected</h3>
-                                <p>Select an existing group from the list or create a new one to start tracking splits.</p>
+                                <h3 data-i18n="group_no_selection_title">No Group Selected</h3>
+                                <p data-i18n="group_no_selection_desc">Select an existing group from the list or create a new one to start tracking splits.</p>
                             </div>
 
                             <div id="groupActiveDetails" class="group-details-container d-none">
@@ -234,34 +237,34 @@
                                         <span class="text-muted" id="activeGroupMeta">Created on Date</span>
                                     </div>
                                     <div class="header-actions">
-                                        <button class="btn btn-secondary" id="settleUpBtn"><i data-lucide="check-circle-2"></i> <span>Settle Up</span></button>
-                                        <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span>Add Group Bill</span></button>
+                                        <button class="btn btn-secondary" id="settleUpBtn"><i data-lucide="check-circle-2"></i> <span data-i18n="group_settle_btn">Settle Up</span></button>
+                                        <button class="btn btn-primary" id="addGroupTxBtn"><i data-lucide="plus"></i> <span data-i18n="group_add_bill_btn">Add Group Bill</span></button>
                                     </div>
                                 </div>
 
                                 <!-- Settlement Summary Box -->
                                 <div class="settlement-summary-box card-box bg-glass">
-                                    <h4>Settlement Analysis</h4>
+                                    <h4 data-i18n="group_analysis_title">Settlement Analysis</h4>
                                     <div class="debts-summary-list" id="debtsSummaryList">
                                         <!-- Dynamically generated list of who owes who -->
-                                        <div class="all-settled-message"><i data-lucide="sparkles" class="text-success"></i> Everyone is settled up!</div>
+                                        <div class="all-settled-message"><i data-lucide="sparkles" class="text-success"></i> <span data-i18n="group_all_settled">Everyone is settled up!</span></div>
                                     </div>
                                 </div>
 
                                 <!-- Group Transactions List -->
                                 <div class="group-transactions-list card-box">
-                                    <h3>Group Ledger</h3>
+                                    <h3 data-i18n="group_ledger_title">Group Ledger</h3>
                                     <div class="ledger-table-wrapper">
                                         <table class="ledger-table" id="groupTxTable">
                                             <thead>
                                                 <tr>
-                                                    <th>Date</th>
-                                                    <th>Paid By</th>
-                                                    <th>Description</th>
-                                                    <th>Category</th>
-                                                    <th>Split Summary</th>
-                                                    <th class="text-right">Amount</th>
-                                                    <th class="text-center">Actions</th>
+                                                    <th data-i18n="th_date">Date</th>
+                                                    <th data-i18n="th_paid_by">Paid By</th>
+                                                    <th data-i18n="th_desc">Description</th>
+                                                    <th data-i18n="th_cat">Category</th>
+                                                    <th data-i18n="th_split_desc">Split Summary</th>
+                                                    <th class="text-right" data-i18n="th_amount">Amount</th>
+                                                    <th class="text-center" data-i18n="th_actions">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="groupTxTableBody">
@@ -280,7 +283,7 @@
                     <div class="analytics-layout">
                         <!-- Chart Card 1: Donut breakdown -->
                         <div class="analytics-card card-box">
-                            <h3>Category Distribution</h3>
+                            <h3 data-i18n="analytics_cat_dist">Category Distribution</h3>
                             <div class="chart-container donut-chart-container">
                                 <svg class="svg-chart" id="categoryDonutChart" viewBox="0 0 200 200">
                                     <!-- Drawn dynamically via SVG -->
@@ -292,7 +295,7 @@
 
                         <!-- Chart Card 2: Income vs Expense Timeline -->
                         <div class="analytics-card card-box">
-                            <h3>Monthly Cash Flow</h3>
+                            <h3 data-i18n="analytics_cash_flow">Monthly Cash Flow</h3>
                             <div class="chart-container line-chart-container">
                                 <svg class="svg-chart" id="trendBarChart" viewBox="0 0 400 220">
                                     <!-- Drawn dynamically via SVG -->
@@ -300,15 +303,15 @@
                                 <div class="chart-tooltip" id="trendTooltip"></div>
                             </div>
                             <div class="chart-legend">
-                                <span class="legend-item"><span class="legend-color bg-success"></span>Income</span>
-                                <span class="legend-item"><span class="legend-color bg-error"></span>Expense</span>
+                                <span class="legend-item"><span class="legend-color bg-success"></span><span data-i18n="db_income_type">Income</span></span>
+                                <span class="legend-item"><span class="legend-color bg-error"></span><span data-i18n="db_expense_type">Expense</span></span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Tags breakdown table -->
                     <div class="analytics-tags-section card-box">
-                        <h3>Spending by Tags</h3>
+                        <h3 data-i18n="analytics_tags">Spending by Tags</h3>
                         <div class="tags-badge-container" id="analyticsTagsList">
                             <!-- Filled dynamically -->
                         </div>
@@ -319,13 +322,13 @@
                 <section id="view-budgeting" class="view-section">
                     <div class="budget-setup-panel card-box">
                         <div class="section-header">
-                            <h2>Budget Settings</h2>
+                            <h2 data-i18n="budget_subtitle">Budget Settings</h2>
                             <div class="budget-month-selector">
-                                <label for="budgetMonthPicker">Month:</label>
+                                <label for="budgetMonthPicker" data-i18n="budget_month">Month:</label>
                                 <input type="month" id="budgetMonthPicker">
                             </div>
                         </div>
-                        <p class="text-muted">Set monthly spending limits for each category. We will track your spending progress in real-time.</p>
+                        <p class="text-muted" data-i18n="budget_desc">Set monthly spending limits for each category. We will track your spending progress in real-time.</p>
 
                         <div class="budget-sliders-grid" id="budgetSlidersGrid">
                             <!-- Dynamic category progress bar adjusters -->
@@ -340,30 +343,30 @@
                         <div class="settings-card card-box">
                             <div class="settings-card-header">
                                 <i data-lucide="database"></i>
-                                <h3>Supabase Configuration</h3>
+                                <h3 data-i18n="settings_db_title">Supabase Configuration</h3>
                             </div>
                             <div class="settings-card-body">
                                 <div id="dbConnectedStatus" class="db-status-banner connected d-none">
                                     <i data-lucide="check-circle-2"></i>
-                                    <span>Database Connected</span>
+                                    <span data-i18n="settings_connected">Database Connected</span>
                                 </div>
                                 <div id="dbDisconnectedStatus" class="db-status-banner disconnected">
                                     <i data-lucide="alert-circle"></i>
-                                    <span>Database Disconnected</span>
+                                    <span data-i18n="settings_disconnected">Database Disconnected</span>
                                 </div>
 
                                 <div class="supabase-config-form" id="supabaseConfigForm">
                                     <div class="form-group">
-                                        <label for="sbUrl">Supabase API URL</label>
+                                        <label for="sbUrl" data-i18n="settings_sb_url">Supabase API URL</label>
                                         <input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co">
                                     </div>
                                     <div class="form-group">
-                                        <label for="sbKey">Supabase Anon Key</label>
+                                        <label for="sbKey" data-i18n="settings_sb_key">Supabase Anon Key</label>
                                         <input type="password" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
                                     </div>
                                     <div class="config-actions">
-                                        <button class="btn btn-primary btn-sm" id="saveSupabaseConfigBtn">Connect Database</button>
-                                        <button class="btn btn-outline-error btn-sm d-none" id="disconnectSupabaseBtn">Disconnect</button>
+                                        <button class="btn btn-primary btn-sm" id="saveSupabaseConfigBtn" data-i18n="settings_btn_connect">Connect Database</button>
+                                        <button class="btn btn-outline-error btn-sm d-none" id="disconnectSupabaseBtn" data-i18n="settings_btn_disconnect">Disconnect</button>
                                     </div>
                                 </div>
                             </div>
@@ -373,13 +376,13 @@
                         <div class="settings-card card-box">
                             <div class="settings-card-header">
                                 <i data-lucide="download"></i>
-                                <h3>Backup & Operations</h3>
+                                <h3 data-i18n="settings_backup_title">Backup & Operations</h3>
                             </div>
                             <div class="settings-card-body">
-                                <p class="text-muted">Export your Supabase transactions, budgets, and groups to a JSON file, or restore from a previous JSON backup into the database.</p>
+                                <p class="text-muted" data-i18n="settings_backup_desc">Export your Supabase transactions, budgets, and groups to a JSON file, or restore from a previous JSON backup into the database.</p>
                                 <div class="backup-actions">
-                                    <button class="btn btn-secondary" id="exportBackupBtn"><i data-lucide="download-cloud"></i> Export JSON</button>
-                                    <button class="btn btn-secondary" id="importBackupBtn"><i data-lucide="upload-cloud"></i> Import JSON</button>
+                                    <button class="btn btn-secondary" id="exportBackupBtn"><i data-lucide="download-cloud"></i> <span data-i18n="settings_btn_export">Export JSON</span></button>
+                                    <button class="btn btn-secondary" id="importBackupBtn"><i data-lucide="upload-cloud"></i> <span data-i18n="settings_btn_import">Import JSON</span></button>
                                     <input type="file" id="importFileSelector" accept=".json" class="d-none">
                                 </div>
                             </div>
@@ -394,28 +397,28 @@
     <div class="modal-overlay" id="txModal">
         <div class="modal-container">
             <div class="modal-header">
-                <h3 id="txModalTitle">Add Transaction</h3>
+                <h3 id="txModalTitle" data-i18n="modal_add_tx">Add Transaction</h3>
                 <button class="modal-close-btn" id="txModalClose"><i data-lucide="x"></i></button>
             </div>
             <form id="txForm" class="modal-form">
                 <input type="hidden" id="txId">
                 <div class="form-row-2">
                     <div class="form-group">
-                        <label for="txType">Transaction Type</label>
+                        <label for="txType" data-i18n="modal_tx_type">Transaction Type</label>
                         <select id="txType" required>
-                            <option value="expense">Expense</option>
-                            <option value="income">Income</option>
+                            <option value="expense" data-i18n="db_expense_type">Expense</option>
+                            <option value="income" data-i18n="db_income_type">Income</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="txAmount">Amount</label>
+                        <label for="txAmount" data-i18n="modal_tx_amount">Amount</label>
                         <input type="number" step="0.01" min="0.01" id="txAmount" placeholder="0.00" required>
                     </div>
                 </div>
 
                 <div class="form-row-2">
                     <div class="form-group">
-                        <label for="txCategory">Category</label>
+                        <label for="txCategory" data-i18n="modal_tx_cat">Category</label>
                         <select id="txCategory" required>
                             <option value="Food">Food</option>
                             <option value="Transport">Transport</option>
@@ -428,24 +431,24 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="txDate">Date</label>
+                        <label for="txDate" data-i18n="modal_tx_date">Date</label>
                         <input type="date" id="txDate" required>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="txTags">Tags (Comma-separated)</label>
+                    <label for="txTags" data-i18n="modal_tx_tags">Tags (Comma-separated)</label>
                     <input type="text" id="txTags" placeholder="e.g. dinner, friends, weekend">
                 </div>
 
                 <div class="form-group">
-                    <label for="txDescription">Description</label>
+                    <label for="txDescription" data-i18n="modal_tx_desc">Description</label>
                     <textarea id="txDescription" rows="2" placeholder="Describe the transaction..."></textarea>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="txModalCancel">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Transaction</button>
+                    <button type="button" class="btn btn-secondary" id="txModalCancel" data-i18n="modal_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="modal_tx_save">Save Transaction</button>
                 </div>
             </form>
         </div>
@@ -455,17 +458,17 @@
     <div class="modal-overlay" id="groupModal">
         <div class="modal-container modal-sm">
             <div class="modal-header">
-                <h3>Create New Group</h3>
+                <h3 data-i18n="modal_new_group">Create New Group</h3>
                 <button class="modal-close-btn" id="groupModalClose"><i data-lucide="x"></i></button>
             </div>
             <form id="groupForm" class="modal-form">
                 <div class="form-group">
-                    <label for="groupName">Group Name</label>
+                    <label for="groupName" data-i18n="modal_group_name">Group Name</label>
                     <input type="text" id="groupName" placeholder="e.g. Trip to Tokyo" required>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="groupModalCancel">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Group</button>
+                    <button type="button" class="btn btn-secondary" id="groupModalCancel" data-i18n="modal_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="modal_group_create">Create Group</button>
                 </div>
             </form>
         </div>
@@ -475,17 +478,17 @@
     <div class="modal-overlay" id="memberModal">
         <div class="modal-container modal-sm">
             <div class="modal-header">
-                <h3>Add Group Member</h3>
+                <h3 data-i18n="modal_new_member">Add Group Member</h3>
                 <button class="modal-close-btn" id="memberModalClose"><i data-lucide="x"></i></button>
             </div>
             <form id="memberForm" class="modal-form">
                 <div class="form-group">
-                    <label for="memberNickname">Nickname / Name</label>
+                    <label for="memberNickname" data-i18n="modal_member_name">Nickname / Name</label>
                     <input type="text" id="memberNickname" placeholder="e.g. Alice" required>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="memberModalCancel">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Member</button>
+                    <button type="button" class="btn btn-secondary" id="memberModalCancel" data-i18n="modal_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="modal_member_add">Add Member</button>
                 </div>
             </form>
         </div>
@@ -495,17 +498,17 @@
     <div class="modal-overlay" id="groupTxModal">
         <div class="modal-container">
             <div class="modal-header">
-                <h3>Add Group Expense</h3>
+                <h3 data-i18n="modal_group_tx">Add Group Expense</h3>
                 <button class="modal-close-btn" id="groupTxModalClose"><i data-lucide="x"></i></button>
             </div>
             <form id="groupTxForm" class="modal-form">
                 <div class="form-row-2">
                     <div class="form-group">
-                        <label for="gtxAmount">Amount</label>
+                        <label for="gtxAmount" data-i18n="modal_gtx_amount">Amount</label>
                         <input type="number" step="0.01" min="0.01" id="gtxAmount" placeholder="0.00" required>
                     </div>
                     <div class="form-group">
-                        <label for="gtxPayer">Paid By</label>
+                        <label for="gtxPayer" data-i18n="modal_gtx_payer">Paid By</label>
                         <select id="gtxPayer" required>
                             <!-- Dynamic list of members -->
                         </select>
@@ -514,7 +517,7 @@
 
                 <div class="form-row-2">
                     <div class="form-group">
-                        <label for="gtxCategory">Category</label>
+                        <label for="gtxCategory" data-i18n="modal_gtx_cat">Category</label>
                         <select id="gtxCategory" required>
                             <option value="Food">Food</option>
                             <option value="Transport">Transport</option>
@@ -525,27 +528,27 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="gtxDate">Date</label>
+                        <label for="gtxDate" data-i18n="modal_tx_date">Date</label>
                         <input type="date" id="gtxDate" required>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="gtxDescription">Description</label>
+                    <label for="gtxDescription" data-i18n="modal_tx_desc">Description</label>
                     <input type="text" id="gtxDescription" placeholder="e.g. Dinner at Shibuya" required>
                 </div>
 
                 <!-- Split Details Checkboxes -->
                 <div class="form-group">
-                    <label>Split Between Members (Equally)</label>
+                    <label data-i18n="modal_gtx_split">Split Between Members (Equally)</label>
                     <div class="split-checkboxes-grid" id="gtxSplitMembers">
                         <!-- Dynamic Checkboxes -->
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="groupTxModalCancel">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Bill</button>
+                    <button type="button" class="btn btn-secondary" id="groupTxModalCancel" data-i18n="modal_cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="modal_gtx_save">Save Bill</button>
                 </div>
             </form>
         </div>
@@ -559,48 +562,48 @@
                     <span class="logo-icon"><i data-lucide="book-open"></i></span>
                     <span class="logo-text">Notebook</span>
                 </div>
-                <h2 id="gatewayTitle">Database Connection Required</h2>
-                <p class="text-muted" id="gatewaySubtitle">Connect to your Supabase instance to begin.</p>
+                <h2 id="gatewayTitle" data-i18n="gw_db_req">Database Connection Required</h2>
+                <p class="text-muted" id="gatewaySubtitle" data-i18n="gw_db_desc">Connect to your Supabase instance to begin.</p>
             </div>
 
             <!-- Panel A: Database Connection Setup -->
             <form id="gatewayDbForm" class="gateway-panel modal-form">
                 <div class="form-group">
-                    <label for="gwSbUrl">Supabase API URL</label>
+                    <label for="gwSbUrl" data-i18n="gw_label_url">Supabase API URL</label>
                     <input type="text" id="gwSbUrl" placeholder="https://xxxx.supabase.co" required>
                 </div>
                 <div class="form-group">
-                    <label for="gwSbKey">Supabase Anon Key</label>
+                    <label for="gwSbKey" data-i18n="gw_label_key">Supabase Anon Key</label>
                     <input type="password" id="gwSbKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." required>
                 </div>
                 <div class="gateway-message text-error d-none" id="gatewayDbError"></div>
-                <button type="submit" class="btn btn-primary w-100" id="gatewayDbSubmitBtn">Connect Database</button>
+                <button type="submit" class="btn btn-primary w-100" id="gatewayDbSubmitBtn" data-i18n="gw_btn_connect">Connect Database</button>
             </form>
 
             <!-- Panel B: User Authentication (Sign In / Sign Up) -->
             <form id="gatewayAuthForm" class="gateway-panel modal-form d-none">
                 <div class="form-group d-none" id="gwNicknameGroup">
-                    <label for="gwNickname">Nickname</label>
+                    <label for="gwNickname" data-i18n="gw_label_nickname">Nickname</label>
                     <input type="text" id="gwNickname" placeholder="Display Name">
                 </div>
                 
                 <div class="form-group">
-                    <label for="gwUsername">Username (帳號)</label>
+                    <label for="gwUsername" data-i18n="gw_label_username">Username (帳號)</label>
                     <input type="text" id="gwUsername" placeholder="e.g. user123" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="gwPassword">Password</label>
+                    <label for="gwPassword" data-i18n="gw_label_password">Password</label>
                     <input type="password" id="gwPassword" placeholder="••••••••" required>
                 </div>
 
                 <div class="gateway-message text-error d-none" id="gatewayAuthError"></div>
                 
-                <button type="submit" class="btn btn-primary w-100" id="gatewayAuthSubmitBtn">Sign In</button>
+                <button type="submit" class="btn btn-primary w-100" id="gatewayAuthSubmitBtn" data-i18n="gw_btn_signin">Sign In</button>
                 
                 <div class="gateway-switch-text text-muted text-center mt-3">
-                    <span id="gwAuthToggleQuestion">Don't have an account?</span>
-                    <a href="#" id="gwAuthToggleBtn">Sign Up</a>
+                    <span id="gwAuthToggleQuestion" data-i18n="gw_switch_to_signup">Don't have an account?</span>
+                    <a href="#" id="gwAuthToggleBtn" data-i18n="gw_switch_to_signup">Sign Up</a>
                 </div>
             </form>
         </div>

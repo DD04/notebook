@@ -12,6 +12,9 @@ if (window.lucide && !window.lucide.replace) {
     window.lucide.replace = window.lucide.createIcons;
 }
 
+// i18n localization
+import { translateUI, toggleLocale, getLocale, getText } from './i18n.js';
+
 // DOM elements
 const sidebar = document.getElementById('sidebar');
 const sidebarOpenBtn = document.getElementById('sidebarOpenBtn');
@@ -37,6 +40,17 @@ let currentUser = null;
 async function initApp() {
     // 1. Initialize Theme
     initTheme();
+
+    // 1.5. Apply language settings
+    translateUI();
+    const langToggleBtn = document.getElementById('langToggleBtn');
+    if (langToggleBtn) {
+        langToggleBtn.addEventListener('click', () => {
+            toggleLocale();
+            translateUI();
+            refreshAppState();
+        });
+    }
 
     // 2. Initialize Core Storage and Configuration
     await storage.initStorage();
@@ -119,11 +133,11 @@ function switchView(viewName) {
 
     // Update Page Header Title
     const titles = {
-        dashboard: 'Dashboard',
-        groups: 'Group Ledger',
-        analytics: 'Analytics & Trends',
-        budgeting: 'Monthly Budgeting',
-        settings: 'Configuration Settings'
+        dashboard: getText('nav_dashboard'),
+        groups: getText('nav_groups'),
+        analytics: getText('nav_analytics'),
+        budgeting: getText('nav_budgeting'),
+        settings: getText('nav_settings')
     };
     pageTitle.textContent = titles[viewName] || 'Notebook';
     
@@ -296,7 +310,7 @@ async function refreshUserSession() {
     
     if (currentUser) {
         profileNickname.textContent = currentUser.nickname || 'Active User';
-        profileStatus.textContent = 'Cloud Sync Connected';
+        profileStatus.textContent = getText('badge_cloud_sync');
         
         sidebarAuthBtn.innerHTML = '<i data-lucide="log-out"></i>';
         sidebarAuthBtn.setAttribute('title', 'Log Out');
@@ -306,8 +320,8 @@ async function refreshUserSession() {
             userAvatar.innerHTML = '<i data-lucide="user"></i>';
         }
     } else {
-        profileNickname.textContent = 'Guest User';
-        profileStatus.textContent = 'Disconnected';
+        profileNickname.textContent = getText('sidebar_offline_user');
+        profileStatus.textContent = getText('sidebar_disconnected');
         
         sidebarAuthBtn.innerHTML = '<i data-lucide="log-in"></i>';
         sidebarAuthBtn.setAttribute('title', 'Log In / Sign Up');
@@ -347,11 +361,11 @@ function updateModeBadge() {
     
     if (isCloud) {
         modeBadge.classList.add('bg-glass');
-        modeBadgeText.textContent = 'Cloud Sync';
+        modeBadgeText.textContent = getText('badge_cloud_sync');
         modeBadge.querySelector('.badge-dot').style.background = 'var(--success)';
         modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--success)';
     } else {
-        modeBadgeText.textContent = 'Database Required';
+        modeBadgeText.textContent = getText('badge_db_required');
         modeBadge.querySelector('.badge-dot').style.background = 'var(--error)';
         modeBadge.querySelector('.badge-dot').style.boxShadow = '0 0 8px var(--error)';
     }
