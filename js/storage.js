@@ -140,7 +140,8 @@ export async function signUp(username, password, nickname, question, answer) {
 export async function signIn(emailOrUsername, password) {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
-    let email = emailOrUsername.trim();
+    const usernameRaw = emailOrUsername.trim();
+    let email = usernameRaw;
     if (!email.includes('@')) {
         email = `${email}@notebook.local`;
     }
@@ -149,7 +150,25 @@ export async function signIn(emailOrUsername, password) {
         email,
         password
     });
-    if (error) throw error;
+
+    if (error) {
+        // 判斷是帳號不存在還是密碼錯誤
+        const msg = (error.message || '').toLowerCase();
+        if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) {
+            // 查詢帳號是否存在於 profiles
+            const existingUser = await findUserByUsername(usernameRaw);
+            if (!existingUser) {
+                const notFoundErr = new Error('查無此帳號，請先註冊。');
+                notFoundErr.code = 'USER_NOT_FOUND';
+                throw notFoundErr;
+            } else {
+                const wrongPwdErr = new Error('密碼錯誤，請重新輸入。');
+                wrongPwdErr.code = 'WRONG_PASSWORD';
+                throw wrongPwdErr;
+            }
+        }
+        throw error;
+    }
     return data.user;
 }
 

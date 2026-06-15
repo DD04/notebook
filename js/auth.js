@@ -201,8 +201,42 @@ async function handleAuthSubmit(e) {
     } catch (err) {
         console.error("Auth error:", err);
         if (gatewayAuthError) {
-            gatewayAuthError.textContent = err.message || "Authentication failed.";
-            gatewayAuthError.classList.remove('d-none');
+            if (err.code === 'USER_NOT_FOUND') {
+                // 帳號不存在：顯示訊息 + 註冊按鈕
+                gatewayAuthError.innerHTML = `
+                    <span>${err.message}</span>
+                    <button type="button" id="switchToSignUpBtn" style="
+                        display: inline-block;
+                        margin-left: 10px;
+                        padding: 3px 12px;
+                        background: var(--accent, #6c63ff);
+                        color: #fff;
+                        border: none;
+                        border-radius: 20px;
+                        font-size: 0.82em;
+                        cursor: pointer;
+                        vertical-align: middle;
+                        font-weight: 600;
+                        transition: opacity 0.2s;
+                    ">立即註冊</button>
+                `;
+                gatewayAuthError.classList.remove('d-none');
+                const switchBtn = document.getElementById('switchToSignUpBtn');
+                if (switchBtn) {
+                    switchBtn.addEventListener('click', () => {
+                        isSignUpMode = true;
+                        // 自動帶入帳號到註冊表單
+                        if (gwNickname) gwNickname.value = '';
+                        updateAuthPanelUI();
+                        // 將帳號帶入註冊表單
+                        if (gwUsername) gwUsername.dispatchEvent(new Event('input'));
+                    });
+                }
+            } else {
+                // 其他錯誤（密碼錯誤等）：直接顯示文字
+                gatewayAuthError.textContent = err.message || "Authentication failed.";
+                gatewayAuthError.classList.remove('d-none');
+            }
         }
     } finally {
         if (gatewayAuthSubmitBtn) {
