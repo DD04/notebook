@@ -748,7 +748,25 @@
                             style="font-size: 12px; color: var(--color-primary);"
                             data-i18n="gw_forgot_password">忘記密碼？</a>
                     </div>
-                    <input type="password" id="gwPassword" placeholder="••••••••" required>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="gwPassword" placeholder="••••••••" required>
+                        <button type="button" class="pw-toggle-btn" id="gwPasswordToggle" tabindex="-1" title="顯示/隱藏密碼">
+                            <i data-lucide="eye" class="pw-eye-icon"></i>
+                            <i data-lucide="eye-off" class="pw-eye-off-icon" style="display:none;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group d-none" id="gwConfirmPasswordGroup">
+                    <label for="gwConfirmPassword">確認密碼</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="gwConfirmPassword" placeholder="••••••••">
+                        <button type="button" class="pw-toggle-btn" id="gwConfirmPasswordToggle" tabindex="-1" title="顯示/隱藏密碼">
+                            <i data-lucide="eye" class="pw-eye-icon"></i>
+                            <i data-lucide="eye-off" class="pw-eye-off-icon" style="display:none;"></i>
+                        </button>
+                    </div>
+                    <div id="gwConfirmPasswordHint" style="font-size:12px; margin-top:5px; min-height:16px;"></div>
                 </div>
 
                 <div class="gateway-message text-error d-none" id="gatewayAuthError"></div>

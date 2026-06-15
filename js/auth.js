@@ -20,6 +20,11 @@ const gwRecoveryAnswerGroup = document.getElementById('gwRecoveryAnswerGroup');
 const gwRecoveryAnswer = document.getElementById('gwRecoveryAnswer');
 const gwUsername = document.getElementById('gwUsername');
 const gwPassword = document.getElementById('gwPassword');
+const gwPasswordToggle = document.getElementById('gwPasswordToggle');
+const gwConfirmPasswordGroup = document.getElementById('gwConfirmPasswordGroup');
+const gwConfirmPassword = document.getElementById('gwConfirmPassword');
+const gwConfirmPasswordToggle = document.getElementById('gwConfirmPasswordToggle');
+const gwConfirmPasswordHint = document.getElementById('gwConfirmPasswordHint');
 const gatewayAuthError = document.getElementById('gatewayAuthError');
 const gatewayAuthSubmitBtn = document.getElementById('gatewayAuthSubmitBtn');
 
@@ -47,9 +52,48 @@ const gwForgotBackToLoginBtn = document.getElementById('gwForgotBackToLoginBtn')
 
 let isSignUpMode = false;
 
+// 密碼顯示/隱藏切換工具函數
+function setupPasswordToggle(inputEl, toggleBtn) {
+    if (!inputEl || !toggleBtn) return;
+    toggleBtn.addEventListener('click', () => {
+        const isHidden = inputEl.type === 'password';
+        inputEl.type = isHidden ? 'text' : 'password';
+        const eyeIcon = toggleBtn.querySelector('.pw-eye-icon');
+        const eyeOffIcon = toggleBtn.querySelector('.pw-eye-off-icon');
+        if (eyeIcon) eyeIcon.style.display = isHidden ? 'none' : '';
+        if (eyeOffIcon) eyeOffIcon.style.display = isHidden ? '' : 'none';
+    });
+}
+
 export function initAuth(onAuthSuccess) {
     authSuccessCallback = onAuthSuccess;
     
+    // 密碼顯示/隱藏按鈕
+    setupPasswordToggle(gwPassword, gwPasswordToggle);
+    setupPasswordToggle(gwConfirmPassword, gwConfirmPasswordToggle);
+
+    // 確認密碼即時比對提示
+    if (gwConfirmPassword) {
+        gwConfirmPassword.addEventListener('input', () => {
+            if (!gwConfirmPasswordHint) return;
+            if (!gwConfirmPassword.value) {
+                gwConfirmPasswordHint.textContent = '';
+                gwConfirmPasswordHint.className = '';
+            } else if (gwConfirmPassword.value === gwPassword.value) {
+                gwConfirmPasswordHint.textContent = '✓ 密碼一致';
+                gwConfirmPasswordHint.className = 'hint-match';
+            } else {
+                gwConfirmPasswordHint.textContent = '✗ 密碼不一致';
+                gwConfirmPasswordHint.className = 'hint-mismatch';
+            }
+        });
+        gwPassword.addEventListener('input', () => {
+            if (gwConfirmPassword.value) {
+                gwConfirmPassword.dispatchEvent(new Event('input'));
+            }
+        });
+    }
+
     if (gwAuthToggleBtn) {
         gwAuthToggleBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -140,6 +184,8 @@ function updateAuthPanelUI() {
         if (gwRecoveryQuestionGroup) gwRecoveryQuestionGroup.classList.remove('d-none');
         if (gwRecoveryAnswerGroup) gwRecoveryAnswerGroup.classList.remove('d-none');
         if (gwRecoveryAnswer) gwRecoveryAnswer.required = true;
+        if (gwConfirmPasswordGroup) gwConfirmPasswordGroup.classList.remove('d-none');
+        if (gwConfirmPassword) gwConfirmPassword.required = true;
         if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = getText('gw_btn_signup');
         if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = getText('gw_switch_to_signin').split('？')[0] + '？';
         if (gwAuthToggleBtn) gwAuthToggleBtn.textContent = getText('gw_btn_signin');
@@ -156,6 +202,15 @@ function updateAuthPanelUI() {
         if (gwRecoveryAnswer) {
             gwRecoveryAnswer.required = false;
             gwRecoveryAnswer.value = '';
+        }
+        if (gwConfirmPasswordGroup) gwConfirmPasswordGroup.classList.add('d-none');
+        if (gwConfirmPassword) {
+            gwConfirmPassword.required = false;
+            gwConfirmPassword.value = '';
+        }
+        if (gwConfirmPasswordHint) {
+            gwConfirmPasswordHint.textContent = '';
+            gwConfirmPasswordHint.className = '';
         }
         if (gatewayAuthSubmitBtn) gatewayAuthSubmitBtn.textContent = getText('gw_btn_signin');
         if (gwAuthToggleQuestion) gwAuthToggleQuestion.textContent = getText('gw_switch_to_signup').split('？')[0] + '？';
@@ -188,6 +243,10 @@ async function handleAuthSubmit(e) {
         if (isSignUpMode) {
             if (!question || !answer) {
                 throw new Error("密保問題與答案為必填項目。");
+            }
+            const confirmPwd = gwConfirmPassword ? gwConfirmPassword.value : '';
+            if (confirmPwd !== password) {
+                throw new Error("兩次輸入的密碼不一致，請重新確認。");
             }
             user = await storage.signUp(username, password, nickname, question, answer);
         } else {
