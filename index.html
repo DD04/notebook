@@ -170,17 +170,6 @@
                             </div>
                         </div>
 
-                        <!-- Pagination (top) -->
-                        <div class="pagination-bar" id="ledgerPagination">
-                            <button class="btn btn-secondary btn-sm" id="prevPageBtn" disabled>
-                                <i data-lucide="chevron-left"></i>
-                            </button>
-                            <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
-                            <button class="btn btn-secondary btn-sm" id="nextPageBtn" disabled>
-                                <i data-lucide="chevron-right"></i>
-                            </button>
-                        </div>
-
                         <!-- Transactions Table / List -->
                         <div class="ledger-table-wrapper">
                             <table class="ledger-table" id="ledgerTable">
@@ -206,6 +195,17 @@
                                         </td>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination-bar" id="ledgerPagination">
+                            <button class="btn btn-secondary btn-sm" id="prevPageBtn" disabled>
+                                <i data-lucide="chevron-left"></i>
+                            </button>
+                            <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+                            <button class="btn btn-secondary btn-sm" id="nextPageBtn" disabled>
+                                <i data-lucide="chevron-right"></i>
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -390,17 +390,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Group Pagination (top) -->
-                                    <div class="pagination-bar" id="groupLedgerPagination">
-                                        <button class="btn btn-secondary btn-sm" id="groupPrevPageBtn" disabled>
-                                            <i data-lucide="chevron-left"></i>
-                                        </button>
-                                        <span class="pagination-info" id="groupPaginationInfo">Page 1 of 1</span>
-                                        <button class="btn btn-secondary btn-sm" id="groupNextPageBtn" disabled>
-                                            <i data-lucide="chevron-right"></i>
-                                        </button>
-                                    </div>
-
                                     <div class="ledger-table-wrapper">
                                         <table class="ledger-table" id="groupTxTable">
                                             <thead>
@@ -418,6 +407,17 @@
                                                 <!-- Dynamic entries -->
                                             </tbody>
                                         </table>
+                                    </div>
+
+                                    <!-- Group Pagination -->
+                                    <div class="pagination-bar" id="groupLedgerPagination">
+                                        <button class="btn btn-secondary btn-sm" id="groupPrevPageBtn" disabled>
+                                            <i data-lucide="chevron-left"></i>
+                                        </button>
+                                        <span class="pagination-info" id="groupPaginationInfo">Page 1 of 1</span>
+                                        <button class="btn btn-secondary btn-sm" id="groupNextPageBtn" disabled>
+                                            <i data-lucide="chevron-right"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
