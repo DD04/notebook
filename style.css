@@ -435,7 +435,7 @@ a {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden; /* blocks handle their own horizontal overflow */
-    padding: 32px;
+    padding: 32px 32px max(32px, env(safe-area-inset-bottom)) 32px;
 }
 
 .view-section {
@@ -1825,7 +1825,7 @@ a {
     }
 
     .view-panel {
-        padding: 12px;
+        padding: 12px 12px max(12px, env(safe-area-inset-bottom)) 12px;
     }
 
     /* ── Dashboard cards: 3 columns squish to 1 ── */
@@ -1991,7 +1991,7 @@ a {
 
 /* ─── 576px ─── Small phone */
 @media (max-width: 576px) {
-    .view-panel { padding: 10px; }
+    .view-panel { padding: 10px 10px max(10px, env(safe-area-inset-bottom)) 10px; }
     .top-header {
         padding-top: env(safe-area-inset-top);
         padding-left: max(8px, env(safe-area-inset-left));
@@ -2056,7 +2056,7 @@ a {
 
 /* ─── 480px ─── Very small phone */
 @media (max-width: 480px) {
-    .view-panel { padding: 8px; }
+    .view-panel { padding: 8px 8px max(8px, env(safe-area-inset-bottom)) 8px; }
     .top-header {
         padding-top: env(safe-area-inset-top);
         padding-left: max(8px, env(safe-area-inset-left));
