@@ -470,9 +470,8 @@ function renderGroupTransactions() {
             ? `<button class="action-btn action-btn-delete" data-id="${t.id}" title="${getText('confirm_delete_bill')}"><i data-lucide="trash-2"></i></button>`
             : `<button class="action-btn action-btn-delete" style="opacity: 0.2; cursor: not-allowed;" disabled><i data-lucide="trash-2"></i></button>`;
             
-        const username = t.profiles ? t.profiles.username : null;
-        const nickname = (t.profiles && t.profiles.nickname) || t.member_nickname || 'User';
-        const displayName = username ? `${username} (${nickname})` : nickname;
+        // 建立者只顯示暱稱
+        const displayName = (t.profiles && t.profiles.nickname) || t.member_nickname || 'User';
 
         row.innerHTML = `
             <tr>

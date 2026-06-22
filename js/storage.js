@@ -114,22 +114,25 @@ export function isCloudMode() {
 export async function signUp(username, password, nickname, question, answer) {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
+    // 帳號統一轉小寫，不區分大小寫
+    const usernameLower = username.trim().toLowerCase();
+    
     // Check if username is already taken
-    const existing = await findUserByUsername(username);
+    const existing = await findUserByUsername(usernameLower);
     if (existing) {
         throw new Error("該帳號名稱已被使用。");
     }
 
-    const email = `${username.trim()}@notebook.local`;
+    const email = `${usernameLower}@notebook.local`;
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
             data: { 
                 nickname, 
-                username: username.trim(),
+                username: usernameLower,
                 recovery_question: question.trim(),
-                recovery_answer: answer.trim()
+                recovery_answer: answer.trim().toLowerCase()  // 答案統一存小寫
             }
         }
     });
@@ -140,7 +143,8 @@ export async function signUp(username, password, nickname, question, answer) {
 export async function signIn(emailOrUsername, password) {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
-    const usernameRaw = emailOrUsername.trim();
+    // 帳號統一轉小寫，不區分大小寫
+    const usernameRaw = emailOrUsername.trim().toLowerCase();
     let email = usernameRaw;
     if (!email.includes('@')) {
         email = `${email}@notebook.local`;
@@ -174,10 +178,11 @@ export async function signIn(emailOrUsername, password) {
 
 export async function findUserByUsername(username) {
     if (!isCloudMode()) return null;
+    // 帳號統一轉小寫再查詢
     const { data, error } = await supabase
         .from('profiles')
         .select('id, nickname, email, username')
-        .eq('username', username.trim())
+        .eq('username', username.trim().toLowerCase())
         .maybeSingle(); // Use maybeSingle to avoid PGRST116 throwing error when not found
     
     if (error || !data) return null;
@@ -186,8 +191,9 @@ export async function findUserByUsername(username) {
 
 export async function getUserQuestion(username) {
     if (!isCloudMode()) throw new Error("Database connection required.");
+    // 帳號統一轉小寫
     const { data, error } = await supabase.rpc('get_user_question', {
-        p_username: username.trim()
+        p_username: username.trim().toLowerCase()
     });
     if (error) throw error;
     return data;
@@ -195,9 +201,10 @@ export async function getUserQuestion(username) {
 
 export async function resetPasswordByQuestion(username, answer, newPassword) {
     if (!isCloudMode()) throw new Error("Database connection required.");
+    // 帳號與答案統一轉小寫，不區分大小寫
     const { data, error } = await supabase.rpc('reset_password_by_question', {
-        p_username: username.trim(),
-        p_answer: answer.trim(),
+        p_username: username.trim().toLowerCase(),
+        p_answer: answer.trim().toLowerCase(),
         p_new_password: newPassword
     });
     if (error) throw error;

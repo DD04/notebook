@@ -50,12 +50,14 @@ BEGIN
     VALUES (
         new.id, 
         new.email, 
-        COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+        -- 帳號統一小寫存入
+        LOWER(COALESCE(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1))),
         COALESCE(new.raw_user_meta_data->>'nickname', split_part(new.email, '@', 1)),
         new.raw_user_meta_data->>'recovery_question',
         CASE 
             WHEN new.raw_user_meta_data->>'recovery_answer' IS NOT NULL 
-            THEN crypt(new.raw_user_meta_data->>'recovery_answer', gen_salt('bf'))
+            -- 答案統一轉小寫再雜湊存入，不區分大小寫
+            THEN crypt(LOWER(new.raw_user_meta_data->>'recovery_answer'), gen_salt('bf'))
             ELSE NULL
         END
     );
@@ -75,9 +77,10 @@ RETURNS TEXT AS $$
 DECLARE
     v_question TEXT;
 BEGIN
+    -- 帳號統一小寫再查詢，不區分大小寫
     SELECT recovery_question INTO v_question
     FROM public.profiles
-    WHERE username = p_username;
+    WHERE username = LOWER(p_username);
     
     RETURN v_question;
 END;
@@ -93,17 +96,17 @@ DECLARE
     v_user_id UUID;
     v_expected_hash TEXT;
 BEGIN
-    -- 1. Find user ID and answer hash
+    -- 1. 帳號統一小寫再查詢，不區分大小寫
     SELECT id, recovery_answer_hash INTO v_user_id, v_expected_hash
     FROM public.profiles
-    WHERE username = p_username;
+    WHERE username = LOWER(p_username);
     
     IF v_user_id IS NULL OR v_expected_hash IS NULL THEN
         RETURN FALSE;
     END IF;
     
-    -- 2. Verify answer using crypt
-    IF v_expected_hash <> crypt(p_answer, v_expected_hash) THEN
+    -- 2. 答案統一轉小寫再進行 bcrypt 雜湊比對
+    IF v_expected_hash <> crypt(LOWER(p_answer), v_expected_hash) THEN
         RETURN FALSE;
     END IF;
     
