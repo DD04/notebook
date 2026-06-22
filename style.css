@@ -80,6 +80,7 @@ body {
     color: var(--text-primary);
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -120,6 +121,7 @@ a {
 .app-layout {
     display: flex;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     position: relative;
 }
@@ -135,6 +137,7 @@ a {
     flex-direction: column;
     padding: 24px 16px;
     height: 100%;
+    overflow-y: auto;
     z-index: 100;
     transition: transform 0.3s ease, width 0.3s ease, background 0.3s ease;
 }
@@ -325,9 +328,12 @@ a {
 }
 
 .top-header {
-    height: 70px;
     border-bottom: 1px solid var(--border-color);
-    padding: 0 32px;
+    /* safe area: 頂部 notch / Dynamic Island 遠離 */
+    padding-top: env(safe-area-inset-top);
+    padding-left: max(32px, env(safe-area-inset-left));
+    padding-right: max(32px, env(safe-area-inset-right));
+    height: calc(70px + env(safe-area-inset-top));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -341,6 +347,8 @@ a {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-shrink: 0;  /* 確保漢堡按鈕不被按洮消失 */
+    min-width: 0;
 }
 
 .page-title {
@@ -352,6 +360,8 @@ a {
 
 .sidebar-toggle-open {
     display: none;
+    flex-shrink: 0;  /* 漢堡按鈕絕對不可縮小 */
+    min-width: 32px;
     background: transparent;
     border: none;
     color: var(--text-primary);
@@ -364,6 +374,7 @@ a {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex-shrink: 0;  /* 右側按鈕群不可被按洮消失 */
 }
 
 .mode-badge {
@@ -1403,6 +1414,7 @@ a {
 
 .form-group input, .form-group select, .form-group textarea {
     width: 100%;
+    min-width: 0;
     padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
@@ -1410,6 +1422,17 @@ a {
     color: var(--text-primary);
     font-size: 14px;
     transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+/* Date / month inputs: strip browser native chrome so they obey width:100% */
+.form-group input[type="date"],
+.form-group input[type="month"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    min-width: 0;
 }
 
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -1691,9 +1714,16 @@ a {
         position: fixed;
         left: 0;
         top: 0;
-        bottom: 0;
+        /* fallback for older browsers */
+        height: 100vh;
+        /* dvh = dynamic viewport height，支援 iOS Safari 動態工具列（底部 URL bar）*/
+        height: 100dvh;
         transform: translateX(-100%);
         z-index: 200;
+        overflow-y: auto;
+        /* safe area: 頂部 notch 遠離 */
+        padding-top: calc(24px + env(safe-area-inset-top));
+        padding-bottom: calc(24px + env(safe-area-inset-bottom));
     }
     .sidebar.active {
         transform: translateX(0);
@@ -1702,8 +1732,10 @@ a {
     .sidebar-toggle-open  { display: flex; }
 
     .top-header {
-        padding: 0 12px;
-        height: 56px;
+        padding-top: env(safe-area-inset-top);
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+        height: calc(56px + env(safe-area-inset-top));
     }
 
     .view-panel {
@@ -1844,6 +1876,13 @@ a {
     .page-title { font-size: 17px; }
     .header-right { gap: 8px; }
 
+    /* ── date/month inputs on mobile: force full width ── */
+    .form-group input[type="date"],
+    .form-group input[type="month"] {
+        width: 100%;
+        min-width: 0;
+    }
+
     /* ── Buttons ── */
     .btn { font-size: 13px; }
     .btn-sm { padding: 6px 10px; font-size: 12px; }
@@ -1867,11 +1906,16 @@ a {
 /* ─── 576px ─── Small phone */
 @media (max-width: 576px) {
     .view-panel { padding: 10px; }
-    .top-header { padding: 0 10px; height: 50px; }
+    .top-header {
+        padding-top: env(safe-area-inset-top);
+        padding-left: max(8px, env(safe-area-inset-left));
+        padding-right: max(8px, env(safe-area-inset-right));
+        height: calc(50px + env(safe-area-inset-top));
+    }
 
     .page-title { font-size: 15px; }
 
-    .header-right { gap: 6px; }
+    .header-right { gap: 4px; }
     #superuserBackupSection {
         gap: 4px !important;
         margin-right: 4px !important;
@@ -1879,6 +1923,14 @@ a {
     .theme-toggle-btn, .mode-badge {
         width: 32px;
         height: 32px;
+    }
+
+    /* ── date/month inputs: full width on small phones ── */
+    .form-group input[type="date"],
+    .form-group input[type="month"] {
+        width: 100%;
+        min-width: 0;
+        font-size: 13px;
     }
 
     .dashboard-grid {
@@ -1913,10 +1965,32 @@ a {
 /* ─── 480px ─── Very small phone */
 @media (max-width: 480px) {
     .view-panel { padding: 8px; }
-    .top-header { height: 46px; }
+    .top-header {
+        padding-top: env(safe-area-inset-top);
+        padding-left: max(8px, env(safe-area-inset-left));
+        padding-right: max(8px, env(safe-area-inset-right));
+        height: calc(46px + env(safe-area-inset-top));
+    }
 
-    .page-title { font-size: 13px; }
+    /* 確保漢堡按鈕不被擠出畫面 */
+    .header-left { gap: 8px; min-width: 0; flex-shrink: 0; }
+    .header-right { flex-shrink: 0; gap: 4px; }
+    .page-title {
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 120px;
+    }
     .card-amount { font-size: 16px; }
+
+    /* ── date/month inputs: 完整寬度 ── */
+    .form-group input[type="date"],
+    .form-group input[type="month"] {
+        width: 100%;
+        min-width: 0;
+        font-size: 12px;
+    }
 
     .summary-card { padding: 10px; min-height: 80px; }
 
