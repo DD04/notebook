@@ -75,6 +75,12 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Restore focus outline for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
 body {
     background-color: var(--bg-main);
     color: var(--text-primary);
@@ -539,6 +545,11 @@ a {
     border-radius: 6px;
 }
 
+/* Eliminate 300ms tap delay on touch devices */
+.btn, .nav-item, .action-btn, .group-item, .modal-close-btn, .theme-toggle-btn, .auth-btn {
+    touch-action: manipulation;
+}
+
 /* 5. Dashboard / Personal Ledger Specifics */
 .dashboard-grid {
     display: grid;
@@ -652,7 +663,7 @@ a {
 .search-box {
     position: relative;
     flex: 1;
-    min-width: 250px;
+    min-width: min(250px, 100%);
 }
 
 .search-box i,
@@ -1061,8 +1072,82 @@ a {
     font-family: 'Outfit', sans-serif;
     font-size: 16px;
     font-weight: 600;
-    margin-bottom: 16px;
+    margin-bottom: 0;
     color: var(--text-secondary);
+}
+
+.analytics-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.analytics-select {
+    width: auto;
+    padding: 6px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+
+.analytics-month-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.analytics-month-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.chart-empty-overlay {
+    position: absolute;
+}
+
+.analytics-budget-panel {
+    margin-top: 24px;
+}
+
+.donut-chart-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 220px;
+    width: 100%;
+}
+
+.line-chart-container {
+    position: relative;
+    height: 220px;
+    width: 100%;
+}
+
+@media (max-width: 576px) {
+    .donut-chart-container,
+    .line-chart-container {
+        height: 180px;
+    }
+    .analytics-month-label {
+        display: none;
+    }
+    .analytics-select {
+        width: 100%;
+    }
+    .analytics-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .analytics-month-picker {
+        width: 100%;
+    }
 }
 
 .chart-container {
@@ -1498,7 +1583,7 @@ a {
     box-shadow: var(--shadow-lg);
     transform: translateY(20px);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    max-height: 90vh;
+    max-height: min(90vh, 90dvh);
     overflow-y: auto;
 }
 
@@ -1613,8 +1698,8 @@ a {
 /* 11. Toasts */
 .toast-container {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: max(24px, env(safe-area-inset-bottom));
+    right: max(24px, env(safe-area-inset-right));
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -1702,8 +1787,9 @@ a {
     .settings-grid {
         grid-template-columns: 1fr;
     }
-    /* Keep group split layout at this size */
+    /* Narrow the group side panel at tablet size */
     .group-split-layout {
+        grid-template-columns: 220px 1fr;
         gap: 16px;
     }
 }
@@ -1953,6 +2039,12 @@ a {
 
     .section-header h2, .section-header h3 { font-size: 15px; }
 
+    /* ── Modal form: stack two-column rows earlier ── */
+    .form-row-2 {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
     /* Analytics modal charts single column */
     #groupAnalyticsModal .analytics-layout {
         grid-template-columns: 1fr !important;
@@ -2010,10 +2102,6 @@ a {
     }
     .modal-footer {
         padding: 12px 14px;
-    }
-    .form-row-2 {
-        grid-template-columns: 1fr;
-        gap: 10px;
     }
 
     .group-side-panel .panel-section {

@@ -213,38 +213,35 @@
                     <div class="analytics-layout">
                         <!-- Chart Card 1: Donut breakdown -->
                         <div class="analytics-card card-box">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                                <h3 data-i18n="analytics_cat_dist" style="margin-bottom: 0;">Category Distribution</h3>
-                                <select id="analyticsMonthSelect" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
+                            <div class="analytics-card-header">
+                                <h3 data-i18n="analytics_cat_dist">Category Distribution</h3>
+                                <select id="analyticsMonthSelect" class="analytics-select">
                                     <option value="all">所有月份</option>
                                 </select>
                             </div>
-                            <div class="chart-container donut-chart-container"
-                                style="position: relative; display: flex; align-items: center; justify-content: center; height: 220px; width: 100%;">
+                            <div class="chart-container donut-chart-container">
                                 <canvas id="categoryDonutChart"></canvas>
-                                <div id="donutEmptyMessage" class="empty-state text-muted d-none"
-                                    style="position: absolute;"></div>
+                                <div id="donutEmptyMessage" class="empty-state text-muted d-none chart-empty-overlay"></div>
                             </div>
                         </div>
 
                         <!-- Chart Card 2: Income vs Expense Timeline -->
                         <div class="analytics-card card-box">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                                <h3 data-i18n="analytics_cash_flow" style="margin-bottom: 0;">Monthly Cash Flow</h3>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <label for="analyticsTrendMonthPicker" style="font-size: 13px; color: var(--text-secondary);">結束月份：</label>
-                                    <input type="month" id="analyticsTrendMonthPicker" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
+                            <div class="analytics-card-header">
+                                <h3 data-i18n="analytics_cash_flow">Monthly Cash Flow</h3>
+                                <div class="analytics-month-picker">
+                                    <label for="analyticsTrendMonthPicker" class="analytics-month-label">結束月份：</label>
+                                    <input type="month" id="analyticsTrendMonthPicker" class="analytics-select">
                                 </div>
                             </div>
-                            <div class="chart-container line-chart-container"
-                                style="position: relative; height: 220px; width: 100%;">
+                            <div class="chart-container line-chart-container">
                                 <canvas id="trendBarChart"></canvas>
                             </div>
                         </div>
                     </div>
 
                     <!-- Budgeting panel integrated -->
-                    <div class="budget-setup-panel card-box" style="margin-top: 24px;">
+                    <div class="budget-setup-panel card-box analytics-budget-panel">
                         <div class="section-header">
                             <h2 data-i18n="budget_subtitle">Budget Settings</h2>
                             <div class="budget-month-selector">
