@@ -718,7 +718,6 @@ a {
 /* Ledger Table styling */
 .ledger-table-wrapper {
     overflow-x: auto;
-    margin-bottom: 16px;
 }
 
 .ledger-table {
@@ -827,11 +826,39 @@ a {
 }
 
 /* Pagination */
-.pagination-container {
+.ledger-nav-row {
     display: flex;
-    justify-content: space-between;
+    align-items: stretch;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.ledger-nav-row .ledger-table-wrapper {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.ledger-nav-btn {
+    flex-shrink: 0;
+    width: 36px;
+    padding: 0;
+    border-radius: 8px;
+    display: flex;
     align-items: center;
-    padding-top: 16px;
+    justify-content: center;
+    min-height: 60px;
+}
+
+.ledger-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.pagination-info-row {
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
     border-top: 1px solid var(--border-color);
 }
 
