@@ -826,40 +826,13 @@ a {
 }
 
 /* Pagination */
-.ledger-nav-row {
-    display: flex;
-    align-items: stretch;
-    gap: 6px;
-    margin-bottom: 12px;
-}
-
-.ledger-nav-row .ledger-table-wrapper {
-    flex: 1;
-    min-width: 0;
-    margin-bottom: 0;
-}
-
-.ledger-nav-btn {
-    flex-shrink: 0;
-    width: 36px;
-    padding: 0;
-    border-radius: 8px;
+.pagination-bar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    min-height: 60px;
-}
-
-.ledger-nav-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-.pagination-info-row {
-    display: flex;
-    justify-content: center;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-color);
+    justify-content: space-between;
+    padding: 8px 0;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .pagination-info {

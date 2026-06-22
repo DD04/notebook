@@ -170,42 +170,42 @@
                             </div>
                         </div>
 
-                        <!-- Transactions Table / List -->
-                        <div class="ledger-nav-row" id="ledgerPagination">
-                            <button class="ledger-nav-btn btn btn-secondary" id="prevPageBtn" disabled>
+                        <!-- Pagination (top) -->
+                        <div class="pagination-bar" id="ledgerPagination">
+                            <button class="btn btn-secondary btn-sm" id="prevPageBtn" disabled>
                                 <i data-lucide="chevron-left"></i>
                             </button>
-                            <div class="ledger-table-wrapper">
-                                <table class="ledger-table" id="ledgerTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 12.5%;" data-i18n="th_date">Date</th>
-                                            <th style="width: 12.5%;" data-i18n="th_type">Type</th>
-                                            <th style="width: 12.5%;" data-i18n="th_cat">Category</th>
-                                            <th style="width: 30%;" data-i18n="th_desc">Description</th>
-                                            <th style="width: 12.5%;" class="text-right" data-i18n="th_amount">Amount</th>
-                                            <th style="width: 20%;" class="text-center" data-i18n="th_actions">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="ledgerTableBody">
-                                        <!-- Dynamic Content -->
-                                        <tr class="empty-state-row">
-                                            <td colspan="6">
-                                                <div class="empty-state">
-                                                    <i data-lucide="file-text"></i>
-                                                    <p data-i18n="db_empty_state">No transactions found. Add one to get
-                                                        started!</p>
-                                                </div>
-                                            </td>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <button class="ledger-nav-btn btn btn-secondary" id="nextPageBtn" disabled>
+                            <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+                            <button class="btn btn-secondary btn-sm" id="nextPageBtn" disabled>
                                 <i data-lucide="chevron-right"></i>
                             </button>
                         </div>
-                        <div class="pagination-info-row">
-                            <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+
+                        <!-- Transactions Table / List -->
+                        <div class="ledger-table-wrapper">
+                            <table class="ledger-table" id="ledgerTable">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 12.5%;" data-i18n="th_date">Date</th>
+                                        <th style="width: 12.5%;" data-i18n="th_type">Type</th>
+                                        <th style="width: 12.5%;" data-i18n="th_cat">Category</th>
+                                        <th style="width: 30%;" data-i18n="th_desc">Description</th>
+                                        <th style="width: 12.5%;" class="text-right" data-i18n="th_amount">Amount</th>
+                                        <th style="width: 20%;" class="text-center" data-i18n="th_actions">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ledgerTableBody">
+                                    <!-- Dynamic Content -->
+                                    <tr class="empty-state-row">
+                                        <td colspan="6">
+                                            <div class="empty-state">
+                                                <i data-lucide="file-text"></i>
+                                                <p data-i18n="db_empty_state">No transactions found. Add one to get
+                                                    started!</p>
+                                            </div>
+                                        </td>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </section>
@@ -390,35 +390,34 @@
                                         </div>
                                     </div>
 
-                                    <!-- Group Pagination -->
-                                    <div class="ledger-nav-row" id="groupLedgerPagination">
-                                        <button class="ledger-nav-btn btn btn-secondary" id="groupPrevPageBtn" disabled>
+                                    <!-- Group Pagination (top) -->
+                                    <div class="pagination-bar" id="groupLedgerPagination">
+                                        <button class="btn btn-secondary btn-sm" id="groupPrevPageBtn" disabled>
                                             <i data-lucide="chevron-left"></i>
                                         </button>
-                                        <div class="ledger-table-wrapper">
-                                            <table class="ledger-table" id="groupTxTable">
-                                                <thead>
-                                                    <tr>
-                                                        <th style="width: 15%;" data-i18n="th_date">Date</th>
-                                                        <th style="width: 20%;" data-i18n="th_member">Recorded By</th>
-                                                        <th style="width: 10%;" data-i18n="th_type">Type</th>
-                                                        <th style="width: 10%;" data-i18n="th_cat">Category</th>
-                                                        <th style="width: 25%;" data-i18n="th_desc">Description</th>
-                                                        <th style="width: 10%;" class="text-right" data-i18n="th_amount">Amount</th>
-                                                        <th style="width: 10%;" class="text-center" data-i18n="th_actions">Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="groupTxTableBody">
-                                                    <!-- Dynamic entries -->
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <button class="ledger-nav-btn btn btn-secondary" id="groupNextPageBtn" disabled>
+                                        <span class="pagination-info" id="groupPaginationInfo">Page 1 of 1</span>
+                                        <button class="btn btn-secondary btn-sm" id="groupNextPageBtn" disabled>
                                             <i data-lucide="chevron-right"></i>
                                         </button>
                                     </div>
-                                    <div class="pagination-info-row">
-                                        <span class="pagination-info" id="groupPaginationInfo">Page 1 of 1</span>
+
+                                    <div class="ledger-table-wrapper">
+                                        <table class="ledger-table" id="groupTxTable">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 15%;" data-i18n="th_date">Date</th>
+                                                    <th style="width: 20%;" data-i18n="th_member">Recorded By</th>
+                                                    <th style="width: 10%;" data-i18n="th_type">Type</th>
+                                                    <th style="width: 10%;" data-i18n="th_cat">Category</th>
+                                                    <th style="width: 25%;" data-i18n="th_desc">Description</th>
+                                                    <th style="width: 10%;" class="text-right" data-i18n="th_amount">Amount</th>
+                                                    <th style="width: 10%;" class="text-center" data-i18n="th_actions">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="groupTxTableBody">
+                                                <!-- Dynamic entries -->
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
