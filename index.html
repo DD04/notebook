@@ -539,6 +539,10 @@
                     <input type="text" id="memberNickname" data-i18n-placeholder="modal_member_placeholder"
                         placeholder="e.g. alice123" required>
                 </div>
+                <div id="memberSuggestions" style="display:none; margin-bottom: 12px;">
+                    <p class="text-muted" style="font-size: 12px; margin-bottom: 6px;" data-i18n="modal_member_suggestions">Previously added members (click to fill):</p>
+                    <div id="memberSuggestionsChips" class="member-suggestions-chips"></div>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" id="memberModalCancel"
                         data-i18n="modal_cancel">Cancel</button>

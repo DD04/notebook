@@ -766,6 +766,31 @@ a {
     color: var(--text-secondary);
 }
 
+.member-suggestions-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.member-suggestion-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--primary-glow);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+    user-select: none;
+}
+
+.member-suggestion-chip:hover {
+    opacity: 0.75;
+}
+
 .action-btns {
     display: flex;
     align-items: center;

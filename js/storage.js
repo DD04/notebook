@@ -403,6 +403,28 @@ export async function getGroupMembers(groupId) {
     return data;
 }
 
+export async function getPastGroupMembers(currentGroupId, currentUserId) {
+    if (!isCloudMode()) return [];
+    const { data, error } = await supabase
+        .from('group_members')
+        .select('nickname, user_id, group_id')
+        .order('joined_at', { ascending: false });
+    if (error) return [];
+
+    const currentGroupMemberIds = new Set(
+        data.filter(m => m.group_id === currentGroupId).map(m => m.user_id)
+    );
+
+    const seen = new Set();
+    return data.filter(m => {
+        if (m.user_id === currentUserId) return false;
+        if (currentGroupMemberIds.has(m.user_id)) return false;
+        if (seen.has(m.user_id || m.nickname)) return false;
+        seen.add(m.user_id || m.nickname);
+        return true;
+    });
+}
+
 
 
 export async function addGroupMember(groupId, username) {

@@ -194,6 +194,7 @@ export const translations = {
         // Add member modal
         'modal_member_hint': '請輸入要新增成員的已註冊帳號。',
         'modal_member_placeholder': '輸入帳號…',
+        'modal_member_suggestions': '歷史新增成員（點選快速填入）：',
 
         // Settlement modal
         'settle_record_title': '記錄債務結清',
@@ -401,6 +402,7 @@ export const translations = {
         // Add member modal
         'modal_member_hint': 'Enter the registered username of the user you want to add.',
         'modal_member_placeholder': 'Enter username...',
+        'modal_member_suggestions': 'Previously added members (click to fill):',
 
         // Settlement modal
         'settle_record_title': 'Record Settlement',

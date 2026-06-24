@@ -32,6 +32,8 @@ const memberModalClose = document.getElementById('memberModalClose');
 const memberModalCancel = document.getElementById('memberModalCancel');
 const memberForm = document.getElementById('memberForm');
 const memberNicknameInput = document.getElementById('memberNickname');
+const memberSuggestions = document.getElementById('memberSuggestions');
+const memberSuggestionsChips = document.getElementById('memberSuggestionsChips');
 
 const groupTxModal = document.getElementById('groupTxModal');
 const groupTxModalTitle = document.getElementById('groupTxModalTitle');
@@ -84,12 +86,15 @@ export function initGroups() {
     });
 
     // Member Modal (only creator can open - button visibility controlled in renderMembersList)
-    addMemberBtn.addEventListener('click', () => showModal(memberModal));
-    memberModalClose.addEventListener('click', () => hideModal(memberModal));
-    memberModalCancel.addEventListener('click', () => hideModal(memberModal));
+    addMemberBtn.addEventListener('click', () => {
+        showModal(memberModal);
+        loadMemberSuggestions();
+    });
+    memberModalClose.addEventListener('click', () => { hideModal(memberModal); clearMemberSuggestions(); });
+    memberModalCancel.addEventListener('click', () => { hideModal(memberModal); clearMemberSuggestions(); });
     memberForm.addEventListener('submit', handleAddMember);
     memberModal.addEventListener('click', (e) => {
-        if (e.target === memberModal) hideModal(memberModal);
+        if (e.target === memberModal) { hideModal(memberModal); clearMemberSuggestions(); }
     });
 
     // Group Transaction Modal (any member can open)
@@ -531,6 +536,36 @@ async function handleCreateGroup(e) {
     }
 }
 
+async function loadMemberSuggestions() {
+    if (!activeGroup) return;
+    try {
+        const past = await storage.getPastGroupMembers(activeGroup.id, currentUserId);
+        memberSuggestionsChips.innerHTML = '';
+        if (past.length === 0) {
+            memberSuggestions.style.display = 'none';
+            return;
+        }
+        past.forEach(m => {
+            const chip = document.createElement('span');
+            chip.className = 'member-suggestion-chip';
+            chip.textContent = m.nickname;
+            chip.addEventListener('click', () => {
+                memberNicknameInput.value = m.nickname;
+                memberNicknameInput.focus();
+            });
+            memberSuggestionsChips.appendChild(chip);
+        });
+        memberSuggestions.style.display = 'block';
+    } catch {
+        memberSuggestions.style.display = 'none';
+    }
+}
+
+function clearMemberSuggestions() {
+    memberSuggestionsChips.innerHTML = '';
+    memberSuggestions.style.display = 'none';
+}
+
 async function handleAddMember(e) {
     e.preventDefault();
     const username = memberNicknameInput.value.trim();
@@ -546,6 +581,7 @@ async function handleAddMember(e) {
         showToast(`${getText('toast_member_added') || '已新增成員'} ${username}`, 'success');
         hideModal(memberModal);
         memberNicknameInput.value = '';
+        clearMemberSuggestions();
         
         // Refresh active details
         if (activeGroup) {
