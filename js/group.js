@@ -90,11 +90,11 @@ export function initGroups() {
         showModal(memberModal);
         loadMemberSuggestions();
     });
-    memberModalClose.addEventListener('click', () => { hideModal(memberModal); clearMemberSuggestions(); });
-    memberModalCancel.addEventListener('click', () => { hideModal(memberModal); clearMemberSuggestions(); });
+    memberModalClose.addEventListener('click', () => { hideModal(memberModal); memberNicknameInput.value = ''; clearMemberSuggestions(); });
+    memberModalCancel.addEventListener('click', () => { hideModal(memberModal); memberNicknameInput.value = ''; clearMemberSuggestions(); });
     memberForm.addEventListener('submit', handleAddMember);
     memberModal.addEventListener('click', (e) => {
-        if (e.target === memberModal) { hideModal(memberModal); clearMemberSuggestions(); }
+        if (e.target === memberModal) { hideModal(memberModal); memberNicknameInput.value = ''; clearMemberSuggestions(); }
     });
 
     // Group Transaction Modal (any member can open)
