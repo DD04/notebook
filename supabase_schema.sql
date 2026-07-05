@@ -331,6 +331,7 @@ USING (
 -- Creator can remove members, or members can remove themselves (leave group)
 DROP POLICY IF EXISTS "Only creator can remove group members" ON public.group_members;
 DROP POLICY IF EXISTS "Users can delete group members in their groups" ON public.group_members;
+DROP POLICY IF EXISTS "Creator can remove members, or members can remove themselves" ON public.group_members;
 CREATE POLICY "Creator can remove members, or members can remove themselves"
 ON public.group_members FOR DELETE
 USING (
