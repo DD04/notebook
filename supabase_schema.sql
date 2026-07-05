@@ -38,9 +38,19 @@ ON public.profiles FOR SELECT
 USING (true);
 
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
-CREATE POLICY "Users can update their own profile" 
-ON public.profiles FOR UPDATE 
+CREATE POLICY "Users can update their own profile"
+ON public.profiles FOR UPDATE
 USING (auth.uid() = id);
+
+-- SECURITY: the SELECT policy above makes every row visible (this is required so
+-- signup/login can check whether a username already exists before the caller is
+-- authenticated). Column-level grants restrict WHICH columns those rows expose.
+-- recovery_question / recovery_answer_hash / email must never be readable directly
+-- by anon/authenticated clients - they are only ever touched by the SECURITY DEFINER
+-- functions below, which run as the table owner and are unaffected by these grants.
+REVOKE SELECT ON public.profiles FROM anon, authenticated;
+GRANT SELECT (id, username, nickname) ON public.profiles TO anon;
+GRANT SELECT (id, username, nickname, superuser, created_at) ON public.profiles TO authenticated;
 
 -- Trigger to automatically create a profile when a user signs up
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -86,6 +96,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- Rate limiting store for password reset attempts (security-question guesses).
+-- RLS is enabled with NO policies defined: anon/authenticated get zero direct
+-- access either way, only the SECURITY DEFINER functions below (running as the
+-- table owner) can read or write it.
+CREATE TABLE IF NOT EXISTS public.password_reset_attempts (
+    username TEXT PRIMARY KEY,
+    fail_count INTEGER NOT NULL DEFAULT 0,
+    locked_until TIMESTAMP WITH TIME ZONE
+);
+ALTER TABLE public.password_reset_attempts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.password_reset_attempts FROM anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.record_reset_failure(p_username TEXT)
+RETURNS VOID AS $$
+DECLARE
+    v_max_attempts CONSTANT INTEGER := 5;
+    v_lockout_duration CONSTANT INTERVAL := '15 minutes';
+BEGIN
+    INSERT INTO public.password_reset_attempts (username, fail_count, locked_until)
+    VALUES (p_username, 1, NULL)
+    ON CONFLICT (username) DO UPDATE
+    SET fail_count = password_reset_attempts.fail_count + 1,
+        locked_until = CASE
+            WHEN password_reset_attempts.fail_count + 1 >= v_max_attempts
+            THEN timezone('utc'::text, now()) + v_lockout_duration
+            ELSE password_reset_attempts.locked_until
+        END;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;
+
 -- Reset password via security question verification RPC
 CREATE OR REPLACE FUNCTION public.reset_password_by_question(
     p_username TEXT,
@@ -95,26 +135,41 @@ CREATE OR REPLACE FUNCTION public.reset_password_by_question(
 DECLARE
     v_user_id UUID;
     v_expected_hash TEXT;
+    v_username TEXT := LOWER(p_username);
+    v_locked_until TIMESTAMP WITH TIME ZONE;
 BEGIN
+    -- 0. 若此帳號因多次嘗試錯誤被鎖定，直接拒絕（不再進行答案比對）
+    SELECT locked_until INTO v_locked_until
+    FROM public.password_reset_attempts
+    WHERE username = v_username;
+
+    IF v_locked_until IS NOT NULL AND v_locked_until > timezone('utc'::text, now()) THEN
+        RETURN FALSE;
+    END IF;
+
     -- 1. 帳號統一小寫再查詢，不區分大小寫
     SELECT id, recovery_answer_hash INTO v_user_id, v_expected_hash
     FROM public.profiles
-    WHERE username = LOWER(p_username);
-    
+    WHERE username = v_username;
+
     IF v_user_id IS NULL OR v_expected_hash IS NULL THEN
+        PERFORM public.record_reset_failure(v_username);
         RETURN FALSE;
     END IF;
-    
+
     -- 2. 答案統一轉小寫再進行 bcrypt 雜湊比對
     IF v_expected_hash <> crypt(LOWER(p_answer), v_expected_hash) THEN
+        PERFORM public.record_reset_failure(v_username);
         RETURN FALSE;
     END IF;
-    
-    -- 3. Update auth.users password
+
+    -- 3. 驗證成功：清除失敗紀錄，更新密碼
+    DELETE FROM public.password_reset_attempts WHERE username = v_username;
+
     UPDATE auth.users
     SET encrypted_password = crypt(p_new_password, gen_salt('bf'))
     WHERE id = v_user_id;
-    
+
     RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;

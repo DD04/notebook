@@ -179,12 +179,14 @@ export async function signIn(emailOrUsername, password) {
 export async function findUserByUsername(username) {
     if (!isCloudMode()) return null;
     // 帳號統一轉小寫再查詢
+    // 注意：僅選取 anon/authenticated 被授權讀取的欄位（見 supabase_schema.sql），
+    // email、recovery_question、recovery_answer_hash 一律無法透過此查詢取得。
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, nickname, email, username')
+        .select('id, nickname, username')
         .eq('username', username.trim().toLowerCase())
         .maybeSingle(); // Use maybeSingle to avoid PGRST116 throwing error when not found
-    
+
     if (error || !data) return null;
     return data;
 }
@@ -532,10 +534,12 @@ export async function updateGroupTransaction(groupId, txId, updatedTx) {
 export async function exportStateAsJSON() {
     if (!isCloudMode()) throw new Error("Database connection required.");
     
-    // Fetch all profiles (superuser bypasses RLS)
+    // Fetch profiles - limited to the columns anon/authenticated are granted
+    // (see supabase_schema.sql); email/recovery_question/recovery_answer_hash are
+    // intentionally excluded from client-readable columns and won't appear here.
     const { data: profiles, error: pErr } = await supabase
         .from('profiles')
-        .select('*');
+        .select('id, username, nickname, superuser, created_at');
     if (pErr) throw pErr;
     
     const txs = await getTransactions();
