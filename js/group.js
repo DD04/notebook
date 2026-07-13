@@ -519,20 +519,29 @@ function renderGroupTransactions() {
 /* ==========================================================================
    EVENT HANDLERS
    ========================================================================== */
+let isCreatingGroup = false;
 async function handleCreateGroup(e) {
     e.preventDefault();
+    if (isCreatingGroup) return;
     const name = groupNameInput.value.trim();
     if (!name) return;
-    
+
+    isCreatingGroup = true;
+    const submitBtn = groupForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
     try {
         const newGroup = await storage.createGroup(name);
         showToast(`${getText('toast_group_created') || '記帳群組建立成功！'} "${name}"`, 'success');
         hideModal(groupModal);
-        
+
         await refreshGroups();
         await selectGroup(newGroup);
     } catch (err) {
         showToast("Failed to create group: " + err.message, "error");
+    } finally {
+        isCreatingGroup = false;
+        if (submitBtn) submitBtn.disabled = false;
     }
 }
 
@@ -546,11 +555,13 @@ async function loadMemberSuggestions() {
             return;
         }
         past.forEach(m => {
+            const username = m.profiles && m.profiles.username;
+            if (!username) return;
             const chip = document.createElement('span');
             chip.className = 'member-suggestion-chip';
             chip.textContent = m.nickname;
             chip.addEventListener('click', () => {
-                memberNicknameInput.value = m.nickname;
+                memberNicknameInput.value = username;
                 memberNicknameInput.focus();
             });
             memberSuggestionsChips.appendChild(chip);

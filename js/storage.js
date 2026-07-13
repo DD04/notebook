@@ -409,7 +409,7 @@ export async function getPastGroupMembers(currentGroupId, currentUserId) {
     if (!isCloudMode()) return [];
     const { data, error } = await supabase
         .from('group_members')
-        .select('nickname, user_id, group_id')
+        .select('nickname, user_id, group_id, profiles(username)')
         .order('joined_at', { ascending: false });
     if (error) return [];
 
