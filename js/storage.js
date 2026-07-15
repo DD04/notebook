@@ -572,8 +572,13 @@ export async function exportStateAsJSON() {
         .select('*');
     if (bErr) throw bErr;
     
-    // Fetch all groups with their members and transactions
-    const groupsList = await getGroups();
+    // Fetch all groups directly (not via getGroups(), which deliberately scopes
+    // to the caller's own memberships for the normal UI). Superuser RLS policies
+    // let this return every group when the caller is flagged as superuser.
+    const { data: groupsList, error: gErr } = await supabase
+        .from('groups')
+        .select('*');
+    if (gErr) throw gErr;
     const fullGroups = [];
     
     for (const g of groupsList) {

@@ -42,6 +42,19 @@ CREATE POLICY "Users can update their own profile"
 ON public.profiles FOR UPDATE
 USING (auth.uid() = id);
 
+-- Helper: check if a given user is flagged as superuser.
+-- SECURITY DEFINER so it can be safely called from other tables' RLS policies
+-- without those callers needing direct SELECT access to profiles.superuser.
+CREATE OR REPLACE FUNCTION public.is_superuser(p_user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = p_user_id AND superuser = true
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- SECURITY: the SELECT policy above makes every row visible (this is required so
 -- signup/login can check whether a username already exists before the caller is
 -- authenticated). Column-level grants restrict WHICH columns those rows expose.
@@ -194,7 +207,7 @@ ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view their own transactions" ON public.transactions;
 CREATE POLICY "Users can view their own transactions"
 ON public.transactions FOR SELECT
-USING (auth.uid() = user_id);
+USING (auth.uid() = user_id OR public.is_superuser(auth.uid()));
 
 DROP POLICY IF EXISTS "Users can insert their own transactions" ON public.transactions;
 CREATE POLICY "Users can insert their own transactions"
@@ -229,7 +242,7 @@ ALTER TABLE public.budgets ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view their own budgets" ON public.budgets;
 CREATE POLICY "Users can view their own budgets"
 ON public.budgets FOR SELECT
-USING (auth.uid() = user_id);
+USING (auth.uid() = user_id OR public.is_superuser(auth.uid()));
 
 DROP POLICY IF EXISTS "Users can insert/update their own budgets" ON public.budgets;
 CREATE POLICY "Users can insert/update their own budgets"
@@ -293,7 +306,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP POLICY IF EXISTS "Users can view groups they are in" ON public.groups;
 CREATE POLICY "Users can view groups they are in"
 ON public.groups FOR SELECT
-USING (public.is_group_member(id, auth.uid()));
+USING (public.is_group_member(id, auth.uid()) OR public.is_superuser(auth.uid()));
 
 DROP POLICY IF EXISTS "Any authenticated user can create a group" ON public.groups;
 CREATE POLICY "Any authenticated user can create a group"
@@ -309,7 +322,7 @@ USING (created_by = auth.uid());
 DROP POLICY IF EXISTS "Users can view members of their groups" ON public.group_members;
 CREATE POLICY "Users can view members of their groups"
 ON public.group_members FOR SELECT
-USING (public.is_group_member(group_id, auth.uid()));
+USING (public.is_group_member(group_id, auth.uid()) OR public.is_superuser(auth.uid()));
 
 -- FIX: Use can_add_member() SECURITY DEFINER function to avoid
 -- "infinite recursion detected in policy for relation group_members" error.
@@ -383,7 +396,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP POLICY IF EXISTS "Users can view transactions in their groups" ON public.group_transactions;
 CREATE POLICY "Users can view transactions in their groups"
 ON public.group_transactions FOR SELECT
-USING (public.is_group_member(group_id, auth.uid()));
+USING (public.is_group_member(group_id, auth.uid()) OR public.is_superuser(auth.uid()));
 
 DROP POLICY IF EXISTS "Users can insert transactions in their groups" ON public.group_transactions;
 CREATE POLICY "Users can insert transactions in their groups"
