@@ -359,13 +359,21 @@ function renderMembersList() {
         const item = document.createElement('div');
         item.className = 'member-item';
         const isCreatorMember = m.user_id === activeGroup?.created_by;
+        const canRemove = isGroupCreator && !isCreatorMember;
+        const removeBtn = canRemove
+            ? `<button class="action-btn action-btn-delete" data-member-id="${m.id}" title="${getText('group_remove_member') || '移除成員'}"><i data-lucide="user-x"></i></button>`
+            : '';
         item.innerHTML = `
             <span>
                 <i data-lucide="user" style="width: 14px; height: 14px; margin-right: 6px; vertical-align: middle; color:var(--text-muted);"></i>
                 ${escapeHTML(m.nickname)}
                 ${isCreatorMember ? `<span style="font-size:10px; color:var(--primary); margin-left:4px;">(${getText('group_creator_badge')})</span>` : ''}
             </span>
+            ${removeBtn}
         `;
+        if (canRemove) {
+            item.querySelector('.action-btn-delete').addEventListener('click', () => handleRemoveMember(m));
+        }
         groupMembersList.appendChild(item);
     });
     
@@ -628,6 +636,24 @@ async function handleDeleteGroup() {
         await refreshGroups();
     } catch (err) {
         showToast('Failed to delete group: ' + err.message, 'error');
+    }
+}
+
+async function handleRemoveMember(member) {
+    if (!isGroupCreator || !activeGroup) return;
+
+    const confirmMsg = (getText('confirm_remove_member') || `確定要將成員「${member.nickname}」移出群組嗎？`).replace('{name}', member.nickname);
+    const isConfirmed = await showConfirm(confirmMsg);
+    if (!isConfirmed) return;
+
+    try {
+        await storage.removeGroupMember(activeGroup.id, member.id);
+        showToast(getText('toast_member_removed') || '已移除成員。', 'success');
+
+        activeMembers = await storage.getGroupMembers(activeGroup.id);
+        renderMembersList();
+    } catch (err) {
+        showToast('移除成員失敗: ' + err.message, 'error');
     }
 }
 

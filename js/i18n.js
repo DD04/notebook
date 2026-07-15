@@ -190,6 +190,9 @@ export const translations = {
         'group_delete_group': '刪除群組',
         'confirm_delete_group': '確定要刪除此群組？所有群組資料將永久刪除且無法復原。',
         'toast_group_deleted': '群組已成功刪除。',
+        'group_remove_member': '移除成員',
+        'confirm_remove_member': '確定要將成員「{name}」移出群組嗎？',
+        'toast_member_removed': '已移除成員。',
 
         // Add member modal
         'modal_member_hint': '請輸入要新增成員的已註冊帳號。',
@@ -398,6 +401,9 @@ export const translations = {
         'group_delete_group': 'Delete Group',
         'confirm_delete_group': 'Are you sure you want to delete this group? All group data will be permanently deleted.',
         'toast_group_deleted': 'Group deleted successfully.',
+        'group_remove_member': 'Remove member',
+        'confirm_remove_member': 'Are you sure you want to remove "{name}" from the group?',
+        'toast_member_removed': 'Member removed.',
 
         // Add member modal
         'modal_member_hint': 'Enter the registered username of the user you want to add.',

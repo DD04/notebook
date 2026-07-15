@@ -452,6 +452,19 @@ export async function addGroupMember(groupId, username) {
     return data[0];
 }
 
+export async function removeGroupMember(groupId, memberId) {
+    if (!isCloudMode()) throw new Error("Database connection required.");
+
+    const { error, count } = await supabase
+        .from('group_members')
+        .delete({ count: 'exact' })
+        .eq('id', memberId)
+        .eq('group_id', groupId);
+
+    if (error) throw error;
+    if (!count) throw new Error("找不到成員資格，或權限不足導致無法移除。");
+}
+
 export async function deleteGroup(groupId) {
     if (!isCloudMode()) throw new Error("Database connection required.");
     const { error } = await supabase
@@ -777,13 +790,14 @@ export async function leaveGroup(groupId) {
     const user = supabase.auth.user ? supabase.auth.user() : (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error("User not logged in");
 
-    const { error } = await supabase
+    const { error, count } = await supabase
         .from('group_members')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('group_id', groupId)
         .eq('user_id', user.id);
 
     if (error) throw error;
+    if (!count) throw new Error("找不到成員資格，或權限不足導致無法移除。");
 }
 
 export async function updateProfile(newNickname, newPassword) {
