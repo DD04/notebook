@@ -55,6 +55,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Only superusers may insert profile rows directly (used by backup restore to
+-- recreate profiles for users that don't yet exist in this database). Regular
+-- users get their profile exclusively via the handle_new_user() signup trigger.
+DROP POLICY IF EXISTS "Superuser can insert profiles" ON public.profiles;
+CREATE POLICY "Superuser can insert profiles"
+ON public.profiles FOR INSERT
+WITH CHECK (public.is_superuser(auth.uid()));
+
 -- SECURITY: the SELECT policy above makes every row visible (this is required so
 -- signup/login can check whether a username already exists before the caller is
 -- authenticated). Column-level grants restrict WHICH columns those rows expose.
@@ -212,7 +220,7 @@ USING (auth.uid() = user_id OR public.is_superuser(auth.uid()));
 DROP POLICY IF EXISTS "Users can insert their own transactions" ON public.transactions;
 CREATE POLICY "Users can insert their own transactions"
 ON public.transactions FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK (auth.uid() = user_id OR public.is_superuser(auth.uid()));
 
 DROP POLICY IF EXISTS "Users can update their own transactions" ON public.transactions;
 CREATE POLICY "Users can update their own transactions"
@@ -247,7 +255,7 @@ USING (auth.uid() = user_id OR public.is_superuser(auth.uid()));
 DROP POLICY IF EXISTS "Users can insert/update their own budgets" ON public.budgets;
 CREATE POLICY "Users can insert/update their own budgets"
 ON public.budgets FOR ALL
-USING (auth.uid() = user_id);
+USING (auth.uid() = user_id OR public.is_superuser(auth.uid()));
 
 
 -- 4. Groups Table
@@ -331,7 +339,7 @@ DROP POLICY IF EXISTS "Group members can add other members" ON public.group_memb
 CREATE POLICY "Only creator can add group members"
 ON public.group_members FOR INSERT
 WITH CHECK (
-    public.can_add_member(group_id, auth.uid())
+    public.can_add_member(group_id, auth.uid()) OR public.is_superuser(auth.uid())
 );
 
 DROP POLICY IF EXISTS "Users can update group member nicknames in their groups" ON public.group_members;
@@ -402,8 +410,8 @@ DROP POLICY IF EXISTS "Users can insert transactions in their groups" ON public.
 CREATE POLICY "Users can insert transactions in their groups"
 ON public.group_transactions FOR INSERT
 WITH CHECK (
-    public.is_group_member(group_id, auth.uid())
-    AND auth.uid() = user_id
+    (public.is_group_member(group_id, auth.uid()) AND auth.uid() = user_id)
+    OR public.is_superuser(auth.uid())
 );
 
 DROP POLICY IF EXISTS "Users can update group transactions" ON public.group_transactions;
