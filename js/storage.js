@@ -360,12 +360,21 @@ export async function deleteBudget(category, month) {
    ========================================================================== */
 export async function getGroups() {
     if (!isCloudMode()) return [];
+    const user = await getCurrentUser();
+    if (!user) return [];
+
+    // Derive membership from group_members (not the groups table's own RLS) so a group
+    // never shows up unless the current user actually has a membership row in it.
     const { data, error } = await supabase
-        .from('groups')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('group_members')
+        .select('groups(*)')
+        .eq('user_id', user.id);
     if (error) throw error;
-    return data;
+
+    return data
+        .map(row => row.groups)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
 export async function createGroup(name) {
