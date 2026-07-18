@@ -709,7 +709,7 @@ async function handleGroupTxSubmit(e) {
     
     const txId = gtxId.value;
     const type = gtxType.value;
-    const amount = parseFloat(gtxAmount.value);
+    const amount = parseInt(gtxAmount.value, 10);
     const category = gtxCategory.value;
     const date = gtxDate.value;
     const description = gtxDescription.value.trim();
@@ -974,7 +974,7 @@ function renderGroupCategoryDonutChart() {
                             label: function(context) {
                                 const value = context.parsed;
                                 const percent = (value / totalExpense) * 100;
-                                return ` ${context.label}: $${value.toFixed(2)} (${percent.toFixed(1)}%)`;
+                                return ` ${context.label}: $${Math.round(value)} (${percent.toFixed(1)}%)`;
                             }
                         }
                     }
@@ -1070,7 +1070,7 @@ function renderGroupTrendBarChart() {
                     ticks: {
                         color: '#a1a1aa',
                         font: { family: "'Outfit', sans-serif", size: 10 },
-                        callback: function(value) { return '$' + value; }
+                        callback: function(value) { return '$' + Math.round(value); }
                     }
                 }
             },
@@ -1090,7 +1090,7 @@ function renderGroupTrendBarChart() {
                     borderWidth: 1,
                     callbacks: {
                         label: function(context) {
-                            return ` ${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
+                            return ` ${context.dataset.label}: $${Math.round(context.parsed.y)}`;
                         }
                     }
                 }

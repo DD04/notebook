@@ -111,7 +111,7 @@
                                 <span class="card-label" data-i18n="db_balance">Net Balance</span>
                                 <div class="card-icon"><i data-lucide="banknote"></i></div>
                             </div>
-                            <div class="card-amount" id="dbNetBalance">$0.00</div>
+                            <div class="card-amount" id="dbNetBalance">$0</div>
                             <div class="card-footer text-muted" data-i18n="db_balance_desc">Total financial summary
                             </div>
                         </div>
@@ -122,7 +122,7 @@
                                 <span class="card-label" data-i18n="db_income">Total Income</span>
                                 <div class="card-icon"><i data-lucide="trending-up"></i></div>
                             </div>
-                            <div class="card-amount text-success" id="dbTotalIncome">$0.00</div>
+                            <div class="card-amount text-success" id="dbTotalIncome">$0</div>
                             <div class="card-footer text-success" id="dbIncomeCount">0 entries</div>
                         </div>
 
@@ -132,7 +132,7 @@
                                 <span class="card-label" data-i18n="db_expense">Total Expenses</span>
                                 <div class="card-icon"><i data-lucide="trending-down"></i></div>
                             </div>
-                            <div class="card-amount text-error" id="dbTotalExpenses">$0.00</div>
+                            <div class="card-amount text-error" id="dbTotalExpenses">$0</div>
                             <div class="card-footer text-error" id="dbExpenseCount">0 entries</div>
                         </div>
                     </div>
@@ -328,7 +328,7 @@
                                             <span class="card-label" data-i18n="group_balance">Group Net Balance</span>
                                             <div class="card-icon"><i data-lucide="banknote"></i></div>
                                         </div>
-                                        <div class="card-amount" id="groupNetBalance">$0.00</div>
+                                        <div class="card-amount" id="groupNetBalance">$0</div>
                                         <div class="card-footer text-muted" data-i18n="group_balance_desc">Total group
                                             financial summary</div>
                                     </div>
@@ -339,7 +339,7 @@
                                             <span class="card-label" data-i18n="group_income">Group Total Income</span>
                                             <div class="card-icon"><i data-lucide="trending-up"></i></div>
                                         </div>
-                                        <div class="card-amount text-success" id="groupTotalIncome">$0.00</div>
+                                        <div class="card-amount text-success" id="groupTotalIncome">$0</div>
                                         <div class="card-footer text-success" id="groupIncomeCount">0 entries</div>
                                     </div>
 
@@ -350,7 +350,7 @@
                                                 Expenses</span>
                                             <div class="card-icon"><i data-lucide="trending-down"></i></div>
                                         </div>
-                                        <div class="card-amount text-error" id="groupTotalExpenses">$0.00</div>
+                                        <div class="card-amount text-error" id="groupTotalExpenses">$0</div>
                                         <div class="card-footer text-error" id="groupExpenseCount">0 entries</div>
                                     </div>
                                 </div>
@@ -460,7 +460,7 @@
                     </div>
                     <div class="form-group">
                         <label for="txAmount" data-i18n="modal_tx_amount">Amount</label>
-                        <input type="number" step="0.01" min="0.01" id="txAmount" placeholder="0.00" required>
+                        <input type="number" step="1" min="1" id="txAmount" placeholder="0" required>
                     </div>
                 </div>
 
@@ -571,7 +571,7 @@
                     </div>
                     <div class="form-group">
                         <label for="gtxAmount" data-i18n="modal_gtx_amount">Amount</label>
-                        <input type="number" step="0.01" min="0.01" id="gtxAmount" placeholder="0.00" required>
+                        <input type="number" step="1" min="1" id="gtxAmount" placeholder="0" required>
                     </div>
                 </div>
 

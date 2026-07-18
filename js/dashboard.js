@@ -360,7 +360,7 @@ async function handleTxSubmit(e) {
         
     const txData = {
         type: txType.value,
-        amount: parseFloat(txAmount.value),
+        amount: parseInt(txAmount.value, 10),
         category: txCategory.value,
         date: txDate.value,
         tags: tagsArray,
@@ -404,7 +404,7 @@ async function handleTxDelete(id) {
 
 // Formatter utils
 export function formatCurrency(amount) {
-    return '$' + Math.abs(parseFloat(amount)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return '$' + Math.round(Math.abs(parseFloat(amount))).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 export function escapeHTML(str) {
