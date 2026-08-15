@@ -75,35 +75,32 @@ async function initApp() {
 
     // 2. Initialize Core Storage and Configuration
     await storage.initStorage();
-    
-    // 3. Initialize Auth Panel
-    auth.initAuth(handleAuthSuccess);
+
+    // 3. Auth Panel / Gateway forms are mounted lazily (see mountGatewayOverlay()),
+    // only when actually needed, so they aren't wired up here.
     sidebarAuthBtn.addEventListener('click', handleAuthBtnClick);
 
-    // 4. Setup Gateway Form Listeners
-    initGateway();
-
-    // 5. Initialize Child Modules
+    // 4. Initialize Child Modules
     dashboard.initDashboard(onLedgerDataChange);
     group.initGroups();
     budgeting.initBudgeting();
     analytics.initAnalytics();
     settings.initSettings();
 
-    // Profile Edit Modal Setup
+    // Profile Edit Modal Setup — mounted lazily (see mountProfileModal()) so its password
+    // input isn't sitting in the DOM (and tripping iOS AutoFill) until the user actually
+    // opens "Edit Profile".
     const userAvatar = document.getElementById('userAvatar');
-    const profileModal = document.getElementById('profileModal');
-    const profileModalClose = document.getElementById('profileModalClose');
-    const profileModalCancel = document.getElementById('profileModalCancel');
-    const profileForm = document.getElementById('profileForm');
-    const profileNicknameInput = document.getElementById('profileNicknameInput');
-    const profilePasswordInput = document.getElementById('profilePasswordInput');
-    const profileError = document.getElementById('profileError');
-
     if (userAvatar) {
         userAvatar.addEventListener('click', () => {
             if (!currentUser) return;
-            
+            mountProfileModal();
+
+            const profileModal = document.getElementById('profileModal');
+            const profileNicknameInput = document.getElementById('profileNicknameInput');
+            const profilePasswordInput = document.getElementById('profilePasswordInput');
+            const profileError = document.getElementById('profileError');
+
             if (profileNicknameInput) {
                 profileNicknameInput.value = currentUser.nickname || '';
             }
@@ -116,56 +113,6 @@ async function initApp() {
             }
             if (profileModal) {
                 profileModal.classList.add('active');
-            }
-        });
-    }
-
-    if (profileModalClose) {
-        profileModalClose.addEventListener('click', () => {
-            if (profileModal) profileModal.classList.remove('active');
-        });
-    }
-    if (profileModalCancel) {
-        profileModalCancel.addEventListener('click', () => {
-            if (profileModal) profileModal.classList.remove('active');
-        });
-    }
-    if (profileModal) {
-        profileModal.addEventListener('click', (e) => {
-            if (e.target === profileModal) profileModal.classList.remove('active');
-        });
-    }
-
-    if (profileForm) {
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (profileError) {
-                profileError.classList.add('d-none');
-                profileError.textContent = '';
-            }
-            
-            const nickname = profileNicknameInput.value.trim();
-            const password = profilePasswordInput.value;
-            
-            if (!nickname) {
-                if (profileError) {
-                    profileError.textContent = "暱稱不能留空";
-                    profileError.classList.remove('d-none');
-                }
-                return;
-            }
-
-            try {
-                await storage.updateProfile(nickname, password);
-                showToast("個人資料更新成功！", "success");
-                if (profileModal) profileModal.classList.remove('active');
-                await refreshUserSession();
-            } catch (err) {
-                console.error("更新個人資料失敗", err);
-                if (profileError) {
-                    profileError.textContent = "更新失敗: " + err.message;
-                    profileError.classList.remove('d-none');
-                }
             }
         });
     }
@@ -324,17 +271,34 @@ function updateThemeIcon(theme) {
 /* ==========================================================================
    GATEWAY GATEKEEPER & CONTROLLER
    ========================================================================== */
+// The gateway overlay (DB connection + login/signup/forgot-password forms) lives in a
+// <template> in index.html instead of the live DOM. It's only cloned in and wired up the
+// first time it's actually needed (not connected, or not signed in). This keeps the
+// password inputs out of the DOM entirely for an already-logged-in visit, which is what
+// was causing iOS Safari to offer to AutoFill/save a password on every page load even
+// though the app itself was already authenticated.
+let gatewayMounted = false;
+function mountGatewayOverlay() {
+    if (gatewayMounted) return;
+    const tpl = document.getElementById('gatewayOverlayTemplate');
+    if (!tpl) return;
+    document.body.appendChild(tpl.content.cloneNode(true));
+    gatewayMounted = true;
+    auth.initAuth(handleAuthSuccess);
+    initGateway();
+}
+
 export async function checkGatewayStatus() {
     const isDbConnected = storage.isCloudMode();
-    
-    const gatewayOverlay = document.getElementById('gatewayOverlay');
-    const gatewayTitle = document.getElementById('gatewayTitle');
-    const gatewaySubtitle = document.getElementById('gatewaySubtitle');
-    const gatewayDbForm = document.getElementById('gatewayDbForm');
-    const gatewayAuthForm = document.getElementById('gatewayAuthForm');
-    
+
     // 1. Database connection is required first
     if (!isDbConnected) {
+        mountGatewayOverlay();
+        const gatewayOverlay = document.getElementById('gatewayOverlay');
+        const gatewayTitle = document.getElementById('gatewayTitle');
+        const gatewaySubtitle = document.getElementById('gatewaySubtitle');
+        const gatewayDbForm = document.getElementById('gatewayDbForm');
+        const gatewayAuthForm = document.getElementById('gatewayAuthForm');
         if (gatewayOverlay) gatewayOverlay.classList.add('active');
         if (gatewayTitle) gatewayTitle.textContent = "Database Connection Required";
         if (gatewaySubtitle) gatewaySubtitle.textContent = "Connect to your Supabase instance to begin.";
@@ -343,10 +307,14 @@ export async function checkGatewayStatus() {
         updateModeBadge();
         return false;
     }
-    
+
     // 2. User authentication is required
     currentUser = await storage.getCurrentUser();
     if (!currentUser) {
+        mountGatewayOverlay();
+        const gatewayOverlay = document.getElementById('gatewayOverlay');
+        const gatewayDbForm = document.getElementById('gatewayDbForm');
+        const gatewayAuthForm = document.getElementById('gatewayAuthForm');
         if (gatewayOverlay) gatewayOverlay.classList.add('active');
         if (gatewayDbForm) gatewayDbForm.classList.add('d-none');
         if (gatewayAuthForm) gatewayAuthForm.classList.remove('d-none');
@@ -354,12 +322,85 @@ export async function checkGatewayStatus() {
         updateModeBadge();
         return false;
     }
-    
-    // 3. Both connected and authenticated
-    if (gatewayOverlay) gatewayOverlay.classList.remove('active');
+
+    // 3. Both connected and authenticated — gateway stays unmounted (or hidden, if it was
+    // mounted earlier this session e.g. after a fresh sign-in)
+    if (gatewayMounted) {
+        const gatewayOverlay = document.getElementById('gatewayOverlay');
+        if (gatewayOverlay) gatewayOverlay.classList.remove('active');
+    }
     await refreshUserSession();
     updateModeBadge();
     return true;
+}
+
+// Same lazy-mount treatment for the "Edit Profile" modal — its password input stays out
+// of the DOM until the user opens the modal at least once this session.
+let profileModalMounted = false;
+function mountProfileModal() {
+    if (profileModalMounted) return;
+    const tpl = document.getElementById('profileModalTemplate');
+    if (!tpl) return;
+    document.body.appendChild(tpl.content.cloneNode(true));
+    profileModalMounted = true;
+
+    const profileModal = document.getElementById('profileModal');
+    const profileModalClose = document.getElementById('profileModalClose');
+    const profileModalCancel = document.getElementById('profileModalCancel');
+    const profileForm = document.getElementById('profileForm');
+    const profileNicknameInput = document.getElementById('profileNicknameInput');
+    const profilePasswordInput = document.getElementById('profilePasswordInput');
+    const profileError = document.getElementById('profileError');
+
+    if (profileModalClose) {
+        profileModalClose.addEventListener('click', () => {
+            if (profileModal) profileModal.classList.remove('active');
+        });
+    }
+    if (profileModalCancel) {
+        profileModalCancel.addEventListener('click', () => {
+            if (profileModal) profileModal.classList.remove('active');
+        });
+    }
+    if (profileModal) {
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) profileModal.classList.remove('active');
+        });
+    }
+
+    if (profileForm) {
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (profileError) {
+                profileError.classList.add('d-none');
+                profileError.textContent = '';
+            }
+
+            const nickname = profileNicknameInput.value.trim();
+            const password = profilePasswordInput.value;
+
+            if (!nickname) {
+                if (profileError) {
+                    profileError.textContent = "暱稱不能留空";
+                    profileError.classList.remove('d-none');
+                }
+                return;
+            }
+
+            try {
+                await storage.updateProfile(nickname, password);
+                showToast("個人資料更新成功！", "success");
+                if (profileModal) profileModal.classList.remove('active');
+                await refreshUserSession();
+            } catch (err) {
+                console.error("更新個人資料失敗", err);
+                if (profileError) {
+                    profileError.textContent = "更新失敗: " + err.message;
+                    profileError.classList.remove('d-none');
+                }
+            }
+        });
+    }
 }
 
 function initGateway() {

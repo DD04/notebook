@@ -4,51 +4,75 @@ import { getText } from './i18n.js';
 
 let authSuccessCallback = null;
 
-// DOM Elements from Gateway Authentication Panel
-const gatewayOverlay = document.getElementById('gatewayOverlay');
-const gatewayTitle = document.getElementById('gatewayTitle');
-const gatewaySubtitle = document.getElementById('gatewaySubtitle');
+// DOM Elements from Gateway Authentication Panel.
+// The gateway overlay now lives in a <template> and is only cloned into the document
+// when actually needed (see mountGatewayOverlay() in app.js), so these can't be looked
+// up at module-load time. queryDom() (called from initAuth()) populates them once the
+// overlay has been mounted.
+let gatewayOverlay, gatewayTitle, gatewaySubtitle;
+let gatewayAuthForm, gatewayDbForm;
 
-const gatewayAuthForm = document.getElementById('gatewayAuthForm');
-const gatewayDbForm = document.getElementById('gatewayDbForm');
+let gwNicknameGroup, gwNickname;
+let gwRecoveryQuestionGroup, gwRecoveryQuestion;
+let gwRecoveryAnswerGroup, gwRecoveryAnswer;
+let gwUsername, gwPassword, gwPasswordToggle;
+let gwConfirmPasswordGroup, gwConfirmPassword, gwConfirmPasswordToggle, gwConfirmPasswordHint;
+let gatewayAuthError, gatewayAuthSubmitBtn;
 
-const gwNicknameGroup = document.getElementById('gwNicknameGroup');
-const gwNickname = document.getElementById('gwNickname');
-const gwRecoveryQuestionGroup = document.getElementById('gwRecoveryQuestionGroup');
-const gwRecoveryQuestion = document.getElementById('gwRecoveryQuestion');
-const gwRecoveryAnswerGroup = document.getElementById('gwRecoveryAnswerGroup');
-const gwRecoveryAnswer = document.getElementById('gwRecoveryAnswer');
-const gwUsername = document.getElementById('gwUsername');
-const gwPassword = document.getElementById('gwPassword');
-const gwPasswordToggle = document.getElementById('gwPasswordToggle');
-const gwConfirmPasswordGroup = document.getElementById('gwConfirmPasswordGroup');
-const gwConfirmPassword = document.getElementById('gwConfirmPassword');
-const gwConfirmPasswordToggle = document.getElementById('gwConfirmPasswordToggle');
-const gwConfirmPasswordHint = document.getElementById('gwConfirmPasswordHint');
-const gatewayAuthError = document.getElementById('gatewayAuthError');
-const gatewayAuthSubmitBtn = document.getElementById('gatewayAuthSubmitBtn');
-
-const gwAuthToggleQuestion = document.getElementById('gwAuthToggleQuestion');
-const gwAuthToggleBtn = document.getElementById('gwAuthToggleBtn');
-const gwForgotPasswordBtn = document.getElementById('gwForgotPasswordBtn');
+let gwAuthToggleQuestion, gwAuthToggleBtn, gwForgotPasswordBtn;
 
 // Forgot Password Panel (密保兩階段重設)
-const gatewayForgotForm = document.getElementById('gatewayForgotForm');
-const gwForgotDesc = document.getElementById('gwForgotDesc');
-const gwForgotStep1Group = document.getElementById('gwForgotStep1Group');
-const gwForgotUsername = document.getElementById('gwForgotUsername');
-const gwForgotNextBtn = document.getElementById('gwForgotNextBtn');
+let gatewayForgotForm, gwForgotDesc, gwForgotStep1Group, gwForgotUsername, gwForgotNextBtn;
 
-const gwForgotStep2Group = document.getElementById('gwForgotStep2Group');
-const gwForgotQuestionText = document.getElementById('gwForgotQuestionText');
-const gwForgotAnswer = document.getElementById('gwForgotAnswer');
-const gwForgotNewPassword = document.getElementById('gwForgotNewPassword');
-const gwForgotConfirmPassword = document.getElementById('gwForgotConfirmPassword');
-const gwForgotSubmitBtn = document.getElementById('gwForgotSubmitBtn');
+let gwForgotStep2Group, gwForgotQuestionText, gwForgotAnswer, gwForgotNewPassword, gwForgotConfirmPassword, gwForgotSubmitBtn;
 
-const gatewayForgotError = document.getElementById('gatewayForgotError');
-const gatewayForgotSuccess = document.getElementById('gatewayForgotSuccess');
-const gwForgotBackToLoginBtn = document.getElementById('gwForgotBackToLoginBtn');
+let gatewayForgotError, gatewayForgotSuccess, gwForgotBackToLoginBtn;
+
+function queryDom() {
+    gatewayOverlay = document.getElementById('gatewayOverlay');
+    gatewayTitle = document.getElementById('gatewayTitle');
+    gatewaySubtitle = document.getElementById('gatewaySubtitle');
+
+    gatewayAuthForm = document.getElementById('gatewayAuthForm');
+    gatewayDbForm = document.getElementById('gatewayDbForm');
+
+    gwNicknameGroup = document.getElementById('gwNicknameGroup');
+    gwNickname = document.getElementById('gwNickname');
+    gwRecoveryQuestionGroup = document.getElementById('gwRecoveryQuestionGroup');
+    gwRecoveryQuestion = document.getElementById('gwRecoveryQuestion');
+    gwRecoveryAnswerGroup = document.getElementById('gwRecoveryAnswerGroup');
+    gwRecoveryAnswer = document.getElementById('gwRecoveryAnswer');
+    gwUsername = document.getElementById('gwUsername');
+    gwPassword = document.getElementById('gwPassword');
+    gwPasswordToggle = document.getElementById('gwPasswordToggle');
+    gwConfirmPasswordGroup = document.getElementById('gwConfirmPasswordGroup');
+    gwConfirmPassword = document.getElementById('gwConfirmPassword');
+    gwConfirmPasswordToggle = document.getElementById('gwConfirmPasswordToggle');
+    gwConfirmPasswordHint = document.getElementById('gwConfirmPasswordHint');
+    gatewayAuthError = document.getElementById('gatewayAuthError');
+    gatewayAuthSubmitBtn = document.getElementById('gatewayAuthSubmitBtn');
+
+    gwAuthToggleQuestion = document.getElementById('gwAuthToggleQuestion');
+    gwAuthToggleBtn = document.getElementById('gwAuthToggleBtn');
+    gwForgotPasswordBtn = document.getElementById('gwForgotPasswordBtn');
+
+    gatewayForgotForm = document.getElementById('gatewayForgotForm');
+    gwForgotDesc = document.getElementById('gwForgotDesc');
+    gwForgotStep1Group = document.getElementById('gwForgotStep1Group');
+    gwForgotUsername = document.getElementById('gwForgotUsername');
+    gwForgotNextBtn = document.getElementById('gwForgotNextBtn');
+
+    gwForgotStep2Group = document.getElementById('gwForgotStep2Group');
+    gwForgotQuestionText = document.getElementById('gwForgotQuestionText');
+    gwForgotAnswer = document.getElementById('gwForgotAnswer');
+    gwForgotNewPassword = document.getElementById('gwForgotNewPassword');
+    gwForgotConfirmPassword = document.getElementById('gwForgotConfirmPassword');
+    gwForgotSubmitBtn = document.getElementById('gwForgotSubmitBtn');
+
+    gatewayForgotError = document.getElementById('gatewayForgotError');
+    gatewayForgotSuccess = document.getElementById('gatewayForgotSuccess');
+    gwForgotBackToLoginBtn = document.getElementById('gwForgotBackToLoginBtn');
+}
 
 let isSignUpMode = false;
 
@@ -67,7 +91,8 @@ function setupPasswordToggle(inputEl, toggleBtn) {
 
 export function initAuth(onAuthSuccess) {
     authSuccessCallback = onAuthSuccess;
-    
+    queryDom();
+
     // 密碼顯示/隱藏按鈕
     setupPasswordToggle(gwPassword, gwPasswordToggle);
     setupPasswordToggle(gwConfirmPassword, gwConfirmPasswordToggle);

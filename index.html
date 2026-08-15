@@ -663,6 +663,9 @@
     </div>
 
     <!-- MODAL 6: Edit User Profile -->
+    <!-- Kept in a <template> (not live DOM) until opened, so iOS Safari doesn't detect a
+         password field on every page load and prompt AutoFill/Keychain for logged-in users. -->
+    <template id="profileModalTemplate">
     <div class="modal-overlay" id="profileModal">
         <div class="modal-container modal-sm">
             <div class="modal-header">
@@ -686,8 +689,13 @@
             </form>
         </div>
     </div>
+    </template>
 
     <!-- Mandatory Gateway Overlay (Database Setup / Authentication) -->
+    <!-- Kept in a <template> (not live DOM) until actually needed (not connected / not
+         signed in), so iOS Safari doesn't detect these password fields on every page load
+         and prompt AutoFill/Keychain even for already-logged-in users. -->
+    <template id="gatewayOverlayTemplate">
     <div class="gateway-overlay" id="gatewayOverlay">
         <div class="gateway-card card-box bg-glass">
             <div class="gateway-header">
@@ -833,6 +841,7 @@
             </form>
         </div>
     </div>
+    </template>
 
     <!-- Global Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
