@@ -1780,6 +1780,11 @@ a {
     margin-bottom: 24px;
 }
 
+/* Group analytics modal has no content below the chart grid - no trailing margin needed */
+#groupAnalyticsModal .analytics-layout {
+    margin-bottom: 0;
+}
+
 /* Each analytics-card has its own box - no additional margin needed */
 .analytics-card.card-box {
     margin-bottom: 0 !important;

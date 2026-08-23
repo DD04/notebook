@@ -174,7 +174,6 @@ export function initGroups() {
     const groupAnalyticsModal = document.getElementById('groupAnalyticsModal');
     const groupAnalyticsModalTitle = document.getElementById('groupAnalyticsModalTitle');
     const groupAnalyticsModalClose = document.getElementById('groupAnalyticsModalClose');
-    const groupAnalyticsModalCloseBtn = document.getElementById('groupAnalyticsModalCloseBtn');
 
     const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
 
@@ -194,7 +193,6 @@ export function initGroups() {
     });
     const hideGroupAnalytics = () => hideModal(groupAnalyticsModal);
     groupAnalyticsModalClose.addEventListener('click', hideGroupAnalytics);
-    groupAnalyticsModalCloseBtn.addEventListener('click', hideGroupAnalytics);
     groupAnalyticsModal.addEventListener('click', (e) => {
         if (e.target === groupAnalyticsModal) hideGroupAnalytics();
     });
