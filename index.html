@@ -388,6 +388,15 @@
                                                 <option value="all" data-i18n="db_all_months">所有月份</option>
                                             </select>
                                         </div>
+                                        <div id="groupMemberFilterChip" class="d-none" style="margin-top: 10px;">
+                                            <span class="tag-badge" style="background: var(--primary-glow); border-color: var(--primary); color: var(--primary); display: inline-flex; align-items: center; gap: 6px;">
+                                                篩選中：<span id="groupMemberFilterChipName"></span>
+                                                <button id="groupMemberFilterChipClear" type="button" title="清除篩選"
+                                                    style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: inherit; display: inline-flex; align-items: center;">
+                                                    <i data-lucide="x" style="width: 12px; height: 12px;"></i>
+                                                </button>
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div class="ledger-table-wrapper">
@@ -621,7 +630,7 @@
                 <h3 id="groupAnalyticsModalTitle">群組收支分析</h3>
                 <button class="modal-close-btn" id="groupAnalyticsModalClose"><i data-lucide="x"></i></button>
             </div>
-            <div class="modal-body" style="padding-top: 10px;">
+            <div class="modal-body" style="padding: 10px 24px 24px;">
                 <div class="analytics-layout"
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                     <!-- Chart Card: Per-member Income vs Expense -->

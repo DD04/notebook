@@ -53,6 +53,7 @@ let groups = [];
 let activeGroup = null;
 let activeMembers = [];
 let activeTransactions = [];
+let groupFilterMemberId = null;
 
 // Pagination state (group transactions)
 const GROUP_ITEMS_PER_PAGE = 8;
@@ -137,6 +138,16 @@ export function initGroups() {
     groupFilterCategory.addEventListener('change', applyGroupFiltersAndRender);
     groupFilterMonth.addEventListener('change', applyGroupFiltersAndRender);
 
+    const groupMemberFilterChipClear = document.getElementById('groupMemberFilterChipClear');
+    if (groupMemberFilterChipClear) {
+        groupMemberFilterChipClear.addEventListener('click', () => {
+            groupFilterMemberId = null;
+            document.getElementById('groupMemberFilterChip').classList.add('d-none');
+            renderMembersList();
+            applyGroupFiltersAndRender();
+        });
+    }
+
     // Group Pagination Listeners
     const groupPrevPageBtn = document.getElementById('groupPrevPageBtn');
     const groupNextPageBtn = document.getElementById('groupNextPageBtn');
@@ -161,9 +172,10 @@ export function initGroups() {
     // Group Analytics Button & Modal
     const groupAnalyticsBtn = document.getElementById('groupAnalyticsBtn');
     const groupAnalyticsModal = document.getElementById('groupAnalyticsModal');
+    const groupAnalyticsModalTitle = document.getElementById('groupAnalyticsModalTitle');
     const groupAnalyticsModalClose = document.getElementById('groupAnalyticsModalClose');
     const groupAnalyticsModalCloseBtn = document.getElementById('groupAnalyticsModalCloseBtn');
-    
+
     const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
 
     if (groupAnalyticsMonthSelect) {
@@ -173,6 +185,9 @@ export function initGroups() {
     }
 
     groupAnalyticsBtn.addEventListener('click', () => {
+        if (groupAnalyticsModalTitle) {
+            groupAnalyticsModalTitle.textContent = `${activeGroup?.name || ''}收支分析`;
+        }
         showModal(groupAnalyticsModal);
         populateGroupAnalyticsMonthSelect();
         renderGroupMemberBarChart();
@@ -263,7 +278,12 @@ function renderGroupsList() {
 async function selectGroup(group) {
     activeGroup = group;
     isGroupCreator = currentUserId && group.created_by === currentUserId;
-    
+
+    // Reset the per-member filter when switching groups; it's scoped to the previous group's members.
+    groupFilterMemberId = null;
+    const groupMemberFilterChip = document.getElementById('groupMemberFilterChip');
+    if (groupMemberFilterChip) groupMemberFilterChip.classList.add('d-none');
+
     renderGroupsList(); // Re-render to highlight active
     
     noGroupSelected.classList.add('d-none');
@@ -344,6 +364,10 @@ function renderMembersList() {
     activeMembers.forEach(m => {
         const item = document.createElement('div');
         item.className = 'member-item';
+        if (m.user_id && m.user_id === groupFilterMemberId) {
+            item.classList.add('active');
+        }
+        item.title = (getText('group_filter_by_member') || `點擊篩選「{name}」的收支記錄`).replace('{name}', m.nickname);
         const isCreatorMember = m.user_id === activeGroup?.created_by;
         const canRemove = isGroupCreator && !isCreatorMember;
         const removeBtn = canRemove
@@ -358,12 +382,36 @@ function renderMembersList() {
             ${removeBtn}
         `;
         if (canRemove) {
-            item.querySelector('.action-btn-delete').addEventListener('click', () => handleRemoveMember(m));
+            item.querySelector('.action-btn-delete').addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleRemoveMember(m);
+            });
         }
+        item.addEventListener('click', () => {
+            if (m.user_id) toggleGroupMemberFilter(m.user_id, m.nickname);
+        });
         groupMembersList.appendChild(item);
     });
-    
+
     if (window.lucide) window.lucide.createIcons();
+}
+
+function toggleGroupMemberFilter(userId, nickname) {
+    groupFilterMemberId = (groupFilterMemberId === userId) ? null : userId;
+
+    const chip = document.getElementById('groupMemberFilterChip');
+    const chipName = document.getElementById('groupMemberFilterChipName');
+    if (chip && chipName) {
+        if (groupFilterMemberId) {
+            chipName.textContent = nickname;
+            chip.classList.remove('d-none');
+        } else {
+            chip.classList.add('d-none');
+        }
+    }
+
+    renderMembersList();
+    applyGroupFiltersAndRender();
 }
 
 function renderGroupSummaryCards(txList = activeTransactions) {
@@ -840,8 +888,9 @@ function applyGroupFiltersAndRender() {
         const matchesType = typeVal === 'all' || t.type === typeVal;
         const matchesCat = catVal === 'all' || t.category === catVal;
         const matchesMonth = monthVal === 'all' || (t.date && t.date.startsWith(monthVal));
-        
-        return matchesSearch && matchesType && matchesCat && matchesMonth;
+        const matchesMember = !groupFilterMemberId || t.user_id === groupFilterMemberId;
+
+        return matchesSearch && matchesType && matchesCat && matchesMonth && matchesMember;
     });
 
     // Reset to page 1 whenever filters change

@@ -909,7 +909,8 @@ a {
     background: rgba(255, 255, 255, 0.02);
 }
 
-.group-item.active {
+.group-item.active,
+.member-item.active {
     background: var(--primary-glow);
     border-color: var(--primary);
     font-weight: 500;

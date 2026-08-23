@@ -193,6 +193,7 @@ export const translations = {
         'group_remove_member': '移除成員',
         'confirm_remove_member': '確定要將成員「{name}」移出群組嗎？',
         'toast_member_removed': '已移除成員。',
+        'group_filter_by_member': '點擊篩選「{name}」的收支記錄',
 
         // Add member modal
         'modal_member_hint': '請輸入要新增成員的已註冊帳號。',
@@ -404,6 +405,7 @@ export const translations = {
         'group_remove_member': 'Remove member',
         'confirm_remove_member': 'Are you sure you want to remove "{name}" from the group?',
         'toast_member_removed': 'Member removed.',
+        'group_filter_by_member': "Click to filter transactions by {name}",
 
         // Add member modal
         'modal_member_hint': 'Enter the registered username of the user you want to add.',
