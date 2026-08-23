@@ -7,6 +7,7 @@ import * as budgeting from './budgeting.js';
 import * as analytics from './analytics.js';
 import * as settings from './settings.js';
 import { exportLedgerToExcel } from './exportExcel.js';
+import { exportLedgerToPdf } from './exportPdf.js';
 
 // Lucide API compatibility polyfill
 if (window.lucide && !window.lucide.replace) {
@@ -34,6 +35,9 @@ const navItems = document.querySelectorAll('.nav-item');
 const viewSections = document.querySelectorAll('.view-section');
 const toastContainer = document.getElementById('toastContainer');
 const headerDownloadBtn = document.getElementById('headerDownloadBtn');
+const headerDownloadMenu = document.getElementById('headerDownloadMenu');
+const headerDownloadExcelBtn = document.getElementById('headerDownloadExcelBtn');
+const headerDownloadPdfBtn = document.getElementById('headerDownloadPdfBtn');
 
 // State
 let currentUser = null;
@@ -122,9 +126,31 @@ async function initApp() {
     // 6. Setup SPA Navigation
     initRouter();
 
-    // 6.5. Ledger Excel download (works from both the Dashboard and Groups views)
-    if (headerDownloadBtn) {
-        headerDownloadBtn.addEventListener('click', handleHeaderDownload);
+    // 6.5. Ledger download (Excel / PDF), works from both the Dashboard and Groups views.
+    // One entry point button opens a small format-choice menu.
+    if (headerDownloadBtn && headerDownloadMenu) {
+        headerDownloadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            headerDownloadMenu.classList.toggle('d-none');
+        });
+        document.addEventListener('click', (e) => {
+            if (!headerDownloadMenu.classList.contains('d-none') &&
+                !headerDownloadMenu.contains(e.target) && e.target !== headerDownloadBtn) {
+                headerDownloadMenu.classList.add('d-none');
+            }
+        });
+    }
+    if (headerDownloadExcelBtn) {
+        headerDownloadExcelBtn.addEventListener('click', () => {
+            headerDownloadMenu.classList.add('d-none');
+            handleHeaderDownload('excel');
+        });
+    }
+    if (headerDownloadPdfBtn) {
+        headerDownloadPdfBtn.addEventListener('click', () => {
+            headerDownloadMenu.classList.add('d-none');
+            handleHeaderDownload('pdf');
+        });
     }
 
     // 7. Setup Mobile Responsive Navigation toggles
@@ -244,52 +270,63 @@ export async function refreshAppState() {
     switchView(getActiveView());
 }
 
-// Downloads the ledger currently on screen (Dashboard or Groups view) as a styled .xlsx file
-async function handleHeaderDownload() {
+// Resolves what to export based on whichever ledger view (Dashboard or Groups) is on screen.
+// Returns null (after showing an explanatory toast) when there's nothing to export.
+function resolveExportContext() {
     const activeView = getActiveView();
 
-    let title;
-    let filenamePrefix;
-    let transactions;
-    let includeMember = false;
-
     if (activeView === 'dashboard') {
-        title = '個人收支明細表';
-        filenamePrefix = '個人收支明細表';
-        transactions = dashboard.getFilteredTransactions();
-    } else if (activeView === 'groups') {
+        const transactions = dashboard.getFilteredTransactions();
+        if (!transactions || transactions.length === 0) {
+            showToast('目前沒有可下載的資料', 'warning');
+            return null;
+        }
+        return { title: '個人收支明細表', filenamePrefix: '個人收支明細表', transactions, includeMember: false };
+    }
+
+    if (activeView === 'groups') {
         const groupName = group.getActiveGroupName();
         if (!groupName) {
             showToast('請先選擇一個群組', 'warning');
-            return;
+            return null;
         }
-        title = `${groupName}收支明細表`;
-        filenamePrefix = title;
-        transactions = group.getFilteredGroupTransactions();
-        includeMember = true;
-    } else {
-        showToast('此頁面沒有可下載的明細', 'info');
-        return;
+        const transactions = group.getFilteredGroupTransactions();
+        if (!transactions || transactions.length === 0) {
+            showToast('目前沒有可下載的資料', 'warning');
+            return null;
+        }
+        const title = `${groupName}收支明細表`;
+        return { title, filenamePrefix: title, transactions, includeMember: true };
     }
 
-    if (!transactions || transactions.length === 0) {
-        showToast('目前沒有可下載的資料', 'warning');
-        return;
-    }
+    showToast('此頁面沒有可下載的明細', 'info');
+    return null;
+}
 
+// Downloads the ledger currently on screen (Dashboard or Groups view) as either a styled
+// .xlsx file or a categorized cash-flow-statement style .pdf.
+async function handleHeaderDownload(format) {
+    const context = resolveExportContext();
+    if (!context) return;
+
+    // The menu is already closed by this point; show the loading state on the entry-point button.
     headerDownloadBtn.disabled = true;
     headerDownloadBtn.innerHTML = '<i data-lucide="loader" class="spin-animation"></i>';
     lucide.replace();
 
     try {
-        await exportLedgerToExcel({ title, transactions, filenamePrefix, includeMember });
+        if (format === 'pdf') {
+            await exportLedgerToPdf(context);
+        } else {
+            await exportLedgerToExcel(context);
+        }
         showToast('明細表下載成功！', 'success');
     } catch (err) {
-        console.error('Excel export failed:', err);
+        console.error(`${format} export failed:`, err);
         showToast('下載失敗: ' + err.message, 'error');
     } finally {
         headerDownloadBtn.disabled = false;
-        headerDownloadBtn.innerHTML = '<i data-lucide="file-spreadsheet"></i>';
+        headerDownloadBtn.innerHTML = '<i data-lucide="download"></i>';
         lucide.replace();
     }
 }

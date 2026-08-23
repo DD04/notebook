@@ -84,9 +84,19 @@
                             <i data-lucide="upload-cloud"></i>
                         </button>
                     </div>
-                    <button class="theme-toggle-btn" id="headerDownloadBtn" title="下載收支明細表 (Excel)">
-                        <i data-lucide="file-spreadsheet"></i>
-                    </button>
+                    <div class="header-dropdown-wrapper">
+                        <button class="theme-toggle-btn" id="headerDownloadBtn" title="下載收支明細表">
+                            <i data-lucide="download"></i>
+                        </button>
+                        <div class="header-dropdown-menu d-none" id="headerDownloadMenu">
+                            <button class="header-dropdown-item" id="headerDownloadExcelBtn" title="下載 Excel (.xlsx)">
+                                <img src="icons/excel-logo.svg" alt="Excel">
+                            </button>
+                            <button class="header-dropdown-item" id="headerDownloadPdfBtn" title="下載 PDF (.pdf)">
+                                <img src="icons/pdf-logo.svg" alt="PDF">
+                            </button>
+                        </div>
+                    </div>
                     <!-- Status Indicators -->
                     <div class="mode-badge" id="modeBadge">
                         <span class="badge-dot"></span>
@@ -844,6 +854,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 

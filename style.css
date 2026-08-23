@@ -427,6 +427,58 @@ a {
     transform: rotate(15deg);
 }
 
+.header-dropdown-wrapper {
+    position: relative;
+}
+
+.header-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    display: flex;
+    gap: 6px;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    z-index: 50;
+}
+
+.header-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.header-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.header-dropdown-item i {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.header-dropdown-item img {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
 /* Icons showing conditionally based on theme */
 :root[data-theme="dark"] .theme-icon-light { display: none; }
 :root[data-theme="light"] .theme-icon-dark { display: none; }
