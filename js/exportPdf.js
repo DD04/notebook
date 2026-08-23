@@ -35,7 +35,7 @@ function groupByCategory(rows) {
     });
     const groups = Array.from(map.entries()).map(([cat, items]) => {
         const total = items.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-        const sorted = items.slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+        const sorted = items.slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
         return { category: cat, items: sorted, total };
     });
     groups.sort((a, b) => b.total - a.total);

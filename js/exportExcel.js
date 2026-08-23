@@ -62,10 +62,10 @@ export async function exportLedgerToExcel({ title, transactions, filenamePrefix,
 
     const incomeRows = transactions
         .filter(t => t.type === 'income')
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+        .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     const expenseRows = transactions
         .filter(t => t.type === 'expense')
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+        .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
     const cols = buildColumns(includeMember);
     const n = cols.length;
