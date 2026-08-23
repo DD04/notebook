@@ -897,6 +897,16 @@ function applyGroupFiltersAndRender() {
     renderGroupTransactions();
 }
 
+// Currently filtered group transaction list (respects search/type/category/month/member filters), used by Excel export
+export function getFilteredGroupTransactions() {
+    return groupFilteredTransactions;
+}
+
+// Name of the currently active group, or null if none is selected, used by Excel export
+export function getActiveGroupName() {
+    return activeGroup ? activeGroup.name : null;
+}
+
 function populateGroupAnalyticsMonthSelect() {
     const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
     if (!groupAnalyticsMonthSelect) return;

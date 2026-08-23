@@ -402,6 +402,11 @@ async function handleTxDelete(id) {
     }
 }
 
+// Currently filtered transaction list (respects search/type/category/month filters), used by Excel export
+export function getFilteredTransactions() {
+    return filteredTransactions;
+}
+
 // Formatter utils
 export function formatCurrency(amount) {
     return '$' + Math.round(Math.abs(parseFloat(amount))).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");

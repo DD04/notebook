@@ -6,6 +6,7 @@ import * as group from './group.js';
 import * as budgeting from './budgeting.js';
 import * as analytics from './analytics.js';
 import * as settings from './settings.js';
+import { exportLedgerToExcel } from './exportExcel.js';
 
 // Lucide API compatibility polyfill
 if (window.lucide && !window.lucide.replace) {
@@ -32,6 +33,7 @@ const pageTitle = document.getElementById('pageTitle');
 const navItems = document.querySelectorAll('.nav-item');
 const viewSections = document.querySelectorAll('.view-section');
 const toastContainer = document.getElementById('toastContainer');
+const headerDownloadBtn = document.getElementById('headerDownloadBtn');
 
 // State
 let currentUser = null;
@@ -119,6 +121,11 @@ async function initApp() {
 
     // 6. Setup SPA Navigation
     initRouter();
+
+    // 6.5. Ledger Excel download (works from both the Dashboard and Groups views)
+    if (headerDownloadBtn) {
+        headerDownloadBtn.addEventListener('click', handleHeaderDownload);
+    }
 
     // 7. Setup Mobile Responsive Navigation toggles
     sidebarOpenBtn.addEventListener('click', () => sidebar.classList.add('active'));
@@ -216,28 +223,75 @@ function triggerViewRefresh(viewName) {
 /* ==========================================================================
    STATE ORCHESTRATION & SYNC
    ========================================================================== */
+function getActiveView() {
+    const hash = window.location.hash.replace('#', '');
+    const validViews = ['dashboard', 'groups', 'analytics'];
+
+    if (hash && validViews.includes(hash)) {
+        return hash;
+    }
+    const activeNav = document.querySelector('.nav-item.active');
+    return activeNav ? activeNav.getAttribute('data-view') : 'dashboard';
+}
+
 export async function refreshAppState() {
     updateModeBadge();
-    
+
     // Check connection/login status
     const ready = await checkGatewayStatus();
     if (!ready) return;
 
-    // Get active view based on hash or fallback
-    let activeView = 'dashboard';
-    const hash = window.location.hash.replace('#', '');
-    const validViews = ['dashboard', 'groups', 'analytics'];
-    
-    if (hash && validViews.includes(hash)) {
-        activeView = hash;
-    } else {
-        const activeNav = document.querySelector('.nav-item.active');
-        if (activeNav) {
-            activeView = activeNav.getAttribute('data-view');
+    switchView(getActiveView());
+}
+
+// Downloads the ledger currently on screen (Dashboard or Groups view) as a styled .xlsx file
+async function handleHeaderDownload() {
+    const activeView = getActiveView();
+
+    let title;
+    let filenamePrefix;
+    let transactions;
+    let includeMember = false;
+
+    if (activeView === 'dashboard') {
+        title = '個人收支明細表';
+        filenamePrefix = '個人收支明細表';
+        transactions = dashboard.getFilteredTransactions();
+    } else if (activeView === 'groups') {
+        const groupName = group.getActiveGroupName();
+        if (!groupName) {
+            showToast('請先選擇一個群組', 'warning');
+            return;
         }
+        title = `${groupName}收支明細表`;
+        filenamePrefix = title;
+        transactions = group.getFilteredGroupTransactions();
+        includeMember = true;
+    } else {
+        showToast('此頁面沒有可下載的明細', 'info');
+        return;
     }
-    
-    switchView(activeView);
+
+    if (!transactions || transactions.length === 0) {
+        showToast('目前沒有可下載的資料', 'warning');
+        return;
+    }
+
+    headerDownloadBtn.disabled = true;
+    headerDownloadBtn.innerHTML = '<i data-lucide="loader" class="spin-animation"></i>';
+    lucide.replace();
+
+    try {
+        await exportLedgerToExcel({ title, transactions, filenamePrefix, includeMember });
+        showToast('明細表下載成功！', 'success');
+    } catch (err) {
+        console.error('Excel export failed:', err);
+        showToast('下載失敗: ' + err.message, 'error');
+    } finally {
+        headerDownloadBtn.disabled = false;
+        headerDownloadBtn.innerHTML = '<i data-lucide="file-spreadsheet"></i>';
+        lucide.replace();
+    }
 }
 
 // Event triggered when dashboard transaction is updated/deleted/added
