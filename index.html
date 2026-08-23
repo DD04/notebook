@@ -624,34 +624,18 @@
             <div class="modal-body" style="padding-top: 10px;">
                 <div class="analytics-layout"
                     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                    <!-- Chart Card 1: Donut breakdown -->
+                    <!-- Chart Card: Per-member Income vs Expense -->
                     <div class="analytics-card card-box" style="margin-bottom: 0;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                            <h3 data-i18n="analytics_cat_dist" style="margin-bottom: 0;">Category Distribution</h3>
+                            <h3 style="margin-bottom: 0;">成員收支分析</h3>
                             <select id="groupAnalyticsMonthSelect" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
                                 <option value="all">所有月份</option>
                             </select>
                         </div>
-                        <div class="chart-container donut-chart-container"
-                            style="position: relative; display: flex; align-items: center; justify-content: center; height: 220px; width: 100%;">
-                            <canvas id="groupCategoryDonutChart"></canvas>
-                            <div id="groupDonutEmptyMessage" class="empty-state text-muted d-none"
-                                style="position: absolute;">無支出數據</div>
-                        </div>
-                    </div>
-
-                    <!-- Chart Card 2: Income vs Expense Timeline -->
-                    <div class="analytics-card card-box" style="margin-bottom: 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                            <h3 data-i18n="analytics_cash_flow" style="margin-bottom: 0;">Monthly Cash Flow</h3>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <label for="groupAnalyticsTrendMonthPicker" style="font-size: 13px; color: var(--text-secondary);">結束月份：</label>
-                                <input type="month" id="groupAnalyticsTrendMonthPicker" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); outline: none;">
-                            </div>
-                        </div>
-                        <div class="chart-container line-chart-container"
-                            style="position: relative; height: 220px; width: 100%;">
-                            <canvas id="groupTrendBarChart"></canvas>
+                        <div class="chart-container" style="position: relative; display: flex; align-items: center; justify-content: center; height: 260px; width: 100%;">
+                            <canvas id="groupMemberBarChart"></canvas>
+                            <div id="groupMemberChartEmptyMessage" class="empty-state text-muted d-none"
+                                style="position: absolute;">無交易數據</div>
                         </div>
                     </div>
                 </div>

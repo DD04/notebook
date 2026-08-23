@@ -2287,7 +2287,7 @@ a {
     width: auto;
 }
 
-#budgetMonthPicker:focus, #analyticsTrendMonthPicker:focus, #groupAnalyticsTrendMonthPicker:focus {
+#budgetMonthPicker:focus, #analyticsTrendMonthPicker:focus {
     border-color: var(--primary);
 }
 

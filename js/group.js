@@ -60,8 +60,7 @@ let groupCurrentPage = 1;
 let groupFilteredTransactions = [];
 
 // Chart.js instances for group
-let groupDonutChartInstance = null;
-let groupBarChartInstance = null;
+let groupMemberBarChartInstance = null;
 
 // Current authenticated user
 let currentUserId = null;
@@ -166,30 +165,17 @@ export function initGroups() {
     const groupAnalyticsModalCloseBtn = document.getElementById('groupAnalyticsModalCloseBtn');
     
     const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
-    const groupAnalyticsTrendMonthPicker = document.getElementById('groupAnalyticsTrendMonthPicker');
-    
+
     if (groupAnalyticsMonthSelect) {
         groupAnalyticsMonthSelect.addEventListener('change', () => {
-            renderGroupCategoryDonutChart();
+            renderGroupMemberBarChart();
         });
     }
-    if (groupAnalyticsTrendMonthPicker) {
-        groupAnalyticsTrendMonthPicker.addEventListener('change', () => {
-            renderGroupTrendBarChart();
-        });
-    }
-    
+
     groupAnalyticsBtn.addEventListener('click', () => {
-        if (groupAnalyticsTrendMonthPicker && !groupAnalyticsTrendMonthPicker.value) {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            groupAnalyticsTrendMonthPicker.value = `${year}-${month}`;
-        }
         showModal(groupAnalyticsModal);
         populateGroupAnalyticsMonthSelect();
-        renderGroupCategoryDonutChart();
-        renderGroupTrendBarChart();
+        renderGroupMemberBarChart();
     });
     const hideGroupAnalytics = () => hideModal(groupAnalyticsModal);
     groupAnalyticsModalClose.addEventListener('click', hideGroupAnalytics);
@@ -893,15 +879,15 @@ function populateGroupAnalyticsMonthSelect() {
     }
 }
 
-function renderGroupCategoryDonutChart() {
-    const donutCanvas = document.getElementById('groupCategoryDonutChart');
-    const donutEmptyMessage = document.getElementById('groupDonutEmptyMessage');
-    
-    if (groupDonutChartInstance) {
-        groupDonutChartInstance.destroy();
-        groupDonutChartInstance = null;
+function renderGroupMemberBarChart() {
+    const barCanvas = document.getElementById('groupMemberBarChart');
+    const emptyMessage = document.getElementById('groupMemberChartEmptyMessage');
+
+    if (groupMemberBarChartInstance) {
+        groupMemberBarChartInstance.destroy();
+        groupMemberBarChartInstance = null;
     }
-    
+
     const groupAnalyticsMonthSelect = document.getElementById('groupAnalyticsMonthSelect');
     const selectedMonth = groupAnalyticsMonthSelect ? groupAnalyticsMonthSelect.value : 'all';
 
@@ -909,135 +895,50 @@ function renderGroupCategoryDonutChart() {
         if (selectedMonth === 'all') return true;
         return t.date && t.date.startsWith(selectedMonth);
     });
-    
-    // 1. Group expenses for Category Donut Chart
-    const catTotals = {};
-    let totalExpense = 0;
-    
-    filteredTxs.forEach(t => {
-        if (t.type === 'expense') {
-            const cat = t.category || 'Other';
-            const val = parseFloat(t.amount);
-            catTotals[cat] = (catTotals[cat] || 0) + val;
-            totalExpense += val;
-        }
-    });
-    
-    const categoriesSorted = Object.entries(catTotals)
-        .sort((a, b) => b[1] - a[1]);
-        
-    if (totalExpense === 0 || categoriesSorted.length === 0) {
-        donutCanvas.classList.add('d-none');
-        donutEmptyMessage.classList.remove('d-none');
-    } else {
-        donutCanvas.classList.remove('d-none');
-        donutEmptyMessage.classList.add('d-none');
-        
-        const labels = categoriesSorted.map(([cat]) => getText('cat_' + cat) || cat);
-        const data = categoriesSorted.map(([, val]) => val);
-        const CHART_COLORS = [
-            '#6366F1', '#10B981', '#EF4444', '#F59E0B', '#EC4899', '#8B5CF6', '#06B6D4', '#3B82F6'
-        ];
-        const backgroundColors = categoriesSorted.map((_, idx) => CHART_COLORS[idx % CHART_COLORS.length]);
-        
-        groupDonutChartInstance = new window.Chart(donutCanvas, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: backgroundColors,
-                    borderWidth: 1,
-                    borderColor: '#1e1e2e',
-                    hoverOffset: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#a1a1aa',
-                            boxWidth: 12,
-                            font: { family: "'Outfit', sans-serif", size: 11 }
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: '#27273a',
-                        titleColor: '#ffffff',
-                        bodyColor: '#e4e4e7',
-                        borderColor: 'rgba(255, 255, 255, 0.08)',
-                        borderWidth: 1,
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.parsed;
-                                const percent = (value / totalExpense) * 100;
-                                return ` ${context.label}: $${Math.round(value)} (${percent.toFixed(1)}%)`;
-                            }
-                        }
-                    }
-                },
-                cutout: '65%'
-            }
-        });
-    }
-}
 
-function renderGroupTrendBarChart() {
-    const barCanvas = document.getElementById('groupTrendBarChart');
-    
-    if (groupBarChartInstance) {
-        groupBarChartInstance.destroy();
-        groupBarChartInstance = null;
-    }
-    
-    const groupAnalyticsTrendMonthPicker = document.getElementById('groupAnalyticsTrendMonthPicker');
-    let baseDate = new Date();
-    if (groupAnalyticsTrendMonthPicker && groupAnalyticsTrendMonthPicker.value) {
-        const [year, month] = groupAnalyticsTrendMonthPicker.value.split('-');
-        baseDate = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
-    }
-    
-    // 2. Group values by month for Monthly Cash Flow (Bar Chart)
-    const monthlySummary = {};
-    const monthsArray = [];
-    
-    for (let i = 5; i >= 0; i--) {
-        const d = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const key = `${year}-${month}`;
-        monthsArray.push(key);
-        monthlySummary[key] = { income: 0, expense: 0 };
-    }
-    
-    activeTransactions.forEach(t => {
-        if (!t.date) return;
-        const mKey = t.date.substring(0, 7);
-        if (monthlySummary[mKey]) {
-            const val = parseFloat(t.amount);
-            if (t.type === 'income') {
-                monthlySummary[mKey].income += val;
-            } else {
-                monthlySummary[mKey].expense += val;
-            }
+    // Group income/expense totals per member, seeded from the member list so
+    // members with no transactions in the selected month still show up.
+    const memberTotals = new Map();
+    activeMembers.forEach(m => {
+        memberTotals.set(m.user_id, { label: m.nickname || 'User', income: 0, expense: 0 });
+    });
+
+    filteredTxs.forEach(t => {
+        const key = t.user_id || t.id;
+        if (!memberTotals.has(key)) {
+            const label = (t.profiles && t.profiles.nickname) || t.member_nickname || 'User';
+            memberTotals.set(key, { label, income: 0, expense: 0 });
+        }
+        const entry = memberTotals.get(key);
+        const val = parseFloat(t.amount);
+        if (t.type === 'income') {
+            entry.income += val;
+        } else {
+            entry.expense += val;
         }
     });
-    
-    const barLabels = monthsArray.map(mKey => {
-        const parts = mKey.split('-');
-        return `${parts[0]}年${parts[1]}月`;
-    });
-    
-    const incomeData = monthsArray.map(mKey => monthlySummary[mKey].income);
-    const expenseData = monthsArray.map(mKey => monthlySummary[mKey].expense);
-    
-    groupBarChartInstance = new window.Chart(barCanvas, {
+
+    const membersSorted = Array.from(memberTotals.values())
+        .filter(m => m.income > 0 || m.expense > 0)
+        .sort((a, b) => (b.income + b.expense) - (a.income + a.expense));
+
+    if (membersSorted.length === 0) {
+        barCanvas.classList.add('d-none');
+        emptyMessage.classList.remove('d-none');
+        return;
+    }
+
+    barCanvas.classList.remove('d-none');
+    emptyMessage.classList.add('d-none');
+
+    const labels = membersSorted.map(m => m.label);
+    const incomeData = membersSorted.map(m => m.income);
+    const expenseData = membersSorted.map(m => m.expense);
+
+    groupMemberBarChartInstance = new window.Chart(barCanvas, {
         type: 'bar',
         data: {
-            labels: barLabels,
+            labels: labels,
             datasets: [
                 {
                     label: getText('db_income_type') || '收入',
