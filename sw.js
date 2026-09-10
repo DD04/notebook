@@ -7,7 +7,7 @@
 //   - Everything else (CDN libraries, fonts): stale-while-revalidate too,
 //     so the app still boots even with a flaky connection.
 
-const CACHE_NAME = 'notebook-shell-v2';
+const CACHE_NAME = 'notebook-shell-v3';
 
 const PRECACHE_URLS = [
   './',

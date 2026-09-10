@@ -505,6 +505,22 @@ a {
     display: block;
 }
 
+/* Dashboard: let the ledger card's own bordered/backgrounded box grow to
+   reach the bottom of the screen, instead of leaving plain page background
+   below a short card when there's little/no transaction data yet. Scoped
+   to #view-dashboard only so Analytics/Groups (grid layouts) are untouched. */
+#view-dashboard.view-section.active {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+#view-dashboard .ledger-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
