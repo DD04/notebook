@@ -87,6 +87,11 @@ body {
     overflow: hidden;
     height: 100vh;
     height: 100dvh;
+    /* iOS standalone home-screen apps sometimes under-report 100vh/100dvh
+       (reserve space as if Safari's chrome were still there). --app-height
+       is set from window.innerHeight by the inline script in index.html and
+       wins here, with 100dvh as the fallback before that script runs. */
+    height: var(--app-height, 100dvh);
     width: 100vw;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -128,6 +133,7 @@ a {
     display: flex;
     height: 100vh;
     height: 100dvh;
+    height: var(--app-height, 100dvh);
     width: 100vw;
     position: relative;
 }
@@ -1635,6 +1641,8 @@ a {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
+    height: var(--app-height, 100dvh);
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -1887,6 +1895,7 @@ a {
         height: 100vh;
         /* dvh = dynamic viewport height，支援 iOS Safari 動態工具列（底部 URL bar）*/
         height: 100dvh;
+        height: var(--app-height, 100dvh);
         transform: translateX(-100%);
         z-index: 200;
         overflow-y: auto;

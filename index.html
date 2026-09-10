@@ -4,6 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- iOS standalone home-screen apps can under-report 100vh/100dvh (they
+         reserve space as if Safari's toolbar were still shown, leaving a
+         blank band at the bottom). Track the *real* viewport height in JS
+         and expose it as --app-height; style.css prefers this over 100dvh. -->
+    <script>
+        (function () {
+            function setAppHeight() {
+                var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+                document.documentElement.style.setProperty('--app-height', h + 'px');
+            }
+            setAppHeight();
+            window.addEventListener('resize', setAppHeight);
+            window.addEventListener('orientationchange', setAppHeight);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', setAppHeight);
+            }
+        })();
+    </script>
     <title>Notebook - Smart Bookkeeping</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- PWA: install to home screen support -->

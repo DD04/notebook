@@ -7,7 +7,7 @@
 //   - Everything else (CDN libraries, fonts): stale-while-revalidate too,
 //     so the app still boots even with a flaky connection.
 
-const CACHE_NAME = 'notebook-shell-v1';
+const CACHE_NAME = 'notebook-shell-v2';
 
 const PRECACHE_URLS = [
   './',
@@ -73,6 +73,29 @@ self.addEventListener('fetch', (event) => {
   // Never intercept Supabase traffic — auth/session/data must always hit the network live.
   if (url.hostname.endsWith('supabase.co')) return;
 
+  // HTML page loads: network-first. This is what fixes a layout/behavior change
+  // (like the --app-height fix) actually reaching an already-installed app on
+  // the very next launch, instead of possibly serving a stale cached page.
+  const isNavigation =
+    request.mode === 'navigate' ||
+    (request.headers.get('accept') || '').includes('text/html');
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Everything else (CSS/JS/icons/CDN libs): stale-while-revalidate for speed.
   event.respondWith(
     caches.match(request).then((cached) => {
       const networkFetch = fetch(request)
