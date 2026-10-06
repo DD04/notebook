@@ -1,3 +1,4 @@
+import { loadCharts } from './libraries.js';
 // js/analytics.js - Chart.js refactored Charting and Analytics Module
 import * as storage from './storage.js';
 import { formatCurrency, escapeHTML } from './dashboard.js';
@@ -28,7 +29,7 @@ export function initAnalytics() {
 
 export async function refreshAnalytics() {
     try {
-        transactions = await storage.getTransactions();
+        [transactions] = await Promise.all([storage.getTransactions(), loadCharts()]);
         
         const analyticsTrendMonthPicker = document.getElementById('analyticsTrendMonthPicker');
         if (analyticsTrendMonthPicker && !analyticsTrendMonthPicker.value) {

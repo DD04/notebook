@@ -6,8 +6,6 @@ import * as group from './group.js';
 import * as budgeting from './budgeting.js';
 import * as analytics from './analytics.js';
 import * as settings from './settings.js';
-import { exportLedgerToExcel } from './exportExcel.js';
-import { exportLedgerToPdf } from './exportPdf.js';
 
 // Lucide API compatibility polyfill
 if (window.lucide && !window.lucide.replace) {
@@ -160,7 +158,7 @@ async function initApp() {
     // 8. Gateway Status Gatekeeper
     const ready = await checkGatewayStatus();
     if (ready) {
-        await refreshAppState();
+        switchView(getActiveView());
     }
     
     // Replace Lucide Icons initially
@@ -316,8 +314,10 @@ async function handleHeaderDownload(format) {
 
     try {
         if (format === 'pdf') {
+            const { exportLedgerToPdf } = await import('./exportPdf.js');
             await exportLedgerToPdf(context);
         } else {
+            const { exportLedgerToExcel } = await import('./exportExcel.js');
             await exportLedgerToExcel(context);
         }
         showToast('明細表下載成功！', 'success');
@@ -333,8 +333,11 @@ async function handleHeaderDownload(format) {
 
 // Event triggered when dashboard transaction is updated/deleted/added
 function onLedgerDataChange() {
-    budgeting.refreshBudgeting();
-    analytics.refreshAnalytics();
+    // Hidden views fetch current data when opened; no full-ledger refetch after saves.
+    if (getActiveView() === 'analytics') {
+        budgeting.refreshBudgeting();
+        analytics.refreshAnalytics();
+    }
 }
 
 /* ==========================================================================
@@ -420,7 +423,7 @@ export async function checkGatewayStatus() {
         const gatewayOverlay = document.getElementById('gatewayOverlay');
         if (gatewayOverlay) gatewayOverlay.classList.remove('active');
     }
-    await refreshUserSession();
+    await refreshUserSession(currentUser);
     updateModeBadge();
     return true;
 }
@@ -545,8 +548,8 @@ function initGateway() {
 /* ==========================================================================
    SESSION CONTROLLER
    ========================================================================== */
-async function refreshUserSession() {
-    currentUser = await storage.getCurrentUser();
+async function refreshUserSession(user) {
+    currentUser = user === undefined ? await storage.getCurrentUser() : user;
     
     // Notify group module about current user (for creator-only access control)
     group.setCurrentUser(currentUser);

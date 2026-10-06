@@ -27,8 +27,9 @@ export function initBudgeting() {
 export async function refreshBudgeting() {
     try {
         // Fetch budget configuration and transactions for this month
-        activeBudgets = await storage.getBudgets(activeMonth);
-        transactions = await storage.getTransactions();
+        [activeBudgets, transactions] = await Promise.all([
+            storage.getBudgets(activeMonth), storage.getTransactions()
+        ]);
         
         renderBudgetDashboard();
     } catch (e) {

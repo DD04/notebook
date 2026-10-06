@@ -1,13 +1,13 @@
 // sw.js — minimal service worker so Notebook can be installed as a PWA
 // on iOS / Android home screens. Strategy:
-//   - App shell (HTML/CSS/JS/icons): stale-while-revalidate, so the app
+//   - App shell (HTML/CSS/JS/icons): precached per release, so the app
 //     still opens instantly offline and updates itself in the background.
 //   - Supabase requests (auth + data): always network, never cached,
 //     since bookkeeping data must stay live and correct.
 //   - Everything else (CDN libraries, fonts): stale-while-revalidate too,
 //     so the app still boots even with a flaky connection.
 
-const CACHE_NAME = 'notebook-shell-v4';
+const CACHE_NAME = 'notebook-shell-v5';
 
 const PRECACHE_URLS = [
   './',
@@ -31,19 +31,18 @@ const PRECACHE_URLS = [
   './js/i18n.js',
   './js/config.js',
   './js/exportExcel.js',
-  './js/exportPdf.js'
+  './js/exportPdf.js',
+  './js/libraries.js',
+  './js/transactions.js'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .catch(() => {
-        // Don't block install if one asset fails to precache (e.g. offline first install)
-      })
+      .then((cache) => cache.addAll(PRECACHE_URLS.map(url => new Request(url, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -51,7 +50,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+        Promise.all(keys.filter((key) => key.startsWith('notebook-shell-') && key !== CACHE_NAME).map((key) => caches.delete(key)))
       )
       .then(() => self.clients.claim())
   );
@@ -59,57 +58,37 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-
-  // Only handle simple GETs; let everything else (POST to Supabase, etc.) pass straight through.
   if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  const local = url.origin === self.location.origin;
+  const cdn = ['cdn.jsdelivr.net', 'unpkg.com', 'esm.sh', 'fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname);
+  // APIs (including custom Supabase domains) always pass through.
+  if (!local && !cdn) return;
 
-  let url;
-  try {
-    url = new URL(request.url);
-  } catch (e) {
+  if (local) {
+    // Serve one release's precached shell consistently. A new service worker
+    // installs the next snapshot and the page reloads when it takes control.
+    event.respondWith(caches.open(CACHE_NAME).then(async (cache) => {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      if (request.mode === 'navigate') {
+        const shell = await cache.match('./index.html');
+        if (shell) return shell;
+      }
+      return fetch(request);
+    }));
     return;
   }
 
-  // Never intercept Supabase traffic — auth/session/data must always hit the network live.
-  if (url.hostname.endsWith('supabase.co')) return;
-
-  // HTML page loads: network-first. This is what fixes a layout/behavior change
-  // (like the --app-height fix) actually reaching an already-installed app on
-  // the very next launch, instead of possibly serving a stale cached page.
-  const isNavigation =
-    request.mode === 'navigate' ||
-    (request.headers.get('accept') || '').includes('text/html');
-
-  if (isNavigation) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('./index.html')))
-    );
-    return;
-  }
-
-  // Everything else (CSS/JS/icons/CDN libs): stale-while-revalidate for speed.
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      const networkFetch = fetch(request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-
-      // Serve cached shell instantly if we have it, refresh cache in the background.
-      return cached || networkFetch;
-    })
-  );
+  // Revalidate optional CDN libraries in the background, with a live event lifetime.
+  const cached = caches.open(CACHE_NAME).then(cache => cache.match(request));
+  const network = fetch(request).then(async response => {
+    if (response.status === 200) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  });
+  event.waitUntil(network.then(() => undefined).catch(() => undefined));
+  event.respondWith(cached.then(response => response || network));
 });

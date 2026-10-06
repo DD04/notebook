@@ -1,3 +1,5 @@
+import { sortTransactions, setFormSaving } from './transactions.js';
+import { loadCharts } from './libraries.js';
 // js/group.js - Group shared bookkeeping ledger logic
 import * as storage from './storage.js';
 import { formatCurrency, escapeHTML, updateCategoryDropdown } from './dashboard.js';
@@ -53,6 +55,10 @@ let groups = [];
 let activeGroup = null;
 let activeMembers = [];
 let activeTransactions = [];
+let savingTransaction = false;
+let createTransactionId = null;
+let dataRevision = 0;
+let groupRequest = 0;
 let groupFilterMemberId = null;
 
 // Pagination state (group transactions)
@@ -183,13 +189,16 @@ export function initGroups() {
         });
     }
 
-    groupAnalyticsBtn.addEventListener('click', () => {
+    groupAnalyticsBtn.addEventListener('click', async () => {
         if (groupAnalyticsModalTitle) {
             groupAnalyticsModalTitle.textContent = `${activeGroup?.name || ''}收支分析`;
         }
         showModal(groupAnalyticsModal);
         populateGroupAnalyticsMonthSelect();
-        renderGroupMemberBarChart();
+        try {
+            await loadCharts();
+            renderGroupMemberBarChart();
+        } catch (error) { showToast(error.message, 'error'); }
     });
     const hideGroupAnalytics = () => hideModal(groupAnalyticsModal);
     groupAnalyticsModalClose.addEventListener('click', hideGroupAnalytics);
@@ -207,8 +216,12 @@ function hideModal(modalEl) {
 }
 
 export async function refreshGroups() {
+    if (savingTransaction) return;
+    const revision = dataRevision;
     try {
-        groups = await storage.getGroups();
+        const records = await storage.getGroups();
+        if (revision !== dataRevision) return;
+        groups = records;
         renderGroupsList();
         
         if (activeGroup) {
@@ -228,6 +241,7 @@ export async function refreshGroups() {
 }
 
 function deselectGroup() {
+    groupRequest++;
     activeGroup = null;
     noGroupSelected.classList.remove('d-none');
     groupActiveDetails.classList.add('d-none');
@@ -274,6 +288,9 @@ function renderGroupsList() {
 }
 
 async function selectGroup(group) {
+    if (savingTransaction || !group) return;
+    const request = ++groupRequest;
+    const revision = dataRevision;
     activeGroup = group;
     isGroupCreator = currentUserId && group.created_by === currentUserId;
 
@@ -307,8 +324,12 @@ async function selectGroup(group) {
     }
     
     // Fetch members and transactions
-    activeMembers = await storage.getGroupMembers(group.id);
-    activeTransactions = await storage.getGroupTransactions(group.id);
+    const [members, records] = await Promise.all([
+        storage.getGroupMembers(group.id), storage.getGroupTransactions(group.id)
+    ]);
+    if (request !== groupRequest || revision !== dataRevision || activeGroup?.id !== group.id) return;
+    activeMembers = members;
+    activeTransactions = records;
     
     renderMembersList();
     
@@ -323,7 +344,10 @@ async function selectGroup(group) {
 }
 
 async function refreshGroupTransactions() {
-    if (!activeGroup) return;
+    if (!activeGroup || savingTransaction) return;
+    const groupId = activeGroup.id;
+    const request = ++groupRequest;
+    const revision = dataRevision;
     
     const icon = refreshGroupTxBtn ? refreshGroupTxBtn.querySelector('i') : null;
     if (icon) {
@@ -334,8 +358,12 @@ async function refreshGroupTransactions() {
     }
     
     try {
-        activeMembers = await storage.getGroupMembers(activeGroup.id);
-        activeTransactions = await storage.getGroupTransactions(activeGroup.id);
+        const [members, records] = await Promise.all([
+            storage.getGroupMembers(groupId), storage.getGroupTransactions(groupId)
+        ]);
+        if (request !== groupRequest || revision !== dataRevision || activeGroup?.id !== groupId) return;
+        activeMembers = members;
+        activeTransactions = records;
         renderMembersList();
         applyGroupFiltersAndRender();
     } catch (error) {
@@ -541,6 +569,14 @@ function renderGroupTransactions() {
             row.querySelector('.action-btn-edit').addEventListener('click', () => showGroupTxModal(t));
             row.querySelector('.action-btn-delete').addEventListener('click', () => handleGroupTxDelete(t.id));
         }
+        if (t.pending) {
+            row.classList.add('sync-pending');
+            const status = document.createElement('span');
+            status.className = 'sync-status';
+            status.textContent = getText('sync_pending');
+            row.querySelectorAll('td')[4].appendChild(status);
+        }
+        if (savingTransaction) row.querySelectorAll('button').forEach(button => { button.disabled = true; });
         groupTxTableBody.appendChild(row);
     });
     
@@ -708,6 +744,8 @@ async function handleLeaveGroup() {
 
 // Display Bill Modal
 function showGroupTxModal(existingTx = null) {
+    if (savingTransaction || !activeGroup) return;
+    createTransactionId = existingTx ? null : crypto.randomUUID();
     groupTxForm.reset();
     
     if (existingTx) {
@@ -738,6 +776,7 @@ function showGroupTxModal(existingTx = null) {
 
 async function handleGroupTxSubmit(e) {
     e.preventDefault();
+    if (savingTransaction || !activeGroup) return;
     
     const txId = gtxId.value;
     const type = gtxType.value;
@@ -760,25 +799,46 @@ async function handleGroupTxSubmit(e) {
         tags
     };
     
+    const groupId = activeGroup.id;
+    const recordId = txId || createTransactionId || (createTransactionId = crypto.randomUUID());
+    const previous = activeTransactions.find(t => t.id === recordId);
+    const pending = { ...previous, ...txData, id: recordId, group_id: groupId,
+        user_id: previous?.user_id || currentUserId,
+        member_nickname: previous?.member_nickname || currentUserNickname,
+        created_at: previous?.created_at || new Date().toISOString(), pending: true };
+    savingTransaction = true;
+    dataRevision++;
+    setFormSaving(groupTxForm, addGroupTxBtn, true);
+    activeTransactions = sortTransactions([pending, ...activeTransactions.filter(t => t.id !== recordId)]);
+    hideModal(groupTxModal);
+    populateGroupFilters();
+    applyGroupFiltersAndRender();
+
     try {
-        if (txId) {
-            await storage.updateGroupTransaction(activeGroup.id, txId, txData);
-            showToast(getText('toast_tx_updated') || '交易紀錄已更新！', 'success');
-        } else {
-            await storage.addGroupTransaction(activeGroup.id, txData);
-            showToast(getText('toast_bill_added') || '交易已記錄成功！', 'success');
-        }
-        hideModal(groupTxModal);
-        
-        // Reload details
-        const updated = (await storage.getGroups()).find(g => g.id === activeGroup.id);
-        await selectGroup(updated);
+        const saved = txId
+            ? await storage.updateGroupTransaction(groupId, txId, txData)
+            : await storage.addGroupTransaction(groupId, { ...txData, id: recordId });
+        // The mutation response doesn't include the joined profile object.
+        const confirmed = { ...pending, ...saved, pending: false };
+        activeTransactions = sortTransactions([confirmed, ...activeTransactions.filter(t => t.id !== recordId)]);
+        createTransactionId = null;
+        showToast(getText(txId ? 'toast_tx_updated' : 'toast_bill_added'), 'success');
     } catch (err) {
-        showToast("Failed to save transaction: " + err.message, "error");
+        activeTransactions = activeTransactions.filter(t => t.id !== recordId);
+        if (previous) activeTransactions = sortTransactions([...activeTransactions, previous]);
+        showModal(groupTxModal);
+        showToast(getText('sync_failed') + ' ' + err.message, 'error');
+    } finally {
+        savingTransaction = false;
+        dataRevision++;
+        setFormSaving(groupTxForm, addGroupTxBtn, false);
+        populateGroupFilters();
+        applyGroupFiltersAndRender();
     }
 }
 
 async function handleGroupTxDelete(txId) {
+    if (savingTransaction) return;
     const isConfirmed = await showConfirm(getText('confirm_delete_bill') || '確定要刪除這筆群組交易紀錄嗎？');
     if (!isConfirmed) return;
     
@@ -937,6 +997,7 @@ function populateGroupAnalyticsMonthSelect() {
 }
 
 function renderGroupMemberBarChart() {
+    if (!window.Chart) return;
     const barCanvas = document.getElementById('groupMemberBarChart');
     const emptyMessage = document.getElementById('groupMemberChartEmptyMessage');
 

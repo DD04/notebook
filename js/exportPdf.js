@@ -1,3 +1,4 @@
+import { loadScript } from './libraries.js';
 // js/exportPdf.js - Shared PDF ledger export (categorized cash-flow-statement style),
 // rendered off-screen with the browser's own CJK font rendering, then rasterized via
 // html2canvas + jsPDF. This trades selectable text for zero font-embedding complexity.
@@ -197,6 +198,10 @@ function buildStatementDom({ title, transactions, includeMember }) {
  * @param {boolean} [opts.includeMember] - Shows a "記帳人" column per line (for group ledgers).
  */
 export async function exportLedgerToPdf({ title, transactions, filenamePrefix, includeMember = false }) {
+    await Promise.all([
+        loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas'),
+        loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'jspdf')
+    ]);
     if (!window.html2canvas || !window.jspdf) {
         throw new Error('PDF 匯出套件尚未載入完成，請稍後再試一次。');
     }

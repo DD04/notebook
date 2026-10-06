@@ -155,6 +155,8 @@ export const translations = {
         'cat_Other': '其他',
 
         // Toast messages
+        'sync_pending': '同步中…',
+        'sync_failed': '同步未完成，已保留輸入內容，請重試。',
         'toast_tx_added': '交易紀錄已新增！',
         'toast_tx_updated': '交易紀錄已更新！',
         'toast_tx_deleted': '交易紀錄已刪除！',
@@ -367,6 +369,8 @@ export const translations = {
         'cat_Other': 'Other',
 
         // Toast messages
+        'sync_pending': 'Syncing…',
+        'sync_failed': 'Sync failed. Your draft has been kept; please retry.',
         'toast_tx_added': 'Transaction added successfully!',
         'toast_tx_updated': 'Transaction updated successfully!',
         'toast_tx_deleted': 'Transaction deleted successfully!',

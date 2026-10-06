@@ -1,3 +1,4 @@
+import { loadScript } from './libraries.js';
 // js/exportExcel.js - Shared Excel (.xlsx) ledger export, styled with the app's brand colors.
 import { getText } from './i18n.js';
 
@@ -56,6 +57,7 @@ function sanitizeFilename(name) {
  * @param {boolean} [opts.includeMember] - Adds a "記帳人" column (for group ledgers).
  */
 export async function exportLedgerToExcel({ title, transactions, filenamePrefix, includeMember = false }) {
+    await loadScript('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js', 'ExcelJS');
     if (!window.ExcelJS) {
         throw new Error('Excel 匯出套件尚未載入完成，請稍後再試一次。');
     }

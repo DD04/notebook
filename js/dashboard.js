@@ -1,3 +1,4 @@
+import { sortTransactions, setFormSaving } from './transactions.js';
 // js/dashboard.js - Personal Dashboard Ledger Module
 import * as storage from './storage.js';
 import { showToast, showConfirm } from './app.js';
@@ -41,6 +42,10 @@ let filteredTransactions = [];
 let currentPage = 1;
 const ITEMS_PER_PAGE = 8;
 let changeCallback = null;
+let savingTransaction = false;
+let createTransactionId = null;
+let dataRevision = 0;
+let refreshRequest = 0;
 
 export function updateCategoryDropdown(typeSelectEl, categorySelectEl) {
     const selectedType = typeSelectEl.value; // 'expense' or 'income'
@@ -108,6 +113,8 @@ export function initDashboard(onDashboardChange) {
 
 // Open Modal to create or edit transaction
 export function showTxModal(existingTx = null) {
+    if (savingTransaction) return;
+    createTransactionId = existingTx ? null : crypto.randomUUID();
     txForm.reset();
     
     if (existingTx) {
@@ -143,8 +150,13 @@ export function hideTxModal() {
 
 // Refresh transactions data from storage
 export async function refreshDashboard() {
+    if (savingTransaction) return;
+    const revision = dataRevision;
+    const request = ++refreshRequest;
     try {
-        localTransactions = await storage.getTransactions();
+        const records = await storage.getTransactions();
+        if (revision !== dataRevision || request !== refreshRequest) return;
+        localTransactions = records;
         
         // Dynamic options populate
         populateFilterSelectors();
@@ -333,6 +345,15 @@ function renderTable() {
             </td>
         `;
         
+        if (t.pending) {
+            row.classList.add('sync-pending');
+            const status = document.createElement('span');
+            status.className = 'sync-status';
+            status.textContent = getText('sync_pending');
+            row.children[3].appendChild(status);
+        }
+        row.querySelectorAll('button').forEach(button => { button.disabled = savingTransaction; });
+
         // Hook edit/delete actions
         row.querySelector('.action-btn-edit').addEventListener('click', () => showTxModal(t));
         row.querySelector('.action-btn-delete').addEventListener('click', () => handleTxDelete(t.id));
@@ -351,6 +372,7 @@ function renderTable() {
 
 async function handleTxSubmit(e) {
     e.preventDefault();
+    if (savingTransaction) return;
     
     const id = txId.value;
     const tagsArray = txTags.value
@@ -367,34 +389,53 @@ async function handleTxSubmit(e) {
         description: txDescription.value.trim()
     };
     
+    const recordId = id || createTransactionId || (createTransactionId = crypto.randomUUID());
+    const previous = localTransactions.find(t => t.id === recordId);
+    const pending = { ...previous, ...txData, id: recordId,
+        created_at: previous?.created_at || new Date().toISOString(), pending: true };
+    savingTransaction = true;
+    dataRevision++;
+    setFormSaving(txForm, addTxBtn, true);
+    localTransactions = sortTransactions([pending, ...localTransactions.filter(t => t.id !== recordId)]);
+    hideTxModal();
+    populateFilterSelectors();
+    applyFiltersAndRender();
+
     try {
-        if (id) {
-            await storage.updateTransaction(id, txData);
-            showToast(getText('toast_tx_updated') || '交易紀錄已更新！', 'success');
-        } else {
-            await storage.addTransaction(txData);
-            showToast(getText('toast_tx_added') || '交易紀錄已新增！', 'success');
-        }
-        
-        hideTxModal();
-        await refreshDashboard();
-        
-        // Notify app shell of data changes (to sync other views)
+        const saved = id
+            ? await storage.updateTransaction(id, txData)
+            : await storage.addTransaction({ ...txData, id: recordId });
+        localTransactions = sortTransactions([saved, ...localTransactions.filter(t => t.id !== recordId)]);
+        createTransactionId = null;
+        showToast(getText(id ? 'toast_tx_updated' : 'toast_tx_added'), 'success');
         if (changeCallback) changeCallback();
     } catch (err) {
-        console.error("Save transaction error:", err);
-        showToast("Failed to save transaction: " + err.message, "error");
+        localTransactions = localTransactions.filter(t => t.id !== recordId);
+        if (previous) localTransactions = sortTransactions([...localTransactions, previous]);
+        // Keep the draft and its ID for a safe retry after a lost response.
+        txModal.classList.add('active');
+        showToast(getText('sync_failed') + ' ' + err.message, 'error');
+    } finally {
+        savingTransaction = false;
+        dataRevision++;
+        setFormSaving(txForm, addTxBtn, false);
+        populateFilterSelectors();
+        applyFiltersAndRender();
     }
 }
 
 async function handleTxDelete(id) {
+    if (savingTransaction) return;
     const isConfirmed = await showConfirm(getText('confirm_delete_tx') || '確定要刪除這筆交易紀錄嗎？');
     if (!isConfirmed) return;
     
     try {
         await storage.deleteTransaction(id);
         showToast(getText('toast_tx_deleted') || '交易紀錄已刪除！', 'success');
-        await refreshDashboard();
+        dataRevision++;
+        localTransactions = localTransactions.filter(t => t.id !== id);
+        populateFilterSelectors();
+        applyFiltersAndRender();
         if (changeCallback) changeCallback();
     } catch (err) {
         console.error("Delete transaction error:", err);

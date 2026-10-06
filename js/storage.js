@@ -35,7 +35,7 @@ export async function initStorage() {
     
     if (currentConfig.mode === 'supabase' && currentConfig.sbUrl && currentConfig.sbKey) {
         try {
-            await connectSupabase(currentConfig.sbUrl, currentConfig.sbKey);
+            await connectSupabase(currentConfig.sbUrl, currentConfig.sbKey, false);
         } catch (err) {
             console.error("Supabase connection failed on init", err);
             currentConfig.mode = 'unconfigured';
@@ -71,11 +71,17 @@ export async function saveConfig(newConfig) {
 
 let authChangeListeners = [];
 
-async function connectSupabase(url, key) {
+const profileCache = new Map();
+
+async function connectSupabase(url, key, verify = true) {
     try {
         // Dynamic ESM import of Supabase JS Client
-        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2?standalone');
         supabase = createClient(url, key);
+        profileCache.clear();
+        supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') profileCache.clear();
+        });
         
         // Register any pending auth state change listeners
         authChangeListeners.forEach(callback => {
@@ -83,9 +89,9 @@ async function connectSupabase(url, key) {
         });
         
         // Quick verification ping to check credentials
-        const { error } = await supabase.from('profiles').select('id').limit(1);
-        if (error && error.code !== 'PGRST116') { // PGRST116 just means no rows, which is fine
-            throw error;
+        if (verify) {
+            const { error } = await supabase.from('profiles').select('id').limit(1);
+            if (error && error.code !== 'PGRST116') throw error;
         }
         return true;
     } catch (e) {
@@ -224,20 +230,25 @@ export async function signOut() {
 
 export async function getCurrentUser() {
     if (!isCloudMode()) return null;
-    const { data } = await supabase.auth.getUser();
-    if (!data?.user) return null;
-    
-    // Fetch custom profile details (nickname, superuser)
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('nickname, superuser')
-        .eq('id', data.user.id)
-        .single();
-        
+    // Restore the local session; authorization still runs in database RLS on every request.
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    const user = data?.session?.user;
+    if (!user) { profileCache.clear(); return null; }
+    let cached = profileCache.get(user.id);
+    if (!cached || cached.expires <= Date.now()) {
+        cached = {
+            expires: Date.now() + 30000,
+            promise: Promise.resolve(supabase.from('profiles').select('nickname, superuser').eq('id', user.id).single())
+        };
+        profileCache.set(user.id, cached);
+    }
+    const { data: profile, error: profileError } = await cached.promise;
+    if (profileError) { profileCache.delete(user.id); throw profileError; }
     return {
-        id: data.user.id,
-        email: data.user.email,
-        nickname: profile?.nickname || splitEmail(data.user.email),
+        id: user.id,
+        email: user.email,
+        nickname: profile?.nickname || splitEmail(user.email),
         superuser: !!profile?.superuser
     };
 }
@@ -268,6 +279,7 @@ export async function addTransaction(tx) {
     const { data, error } = await supabase
         .from('transactions')
         .insert([{
+            ...(tx.id ? { id: tx.id } : {}),
             user_id: user.id,
             type: tx.type,
             amount: parseFloat(tx.amount),
@@ -277,7 +289,15 @@ export async function addTransaction(tx) {
             tags: tx.tags || []
         }])
         .select();
+    if (error?.code === '23505' && tx.id) {
+        const existing = await supabase.from('transactions').select('*').eq('id', tx.id).eq('user_id', user.id).single();
+        if (existing.error) throw existing.error;
+        if (!existing.data) throw error;
+        // Apply any draft corrections made after a lost response to the same row.
+        return updateTransaction(tx.id, tx);
+    }
     if (error) throw error;
+    if (!data?.[0]) throw new Error('Saved record was not returned.');
     return data[0];
 }
 
@@ -296,6 +316,7 @@ export async function updateTransaction(id, updatedTx) {
         .eq('id', id)
         .select();
     if (error) throw error;
+    if (!data?.[0]) throw new Error('Transaction was not updated.');
     return data[0];
 }
 
@@ -505,6 +526,7 @@ export async function addGroupTransaction(groupId, tx) {
     const { data, error } = await supabase
         .from('group_transactions')
         .insert([{
+            ...(tx.id ? { id: tx.id } : {}),
             group_id: groupId,
             user_id: user.id,
             member_nickname: user.nickname,
@@ -516,7 +538,14 @@ export async function addGroupTransaction(groupId, tx) {
             tags: tx.tags || []
         }])
         .select();
+    if (error?.code === '23505' && tx.id) {
+        const existing = await supabase.from('group_transactions').select('*').eq('id', tx.id).eq('group_id', groupId).eq('user_id', user.id).single();
+        if (existing.error) throw existing.error;
+        if (!existing.data) throw error;
+        return updateGroupTransaction(groupId, tx.id, tx);
+    }
     if (error) throw error;
+    if (!data?.[0]) throw new Error('Saved record was not returned.');
     return data[0];
 }
 
@@ -547,6 +576,7 @@ export async function updateGroupTransaction(groupId, txId, updatedTx) {
         .eq('group_id', groupId)
         .select();
     if (error) throw error;
+    if (!data?.[0]) throw new Error('Transaction was not updated.');
     return data[0];
 }
 
@@ -815,6 +845,7 @@ export async function leaveGroup(groupId) {
 }
 
 export async function updateProfile(newNickname, newPassword) {
+    profileCache.clear();
     if (!supabase) throw new Error("Database not connected");
     const user = supabase.auth.user ? supabase.auth.user() : (await supabase.auth.getUser()).data.user;
     if (!user) throw new Error("User not logged in");

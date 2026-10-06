@@ -87,10 +87,7 @@ body {
     overflow: hidden;
     height: 100vh;
     height: 100dvh;
-    /* iOS standalone home-screen apps sometimes under-report 100vh/100dvh
-       (reserve space as if Safari's chrome were still there). --app-height
-       is set from window.innerHeight by the inline script in index.html and
-       wins here, with 100dvh as the fallback before that script runs. */
+    /* Older browsers get --app-height from window.innerHeight. */
     height: var(--app-height, 100dvh);
     width: 100vw;
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -2434,3 +2431,26 @@ a {
     color: var(--error);
 }
 
+
+/* Fill the layout viewport, including the bottom safe area. */
+html { height: 100%; background: var(--bg-main); }
+.main-content { min-width: 0; }
+.top-header { flex-shrink: 0; }
+.view-panel { min-height: 0; padding-bottom: 0; }
+.view-section.active { flex: 1 0 auto; }
+#view-dashboard.view-section.active { flex: 1 0 auto; }
+#view-groups.view-section.active { display: flex; flex-direction: column; }
+.group-split-layout { flex: 1; align-items: stretch; }
+.group-main-panel { display: flex; flex-direction: column; }
+.group-details-container { flex: 1; }
+.group-transactions-list { flex: 1; display: flex; flex-direction: column; }
+.empty-state-card { flex: 1; }
+.ledger-container { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+.ledger-container .pagination-bar { margin-top: auto; padding-top: 20px; }
+.sidebar { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+.sync-status { display: block; font-size: 12px; color: var(--warning); }
+.sync-pending { opacity: 0.7; }
+button:disabled { cursor: default; }
+@media (max-width: 768px) {
+    .ledger-container { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+}

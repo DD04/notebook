@@ -4,22 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <!-- iOS standalone home-screen apps can under-report 100vh/100dvh (they
-         reserve space as if Safari's toolbar were still shown, leaving a
-         blank band at the bottom). Track the *real* viewport height in JS
-         and expose it as --app-height; style.css prefers this over 100dvh. -->
+    <!-- CSS tracks the layout viewport. Do not shrink the app to visualViewport
+         during keyboard display or pinch zoom. JS is only for older browsers. -->
     <script>
         (function () {
+            if (window.CSS && CSS.supports('height', '100dvh')) return;
             function setAppHeight() {
-                var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-                document.documentElement.style.setProperty('--app-height', h + 'px');
+                document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
             }
             setAppHeight();
             window.addEventListener('resize', setAppHeight);
             window.addEventListener('orientationchange', setAppHeight);
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', setAppHeight);
-            }
+            window.addEventListener('pageshow', setAppHeight);
         })();
     </script>
     <title>Notebook - Smart Bookkeeping</title>
@@ -37,9 +33,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+        rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap">
+    </noscript>
     <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>window.lucide = { createIcons: function () {}, replace: function () {} };</script>
+    <script async src="https://unpkg.com/lucide@latest"
+        onload="window.lucide.replace=window.lucide.createIcons;window.lucide.createIcons()"></script>
     <!-- Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -877,16 +878,27 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- Core App Logic -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script type="module" src="js/app.js"></script>
 
     <!-- PWA: register service worker so the app can be installed to the home screen -->
     <script>
         if ('serviceWorker' in navigator) {
+            const hadController = !!navigator.serviceWorker.controller;
+            let reloading = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (hadController && !reloading) {
+                    reloading = true;
+                    function reloadWhenIdle() {
+                        if (document.querySelector('form[aria-busy="true"], .modal-overlay.active, .gateway-overlay.active')) {
+                            setTimeout(reloadWhenIdle, 500);
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                    reloadWhenIdle();
+                }
+            });
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(() => {
                     // Non-fatal: app still works as a normal website if this fails
