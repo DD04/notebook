@@ -395,7 +395,10 @@ export async function getGroups() {
     return data
         .map(row => row.groups)
         .filter(Boolean)
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        .sort((a, b) =>
+            Number(b.created_by === user.id) - Number(a.created_by === user.id) ||
+            new Date(b.created_at) - new Date(a.created_at)
+        );
 }
 
 export async function createGroup(name) {
